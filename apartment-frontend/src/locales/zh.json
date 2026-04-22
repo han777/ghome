@@ -1,0 +1,14 @@
+{
+  "title": "公寓管理系统",
+  "booking": {
+    "title": "房间预订",
+    "south": "朝南",
+    "north": "朝北",
+    "submit": "立即预订"
+  },
+  "auth": {
+    "login": "登录",
+    "username": "用户名",
+    "password": "密码"
+  }
+}

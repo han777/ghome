@@ -1,0 +1,14 @@
+{
+  "title": "Apartment Mgmt",
+  "booking": {
+    "title": "Room Booking",
+    "south": "South",
+    "north": "North",
+    "submit": "Book Now"
+  },
+  "auth": {
+    "login": "Login",
+    "username": "Username",
+    "password": "Password"
+  }
+}

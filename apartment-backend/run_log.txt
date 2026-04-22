@@ -1,0 +1,127 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< com.apartment:apartment-backend >-------------------
+[INFO] Building apartment-backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-clean-plugin/3.3.2/maven-clean-plugin-3.3.2.pom
+Progress (1): 798 BProgress (1): 1.7 kBProgress (1): 4.4 kBProgress (1): 5.3 kB                    Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-clean-plugin/3.3.2/maven-clean-plugin-3.3.2.pom (5.3 kB at 9.8 kB/s)
+Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-plugins/40/maven-plugins-40.pom
+Progress (1): 773 BProgress (1): 1.8 kBProgress (1): 4.2 kBProgress (1): 6.6 kBProgress (1): 8.1 kB                    Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-plugins/40/maven-plugins-40.pom (8.1 kB at 62 kB/s)
+Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/maven-parent/40/maven-parent-40.pom
+Progress (1): 727 BProgress (1): 1.6 kBProgress (1): 4.2 kBProgress (1): 8.7 kBProgress (1): 12 kB Progress (1): 16 kBProgress (1): 21 kBProgress (1): 24 kBProgress (1): 27 kBProgress (1): 28 kBProgress (1): 30 kBProgress (1): 33 kBProgress (1): 36 kBProgress (1): 39 kBProgress (1): 41 kBProgress (1): 45 kBProgress (1): 49 kB                   Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/maven-parent/40/maven-parent-40.pom (49 kB at 94 kB/s)
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ apartment-backend ---
+Downloading from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-utils/4.0.0/plexus-utils-4.0.0.pom
+Progress (1): 724 BProgress (1): 1.8 kBProgress (1): 3.9 kBProgress (1): 8.3 kBProgress (1): 8.7 kB                    Downloaded from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-utils/4.0.0/plexus-utils-4.0.0.pom (8.7 kB at 67 kB/s)
+Downloading from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-utils/4.0.0/plexus-utils-4.0.0.jar
+Progress (1): 0.9/192 kBProgress (1): 2.3/192 kBProgress (1): 3.6/192 kBProgress (1): 5.0/192 kBProgress (1): 6.4/192 kBProgress (1): 7.7/192 kBProgress (1): 8.2/192 kBProgress (1): 9.6/192 kBProgress (1): 11/192 kB Progress (1): 12/192 kBProgress (1): 14/192 kBProgress (1): 15/192 kBProgress (1): 16/192 kBProgress (1): 18/192 kBProgress (1): 19/192 kBProgress (1): 21/192 kBProgress (1): 22/192 kBProgress (1): 23/192 kBProgress (1): 25/192 kBProgress (1): 26/192 kBProgress (1): 27/192 kBProgress (1): 29/192 kBProgress (1): 30/192 kBProgress (1): 31/192 kBProgress (1): 33/192 kBProgress (1): 37/192 kBProgress (1): 41/192 kBProgress (1): 46/192 kBProgress (1): 50/192 kBProgress (1): 54/192 kBProgress (1): 58/192 kBProgress (1): 62/192 kBProgress (1): 67/192 kBProgress (1): 71/192 kBProgress (1): 75/192 kBProgress (1): 79/192 kBProgress (1): 84/192 kBProgress (1): 88/192 kBProgress (1): 92/192 kBProgress (1): 96/192 kBProgress (1): 100/192 kBProgress (1): 105/192 kBProgress (1): 109/192 kBProgress (1): 113/192 kBProgress (1): 117/192 kBProgress (1): 122/192 kBProgress (1): 126/192 kBProgress (1): 130/192 kBProgress (1): 134/192 kBProgress (1): 139/192 kBProgress (1): 139/192 kBProgress (1): 143/192 kBProgress (1): 148/192 kBProgress (1): 152/192 kBProgress (1): 156/192 kBProgress (1): 160/192 kBProgress (1): 165/192 kBProgress (1): 169/192 kBProgress (1): 173/192 kBProgress (1): 177/192 kBProgress (1): 182/192 kBProgress (1): 186/192 kBProgress (1): 190/192 kBProgress (1): 192 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-utils/4.0.0/plexus-utils-4.0.0.jar (192 kB at 376 kB/s)
+[INFO] Deleting E:\opencode_projects\gensis-apartment\apartment-backend\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ apartment-backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ apartment-backend ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 19 source files with javac [debug release 21] to target\classes
+[INFO] 由于在类路径中发现了一个或多个处理程序，因此启用了
+  批注处理。未来发行版的 javac 可能会禁用批注处理，
+  除非至少按名称指定了一个处理程序 (-processor)，
+  或指定了搜索路径 (--processor-path, --processor-module-path)，
+  或显式启用了批注处理 (-proc:only, -proc:full)。
+  可使用 -Xlint:-options 隐藏此消息。
+  可使用 -proc:none 禁用批注处理。
+[INFO] 
+[INFO] >>> spring-boot:3.2.4:run (default-cli) > test-compile @ apartment-backend >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ apartment-backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ apartment-backend ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ apartment-backend ---
+[INFO] skip non existing resourceDirectory E:\opencode_projects\gensis-apartment\apartment-backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ apartment-backend ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] <<< spring-boot:3.2.4:run (default-cli) < test-compile @ apartment-backend <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.2.4:run (default-cli) @ apartment-backend ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2026-04-21T23:56:38.750+08:00  INFO 17492 --- [           main] com.apartment.ApartmentApplication       : Starting ApartmentApplication using Java 21.0.10 with PID 17492 (E:\opencode_projects\gensis-apartment\apartment-backend\target\classes started by Administrator in E:\opencode_projects\gensis-apartment\apartment-backend)
+2026-04-21T23:56:38.752+08:00  INFO 17492 --- [           main] com.apartment.ApartmentApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-04-21T23:56:39.091+08:00  INFO 17492 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-21T23:56:39.128+08:00  INFO 17492 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 32 ms. Found 4 JPA repository interfaces.
+2026-04-21T23:56:39.473+08:00  INFO 17492 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-04-21T23:56:39.479+08:00  INFO 17492 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-21T23:56:39.480+08:00  INFO 17492 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-04-21T23:56:39.512+08:00  INFO 17492 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-04-21T23:56:39.512+08:00  INFO 17492 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 735 ms
+2026-04-21T23:56:39.587+08:00  INFO 17492 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-21T23:56:39.613+08:00  INFO 17492 --- [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2026-04-21T23:56:39.633+08:00  INFO 17492 --- [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-04-21T23:56:39.742+08:00  INFO 17492 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-21T23:56:39.755+08:00  INFO 17492 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-04-21T23:56:39.842+08:00  INFO 17492 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5dc7841c
+2026-04-21T23:56:39.843+08:00  INFO 17492 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-04-21T23:56:40.482+08:00  INFO 17492 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+Hibernate: create table room (id bigserial not null, building_name varchar(255), direction varchar(255), floor_num integer, room_no varchar(255) not null, status integer, room_type_id bigint, primary key (id))
+Hibernate: create table room_order (id bigserial not null, biz_type integer, created_at timestamp(6), door_code varchar(255), end_date date, expires_at timestamp(6), order_no varchar(255), start_date date, status integer, total_amount numeric(38,2), room_id bigint, user_id bigint, primary key (id))
+Hibernate: create table room_type (id bigserial not null, price_long_rent numeric(38,2), price_short_rent numeric(38,2), type_code varchar(255) not null, primary key (id))
+Hibernate: create table room_type_name_intl (room_type_id bigint not null, name varchar(255), lang varchar(255) not null, primary key (room_type_id, lang))
+Hibernate: create table sys_role (id bigserial not null, description varchar(255), role_code varchar(255) not null, role_name varchar(255) not null, primary key (id))
+Hibernate: create table sys_user (id bigserial not null, email varchar(255), password varchar(255) not null, real_name varchar(255), status integer, username varchar(255) not null, wecom_id varchar(255), primary key (id))
+Hibernate: create table sys_user_role (user_id bigint not null, role_id bigint not null, primary key (user_id, role_id))
+Hibernate: alter table if exists room drop constraint if exists UK_mna8ilkl1xyq2j47tld36dbfy
+2026-04-21T23:56:40.541+08:00  WARN 17492 --- [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2026-04-21T23:56:40.541+08:00  WARN 17492 --- [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : constraint "uk_mna8ilkl1xyq2j47tld36dbfy" of relation "room" does not exist, skipping
+Hibernate: alter table if exists room add constraint UK_mna8ilkl1xyq2j47tld36dbfy unique (room_no)
+Hibernate: alter table if exists room_type drop constraint if exists UK_83qv92m0mojowcd8kj4gkmkbl
+2026-04-21T23:56:40.545+08:00  WARN 17492 --- [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2026-04-21T23:56:40.545+08:00  WARN 17492 --- [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : constraint "uk_83qv92m0mojowcd8kj4gkmkbl" of relation "room_type" does not exist, skipping
+Hibernate: alter table if exists room_type add constraint UK_83qv92m0mojowcd8kj4gkmkbl unique (type_code)
+Hibernate: alter table if exists sys_role drop constraint if exists UK_jqdita2l45v2gglry7bp8kl1f
+2026-04-21T23:56:40.548+08:00  WARN 17492 --- [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2026-04-21T23:56:40.548+08:00  WARN 17492 --- [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : constraint "uk_jqdita2l45v2gglry7bp8kl1f" of relation "sys_role" does not exist, skipping
+Hibernate: alter table if exists sys_role add constraint UK_jqdita2l45v2gglry7bp8kl1f unique (role_code)
+Hibernate: alter table if exists sys_user drop constraint if exists UK_ahtq5ew3v0kt1n7hf1sgp7p8l
+2026-04-21T23:56:40.552+08:00  WARN 17492 --- [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2026-04-21T23:56:40.552+08:00  WARN 17492 --- [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : constraint "uk_ahtq5ew3v0kt1n7hf1sgp7p8l" of relation "sys_user" does not exist, skipping
+Hibernate: alter table if exists sys_user add constraint UK_ahtq5ew3v0kt1n7hf1sgp7p8l unique (email)
+Hibernate: alter table if exists sys_user drop constraint if exists UK_51bvuyvihefoh4kp5syh2jpi4
+2026-04-21T23:56:40.555+08:00  WARN 17492 --- [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Warning Code: 0, SQLState: 00000
+2026-04-21T23:56:40.555+08:00  WARN 17492 --- [           main] o.h.engine.jdbc.spi.SqlExceptionHelper   : constraint "uk_51bvuyvihefoh4kp5syh2jpi4" of relation "sys_user" does not exist, skipping
+Hibernate: alter table if exists sys_user add constraint UK_51bvuyvihefoh4kp5syh2jpi4 unique (username)
+Hibernate: alter table if exists room add constraint FKd468eq7j1cbue8mk20qfrj5et foreign key (room_type_id) references room_type
+Hibernate: alter table if exists room_order add constraint FK6meyoc1frfbj3hryc8rjfya84 foreign key (room_id) references room
+Hibernate: alter table if exists room_order add constraint FK7poclpncg6ul1dsivqpjwblmb foreign key (user_id) references sys_user
+Hibernate: alter table if exists room_type_name_intl add constraint FK2sc8v7n1kf8j7a3r601c9rcmf foreign key (room_type_id) references room_type
+Hibernate: alter table if exists sys_user_role add constraint FKhh52n8vd4ny9ff4x9fb8v65qx foreign key (role_id) references sys_role
+Hibernate: alter table if exists sys_user_role add constraint FKb40xxfch70f5qnyfw8yme1n1s foreign key (user_id) references sys_user
+2026-04-21T23:56:40.566+08:00  INFO 17492 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-21T23:56:40.791+08:00  WARN 17492 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-21T23:56:40.938+08:00  INFO 17492 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@5b27d03d, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@687d31a9, org.springframework.security.web.context.SecurityContextHolderFilter@321558f8, org.springframework.security.web.header.HeaderWriterFilter@53b83897, org.springframework.web.filter.CorsFilter@6ce24203, org.springframework.security.web.authentication.logout.LogoutFilter@155767a7, com.apartment.security.JwtAuthenticationFilter@23d07ad3, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@662b199, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@3a678e40, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@4cc28ad0, org.springframework.security.web.session.SessionManagementFilter@6d96a895, org.springframework.security.web.access.ExceptionTranslationFilter@3305897c, org.springframework.security.web.access.intercept.AuthorizationFilter@3b60be3]
+2026-04-21T23:56:41.046+08:00  INFO 17492 --- [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-04-21T23:56:41.270+08:00  INFO 17492 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path ''
+2026-04-21T23:56:41.275+08:00  INFO 17492 --- [           main] com.apartment.ApartmentApplication       : Started ApartmentApplication in 2.729 seconds (process running for 2.906)
+Hibernate: select su1_0.id,su1_0.email,su1_0.password,su1_0.real_name,su1_0.status,su1_0.username,su1_0.wecom_id from sys_user su1_0 where su1_0.username=?
+Hibernate: insert into sys_role (description,role_code,role_name) values (?,?,?)
+Hibernate: insert into sys_user (email,password,real_name,status,username,wecom_id) values (?,?,?,?,?,?)
+Hibernate: insert into sys_user_role (user_id,role_id) values (?,?)
+Default Admin account created: admin / admin
+2026-04-22T00:38:26.139+08:00  WARN 17492 --- [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=45s538ms271碌s500ns).
+2026-04-22T00:53:50.703+08:00  WARN 17492 --- [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m22s788ms56碌s).
