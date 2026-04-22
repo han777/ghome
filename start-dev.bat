@@ -8,6 +8,9 @@ echo Using JAVA_HOME: %JAVA_HOME%
 echo Starting Backend (Spring Boot)...
 start cmd /k "cd apartment-backend && mvn spring-boot:run"
 
+echo waiting for backend finished...
+pause
+
 echo Starting Frontend (Vite/Vue)...
 start cmd /k "cd apartment-frontend && npm run dev"
 

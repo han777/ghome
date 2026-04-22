@@ -24,4 +24,6 @@ public class RoomType {
 
     private BigDecimal priceShortRent;
     private BigDecimal priceLongRent;
+    private String imageUrl;
+    private String remarks;
 }

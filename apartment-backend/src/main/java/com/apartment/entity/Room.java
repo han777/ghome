@@ -25,4 +25,5 @@ public class Room {
     private String direction; // SOUTH, NORTH
 
     private Integer status = 0; // 0: Free, 1: Occupied, 2: Locked/Repair
+    private Double area;
 }

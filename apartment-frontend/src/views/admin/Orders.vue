@@ -14,7 +14,9 @@
             <th>Order No.</th>
             <th>Guest</th>
             <th>Type</th>
-            <th>Price</th>
+            <th>Guest Info</th>
+            <th>Total Amount</th>
+            <th>Key Code</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -28,15 +30,24 @@
                 {{ getDictLabel('BIZ_TYPE', order.bizType) }}
               </span>
             </td>
-            <td>¥{{ order.amount }}</td>
+            <td>
+              <div style="font-size: 12px; color: #64748b;">
+                📞 {{ order.guestPhone || '-' }}<br>
+                🏢 {{ order.company || '-' }}
+              </div>
+            </td>
+            <td>¥{{ order.totalAmount || 0 }}</td>
+            <td><code>{{ order.doorCode || '-' }}</code></td>
             <td>
               <span class="status-badge" :class="getOrderStatusClass(order.status)">
                 {{ getDictLabel('ORDER_STATUS', order.status) }}
               </span>
             </td>
             <td class="actions">
+              <button class="edit-btn" @click="sendCode(order.id)" v-if="order.status === 1 || order.status === 2">Send Code</button>
+              <button class="edit-btn" @click="openFeeModal(order)">+ Fee</button>
               <button class="edit-btn" @click="openModal(order)">Edit</button>
-              <button class="delete-btn" @click="deleteOrder(order.id)">Delete</button>
+              <button class="delete-btn" @click="cancelOrder(order.id)" v-if="order.status < 3">Cancel</button>
             </td>
           </tr>
         </tbody>
@@ -84,6 +95,41 @@
         </div>
       </div>
     </div>
+
+    <!-- Fee Modal -->
+    <div v-if="showFeeModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Add Extra Fee</h2>
+          <button class="close-btn" @click="showFeeModal = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form class="admin-form">
+            <div class="form-item">
+              <label>Fee Type</label>
+              <select v-model="feeForm.feeType">
+                <option value="Breakfast">Breakfast</option>
+                <option value="Damage">Damage</option>
+                <option value="Laundry">Laundry</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-item">
+              <label>Amount</label>
+              <input type="number" v-model="feeForm.amount">
+            </div>
+            <div class="form-item">
+              <label>Remarks</label>
+              <input v-model="feeForm.remarks">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="cancel-btn" @click="showFeeModal = false">Cancel</button>
+          <button class="save-btn" @click="saveFee">Add Fee</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -94,13 +140,24 @@ import api from '../../utils/api';
 const orders = ref<any[]>([]);
 const dicts = ref<any[]>([]);
 const showModal = ref(false);
+const showFeeModal = ref(false);
 const searchQuery = ref('');
 const form = reactive<any>({
   id: null,
   customerName: '',
   bizType: 1,
+  totalAmount: 0,
+  status: 1,
+  guestPhone: '',
+  company: '',
+  costCenter: ''
+});
+
+const feeForm = reactive({
+  orderId: null as number | null,
+  feeType: 'Breakfast',
   amount: 0,
-  status: 1
+  remarks: ''
 });
 
 const fetchData = async () => {
@@ -108,9 +165,9 @@ const fetchData = async () => {
     const [orderRes, dictRes] = await Promise.all([
       api.get('/orders/all'),
       api.get('/sys/dict/all')
-    ]);
-    orders.value = orderRes as any[];
-    dicts.value = dictRes as any[];
+    ]) as any[];
+    orders.value = orderRes;
+    dicts.value = dictRes;
   } catch (e) {
     console.error('Failed to fetch data', e);
   }
@@ -147,9 +204,47 @@ const openModal = (order?: any) => {
   if (order) {
     Object.assign(form, order);
   } else {
-    Object.assign(form, { id: null, customerName: '', bizType: 1, amount: 0, status: 1 });
+    Object.assign(form, { id: null, customerName: '', bizType: 1, totalAmount: 0, status: 1, guestPhone: '', company: '', costCenter: '' });
   }
   showModal.value = true;
+};
+
+const sendCode = async (id: number) => {
+  try {
+    await api.post(`/orders/${id}/send-code`, {});
+    fetchData();
+    alert('Code sent successfully');
+  } catch (e) {
+    alert('Failed to send code');
+  }
+};
+
+const cancelOrder = async (id: number) => {
+  if (!confirm('Cancel this order?')) return;
+  try {
+    await api.post(`/orders/${id}/cancel`, {});
+    fetchData();
+  } catch (e) {
+    alert('Failed to cancel');
+  }
+};
+
+const openFeeModal = (order: any) => {
+  feeForm.orderId = order.id;
+  feeForm.feeType = 'Breakfast';
+  feeForm.amount = 0;
+  feeForm.remarks = '';
+  showFeeModal.value = true;
+};
+
+const saveFee = async () => {
+  try {
+    await api.post(`/orders/${feeForm.orderId}/add-fee`, feeForm);
+    showFeeModal.value = false;
+    fetchData();
+  } catch (e) {
+    alert('Failed to add fee');
+  }
 };
 
 const saveOrder = async () => {
@@ -162,16 +257,6 @@ const saveOrder = async () => {
     fetchData();
   } catch (e) {
     alert('Failed to save order');
-  }
-};
-
-const deleteOrder = async (id: number) => {
-  if (!confirm('Delete this order?')) return;
-  try {
-    await api.delete(`/orders/${id}`);
-    fetchData();
-  } catch (e) {
-    alert('Failed to delete');
   }
 };
 

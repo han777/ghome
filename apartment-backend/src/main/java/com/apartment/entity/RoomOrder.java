@@ -31,6 +31,9 @@ public class RoomOrder {
     private Integer status = 0; // 0: Locking, 1: Pending, 2: In, 3: Out, 4: Canceled
     private String doorCode;
     private BigDecimal totalAmount;
+    private String guestPhone;
+    private String company;
+    private String costCenter;
     private LocalDateTime createdAt;
     private LocalDateTime expiresAt;
 }

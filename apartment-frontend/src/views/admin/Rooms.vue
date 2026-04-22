@@ -35,16 +35,24 @@
         <div class="search-bar">
           <input v-model="searchQuery" type="text" placeholder="Search rooms...">
         </div>
-        <button class="add-btn" @click="openModal()">+ Add Room</button>
+        <div class="header-actions">
+          <div class="view-toggle">
+            <button :class="{ active: viewMode === 'card' }" @click="viewMode = 'card'">🎴 Card</button>
+            <button :class="{ active: viewMode === 'table' }" @click="viewMode = 'table'">📋 Table</button>
+          </div>
+          <button class="add-btn" @click="openModal()">+ Add Room</button>
+        </div>
       </div>
       
-      <div class="table-card">
+      <!-- Table View -->
+      <div v-if="viewMode === 'table'" class="table-card">
         <table class="admin-table">
           <thead>
             <tr>
               <th>Room No.</th>
               <th>Location</th>
               <th>Direction</th>
+              <th>Area (㎡)</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -56,6 +64,7 @@
                 {{ room.floor?.building?.name }} / {{ room.floor?.name }}
               </td>
               <td>{{ room.direction }}</td>
+              <td>{{ room.area || '-' }}</td>
               <td>
                 <span class="status-badge" :class="getStatusClass(room.status)">
                   {{ getDictLabel('ROOM_STATUS', room.status) }}
@@ -68,6 +77,34 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Card View -->
+      <div v-else class="room-card-grid">
+        <div v-for="room in filteredRooms" :key="room.id" class="room-card" :class="getStatusClass(room.status) + '-border'">
+          <div class="card-header">
+            <span class="room-number">{{ room.roomNo }}</span>
+            <span class="status-dot" :class="getStatusClass(room.status)"></span>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">Location:</span>
+              <span class="value">{{ room.floor?.name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Area:</span>
+              <span class="value">{{ room.area }}㎡</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Dir:</span>
+              <span class="value">{{ room.direction }}</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="icon-btn edit" @click="openModal(room)" title="Edit">✏️</button>
+            <button class="icon-btn delete" @click="deleteRoom(room.id)" title="Delete">🗑️</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -104,6 +141,10 @@
               </select>
             </div>
             <div class="form-item">
+              <label>Area (㎡)</label>
+              <input v-model.number="form.area" type="number" step="0.1">
+            </div>
+            <div class="form-item">
               <label>Status</label>
               <select v-model="form.status">
                 <option v-for="opt in getDictOptions('ROOM_STATUS')" :key="opt.value" :value="parseInt(opt.value)">
@@ -132,13 +173,15 @@ const buildings = ref<any[]>([]);
 const showModal = ref(false);
 const searchQuery = ref('');
 const selectedFloorId = ref<number | null>(null);
+const viewMode = ref<'card' | 'table'>('card');
 
 const form = reactive<any>({
   id: null,
   roomNo: '',
   direction: 'SOUTH',
   status: 0,
-  floorId: null
+  floorId: null,
+  area: null
 });
 
 const fetchData = async () => {
@@ -147,10 +190,10 @@ const fetchData = async () => {
       api.get('/rooms/all'),
       api.get('/sys/dict/all'),
       api.get('/buildings/all')
-    ]);
-    rooms.value = roomRes as any[];
-    dicts.value = dictRes as any[];
-    buildings.value = buildRes as any[];
+    ]) as any[];
+    rooms.value = roomRes;
+    dicts.value = dictRes;
+    buildings.value = buildRes;
   } catch (e) {
     console.error('Failed to fetch data', e);
   }
@@ -189,8 +232,9 @@ const openModal = (room?: any) => {
   if (room) {
     Object.assign(form, room);
     form.floorId = room.floor?.id;
+    form.area = room.area;
   } else {
-    Object.assign(form, { id: null, roomNo: '', direction: 'SOUTH', status: 0, floorId: null });
+    Object.assign(form, { id: null, roomNo: '', direction: 'SOUTH', status: 0, floorId: null, area: null });
   }
   showModal.value = true;
 };
@@ -225,6 +269,132 @@ onMounted(fetchData);
 
 <style scoped>
 @import "../../assets/admin.css";
+
+.filter-item {
+  white-space: nowrap;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.view-toggle {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+  gap: 4px;
+}
+
+.view-toggle button {
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-toggle button.active {
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Card View Styles */
+.room-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.room-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  border: 2px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.room-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.room-card.active-border { border-color: #dcfce7; }
+.room-card.occupied-border { border-color: #fef9c3; }
+.room-card.repair-border { border-color: #fee2e2; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.room-number {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-dot.active { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+.status-dot.occupied { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
+.status-dot.repair { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.info-row .label { color: #64748b; }
+.info-row .value { font-weight: 600; color: #334155; }
+
+.card-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.icon-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-btn:hover { background: #f1f5f9; }
+.icon-btn.delete:hover { background: #fee2e2; color: #ef4444; }
+
 .occupied { background: #fef9c3; color: #854d0e; }
 .repair { background: #fee2e2; color: #991b1b; }
 </style>

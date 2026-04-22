@@ -10,5 +10,10 @@
     "login": "Login",
     "username": "Username",
     "password": "Password"
+  },
+  "dashboard": {
+    "ARRIVING_TODAY": "Arriving Today",
+    "DEPARTING_TODAY": "Departing Today",
+    "ARRIVING_SOON": "Arriving Soon"
   }
 }

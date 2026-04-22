@@ -10,5 +10,10 @@
     "login": "登录",
     "username": "用户名",
     "password": "密码"
+  },
+  "dashboard": {
+    "ARRIVING_TODAY": "今日抵店",
+    "DEPARTING_TODAY": "今日离店",
+    "ARRIVING_SOON": "即将抵达"
   }
 }

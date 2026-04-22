@@ -6,6 +6,10 @@
         <span class="logo-text">Genesis Admin</span>
       </div>
       <nav class="nav-menu">
+        <router-link to="/admin/dashboard" class="nav-item">
+          <span class="icon">📊</span>
+          <span class="text">房态仪表盘</span>
+        </router-link>
         <router-link to="/admin/rooms" class="nav-item">
           <span class="icon">🏠</span>
           <span class="text">房间管理</span>
@@ -17,6 +21,18 @@
         <router-link to="/admin/buildings" class="nav-item">
           <span class="icon">🏘️</span>
           <span class="text">楼栋管理</span>
+        </router-link>
+        <router-link to="/admin/room-types" class="nav-item">
+          <span class="icon">🛌</span>
+          <span class="text">房型管理</span>
+        </router-link>
+        <router-link to="/admin/gantt" class="nav-item">
+          <span class="icon">📅</span>
+          <span class="text">线性房态</span>
+        </router-link>
+        <router-link to="/admin/reports" class="nav-item">
+          <span class="icon">📈</span>
+          <span class="text">财务报表</span>
         </router-link>
         <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 8px 16px;"></div>
         <router-link to="/admin/accounts" class="nav-item">
@@ -68,6 +84,7 @@ const route = useRoute();
 const router = useRouter();
 
 const titles: Record<string, string> = {
+  'Dashboard': '房态仪表盘',
   'Accounts': '账户管理',
   'Roles': '角色管理',
   'Menus': '菜单管理',
@@ -75,7 +92,10 @@ const titles: Record<string, string> = {
   'Depts': '部门管理',
   'Rooms': '房间管理',
   'Orders': '订单管理',
-  'Buildings': '楼栋管理'
+  'Buildings': '楼栋管理',
+  'RoomTypes': '房型管理',
+  'Gantt': '线性房态',
+  'Reports': '财务报表'
 };
 
 const currentTitle = computed(() => titles[route.name as string] || 'Dashboard');

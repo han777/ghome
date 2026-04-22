@@ -17,7 +17,13 @@ const router = createRouter({
             name: 'Admin',
             component: () => import('../views/admin/Layout.vue'),
             meta: { requiresAuth: true },
+            redirect: '/admin/dashboard',
             children: [
+                {
+                    path: 'dashboard',
+                    name: 'Dashboard',
+                    component: () => import('../views/admin/Dashboard.vue')
+                },
                 {
                     path: 'accounts',
                     name: 'Accounts',
@@ -57,13 +63,28 @@ const router = createRouter({
                     path: 'buildings',
                     name: 'Buildings',
                     component: () => import('../views/admin/Buildings.vue')
+                },
+                {
+                    path: 'room-types',
+                    name: 'RoomTypes',
+                    component: () => import('../views/admin/RoomTypes.vue')
+                },
+                {
+                    path: 'gantt',
+                    name: 'Gantt',
+                    component: () => import('../views/admin/Gantt.vue')
+                },
+                {
+                    path: 'reports',
+                    name: 'Reports',
+                    component: () => import('../views/admin/Reports.vue')
                 }
             ]
         }
     ]
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
     const token = localStorage.getItem('token')
     if (to.meta.requiresAuth && !token) {
         next('/login')

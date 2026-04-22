@@ -12,6 +12,9 @@ public class RoomOrderController {
     @Autowired
     private RoomOrderRepository orderRepository;
 
+    @Autowired
+    private com.apartment.service.RoomOrderService orderService;
+
     @GetMapping("/all")
     public List<RoomOrder> getAllOrders() {
         return orderRepository.findAll();
@@ -20,6 +23,31 @@ public class RoomOrderController {
     @PostMapping
     public RoomOrder saveOrder(@RequestBody RoomOrder order) {
         return orderRepository.save(order);
+    }
+
+    @PostMapping("/{id}/send-code")
+    public RoomOrder sendCode(@PathVariable Long id) {
+        return orderService.sendDoorCode(id);
+    }
+
+    @PostMapping("/{id}/add-fee")
+    public com.apartment.entity.OrderFee addFee(@PathVariable Long id, @RequestBody com.apartment.entity.OrderFee fee) {
+        return orderService.addExtraFee(id, fee.getFeeType(), fee.getAmount(), fee.getRemarks());
+    }
+
+    @GetMapping("/{id}/fees")
+    public List<com.apartment.entity.OrderFee> getFees(@PathVariable Long id) {
+        return orderService.getOrderFees(id);
+    }
+
+    @PostMapping("/{id}/cancel")
+    public RoomOrder cancel(@PathVariable Long id) {
+        return orderService.cancelOrder(id);
+    }
+
+    @PostMapping("/{id}/change-room")
+    public RoomOrder changeRoom(@PathVariable Long id, @RequestParam Long roomId) {
+        return orderService.changeRoom(id, roomId);
     }
 
     @DeleteMapping("/{id}")
