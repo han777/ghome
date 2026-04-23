@@ -32,6 +32,16 @@ public class RoomOrder {
     private String doorCode;
     private BigDecimal totalAmount;
     private String guestPhone;
+    
+    // New fields
+    private String checkInTime = "14:00";
+    private String checkOutTime = "13:59";
+    private String roomCardCode;
+    private String checkInType;
+    private Integer occupantCount = 1;
+    private String coOccupants;
+    private String remarks;
+
     private String company;
     private String costCenter;
     private LocalDateTime createdAt;

@@ -50,6 +50,7 @@
           <thead>
             <tr>
               <th>Room No.</th>
+              <th>Type</th>
               <th>Location</th>
               <th>Direction</th>
               <th>Area (㎡)</th>
@@ -60,6 +61,9 @@
           <tbody>
             <tr v-for="room in filteredRooms" :key="room.id">
               <td class="name">{{ room.roomNo }}</td>
+              <td>
+                <span class="tag">{{ room.roomType?.typeCode || '-' }}</span>
+              </td>
               <td>
                 {{ room.floor?.building?.name }} / {{ room.floor?.name }}
               </td>
@@ -90,6 +94,10 @@
             <div class="info-row">
               <span class="label">Location:</span>
               <span class="value">{{ room.floor?.name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Type:</span>
+              <span class="value">{{ room.roomType?.typeCode || '-' }}</span>
             </div>
             <div class="info-row">
               <span class="label">Area:</span>
@@ -124,11 +132,21 @@
             <div class="form-item">
               <label>Location (Floor)</label>
               <select v-model="form.floorId">
+                <option :value="null">-- Select Floor --</option>
                 <optgroup v-for="b in buildings" :key="b.id" :label="b.name">
                   <option v-for="f in b.floors" :key="f.id" :value="f.id">
                     {{ f.name }}
                   </option>
                 </optgroup>
+              </select>
+            </div>
+            <div class="form-item">
+              <label>Room Type</label>
+              <select v-model="form.roomTypeId">
+                <option :value="null">-- Select Room Type --</option>
+                <option v-for="t in roomTypes" :key="t.id" :value="t.id">
+                  {{ t.typeCode }}
+                </option>
               </select>
             </div>
             <div class="form-item">
@@ -170,6 +188,7 @@ import api from '../../utils/api';
 const rooms = ref<any[]>([]);
 const dicts = ref<any[]>([]);
 const buildings = ref<any[]>([]);
+const roomTypes = ref<any[]>([]);
 const showModal = ref(false);
 const searchQuery = ref('');
 const selectedFloorId = ref<number | null>(null);
@@ -181,19 +200,22 @@ const form = reactive<any>({
   direction: 'SOUTH',
   status: 0,
   floorId: null,
+  roomTypeId: null,
   area: null
 });
 
 const fetchData = async () => {
   try {
-    const [roomRes, dictRes, buildRes] = await Promise.all([
+    const [roomRes, dictRes, buildRes, typeRes] = await Promise.all([
       api.get('/rooms/all'),
       api.get('/sys/dict/all'),
-      api.get('/buildings/all')
+      api.get('/buildings/all'),
+      api.get('/room-types/all')
     ]) as any[];
     rooms.value = roomRes;
     dicts.value = dictRes;
     buildings.value = buildRes;
+    roomTypes.value = typeRes;
   } catch (e) {
     console.error('Failed to fetch data', e);
   }
@@ -232,19 +254,23 @@ const openModal = (room?: any) => {
   if (room) {
     Object.assign(form, room);
     form.floorId = room.floor?.id;
+    form.roomTypeId = room.roomType?.id;
     form.area = room.area;
   } else {
-    Object.assign(form, { id: null, roomNo: '', direction: 'SOUTH', status: 0, floorId: null, area: null });
+    Object.assign(form, { id: null, roomNo: '', direction: 'SOUTH', status: 0, floorId: null, roomTypeId: null, area: null });
   }
   showModal.value = true;
 };
 
 const saveRoom = async () => {
   try {
-    // Construct room object for backend (including floor object)
+    // Construct room object for backend (including floor and roomType objects)
     const payload = { ...form };
     if (form.floorId) {
       payload.floor = { id: form.floorId };
+    }
+    if (form.roomTypeId) {
+      payload.roomType = { id: form.roomTypeId };
     }
     await api.post('/rooms', payload);
     showModal.value = false;
@@ -397,4 +423,5 @@ onMounted(fetchData);
 
 .occupied { background: #fef9c3; color: #854d0e; }
 .repair { background: #fee2e2; color: #991b1b; }
+.tag { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
 </style>
