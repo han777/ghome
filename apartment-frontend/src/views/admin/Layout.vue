@@ -115,6 +115,7 @@ const logout = () => {
 
 .sidebar {
   width: 260px;
+  flex-shrink: 0;
   background: #1e293b;
   color: #fff;
   display: flex;
