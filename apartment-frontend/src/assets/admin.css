@@ -224,6 +224,12 @@
   cursor: pointer;
 }
 
+.form-item label.required::after {
+  content: " *";
+  color: #ef4444;
+  margin-left: 4px;
+}
+
 .save-btn {
   background: #38bdf8;
   color: #fff;

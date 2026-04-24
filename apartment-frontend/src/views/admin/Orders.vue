@@ -6,6 +6,25 @@
       </div>
       <button class="add-btn" @click="openModal()">+ New Order</button>
     </div>
+
+    <div class="filter-row">
+      <div class="quick-filters">
+        <button 
+          class="filter-chip" 
+          :class="{ active: filterTodayArrival }"
+          @click="filterTodayArrival = !filterTodayArrival"
+        >
+          🛬 Today Arrival
+        </button>
+        <button 
+          class="filter-chip" 
+          :class="{ active: filterTodayDeparture }"
+          @click="filterTodayDeparture = !filterTodayDeparture"
+        >
+          🛫 Today Departure
+        </button>
+      </div>
+    </div>
     
     <div class="table-card">
       <table class="admin-table">
@@ -13,10 +32,10 @@
           <tr>
             <th>Order No.</th>
             <th>Guest</th>
-            <th>Type</th>
+            <th>Room</th>
+            <th>Business Type</th>
             <th>Stay Period</th>
             <th>Guest Info</th>
-            <th>Total Amount</th>
             <th>Key Code</th>
             <th>Status</th>
             <th>Actions</th>
@@ -26,6 +45,7 @@
           <tr v-for="order in filteredOrders" :key="order.id">
             <td class="code">{{ order.orderNo }}</td>
             <td class="name">{{ order.user?.realName || order.user?.username || order.customerName || '-' }}</td>
+            <td>{{ order.room?.roomNo || '-' }}</td>
             <td>
               <span class="tag">
                 {{ getDictLabel('BIZ_TYPE', order.bizType) }}
@@ -43,7 +63,6 @@
                 🏢 {{ order.company || '-' }}
               </div>
             </td>
-            <td>¥{{ order.totalAmount || 0 }}</td>
             <td><code>{{ order.doorCode || '-' }}</code></td>
             <td>
               <span class="status-badge" :class="getOrderStatusClass(order.status)">
@@ -72,7 +91,7 @@
           <form class="admin-form">
             <div class="form-group-row">
               <div class="form-item">
-                <label>Room</label>
+                <label class="required">Room</label>
                 <select v-model="form.roomId" required>
                   <option :value="null">-- Select Room --</option>
                   <option v-for="r in rooms" :key="r.id" :value="r.id">
@@ -88,7 +107,7 @@
 
             <div class="form-group-row">
               <div class="form-item">
-                <label>Customer (System User)</label>
+                <label class="required">Customer (System User)</label>
                 <select v-model="form.userId" required>
                   <option :value="null">-- Select Customer --</option>
                   <option v-for="u in users" :key="u.id" :value="u.id">
@@ -104,7 +123,7 @@
 
             <div class="form-group-row">
               <div class="form-item">
-                <label>Check-in Date</label>
+                <label class="required">Check-in Date</label>
                 <input type="date" v-model="form.startDate" required>
               </div>
               <div class="form-item">
@@ -234,6 +253,8 @@ const rooms = ref<any[]>([]);
 const showModal = ref(false);
 const showFeeModal = ref(false);
 const searchQuery = ref('');
+const filterTodayArrival = ref(false);
+const filterTodayDeparture = ref(false);
 const form = reactive<any>({
   id: null,
   roomId: null,
@@ -280,10 +301,19 @@ const fetchData = async () => {
 };
 
 const filteredOrders = computed(() => {
-  if (!searchQuery.value) return orders.value;
+  const today = new Date().toISOString().split('T')[0];
   return orders.value.filter(o => {
+    // Search filter
     const name = o.user?.realName || o.user?.username || o.customerName || '';
-    return name.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const matchSearch = !searchQuery.value || name.toLowerCase().includes(searchQuery.value.toLowerCase());
+    
+    // Today Arrival filter
+    const matchArrival = !filterTodayArrival.value || o.startDate === today;
+    
+    // Today Departure filter
+    const matchDeparture = !filterTodayDeparture.value || o.endDate === today;
+    
+    return matchSearch && matchArrival && matchDeparture;
   });
 });
 
@@ -411,12 +441,20 @@ const saveFee = async () => {
 
 const saveOrder = async () => {
   try {
+    if (!form.roomId) {
+      alert('⚠️ Please select a ROOM');
+      return;
+    }
+    if (!form.userId) {
+      alert('⚠️ Please select a CUSTOMER');
+      return;
+    }
     if (!form.startDate || !form.endDate) {
-      alert('Please select check-in and check-out dates');
+      alert('⚠️ Please select CHECK-IN and CHECK-OUT dates');
       return;
     }
     if (new Date(form.endDate) < new Date(form.startDate)) {
-      alert('Check-out date cannot be earlier than check-in date');
+      alert('⚠️ Check-out date cannot be earlier than check-in date');
       return;
     }
 
@@ -450,4 +488,24 @@ onMounted(fetchData);
 .tag { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
 .occupied { background: #fef9c3; color: #854d0e; }
 .repair { background: #fee2e2; color: #991b1b; }
+
+.filter-row { margin-bottom: -12px; }
+.quick-filters { display: flex; gap: 10px; }
+.filter-chip {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filter-chip:hover { border-color: #cbd5e1; background: #f8fafc; }
+.filter-chip.active {
+  background: #0f172a;
+  color: #fff;
+  border-color: #0f172a;
+}
 </style>
