@@ -46,4 +46,7 @@ public class RoomOrder {
     private String costCenter;
     private LocalDateTime createdAt;
     private LocalDateTime expiresAt;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<OrderProductDetail> productDetails;
 }

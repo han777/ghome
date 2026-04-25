@@ -24,7 +24,11 @@
         </router-link>
         <router-link to="/admin/room-types" class="nav-item">
           <span class="icon">🛌</span>
-          <span class="text">房型管理</span>
+          <span class="text">房型价格</span>
+        </router-link>
+        <router-link to="/admin/product-prices" class="nav-item">
+          <span class="icon">🏷️</span>
+          <span class="text">商品服务价格</span>
         </router-link>
         <router-link to="/admin/gantt" class="nav-item">
           <span class="icon">📅</span>
@@ -37,7 +41,7 @@
         <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 8px 16px;"></div>
         <router-link to="/admin/accounts" class="nav-item">
           <span class="icon">👤</span>
-          <span class="text">账户管理</span>
+          <span class="text">用户管理</span>
         </router-link>
         <router-link to="/admin/roles" class="nav-item">
           <span class="icon">🛡️</span>
@@ -85,7 +89,7 @@ const router = useRouter();
 
 const titles: Record<string, string> = {
   'Dashboard': '房态仪表盘',
-  'Accounts': '账户管理',
+  'Accounts': '用户管理',
   'Roles': '角色管理',
   'Menus': '菜单管理',
   'Dicts': '字典管理',
@@ -95,7 +99,8 @@ const titles: Record<string, string> = {
   'Buildings': '楼栋管理',
   'RoomTypes': '房型管理',
   'Gantt': '线性房态',
-  'Reports': '财务报表'
+  'Reports': '财务报表',
+  'ProductPrices': '商品服务价格'
 };
 
 const currentTitle = computed(() => titles[route.name as string] || 'Dashboard');

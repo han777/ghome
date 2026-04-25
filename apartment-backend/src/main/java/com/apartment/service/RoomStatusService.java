@@ -48,11 +48,11 @@ public class RoomStatusService {
             detail.setRoomTypeName(room.getRoomType() != null ? room.getRoomType().getTypeCode() : "N/A");
 
             // Set labels
-            if (arrivingToday.stream().anyMatch(o -> o.getRoom().getId().equals(room.getId()))) {
+            if (arrivingToday.stream().anyMatch(o -> o.getRoom() != null && o.getRoom().getId().equals(room.getId()))) {
                 detail.setLabel("ARRIVING_TODAY");
-            } else if (departingToday.stream().anyMatch(o -> o.getRoom().getId().equals(room.getId()))) {
+            } else if (departingToday.stream().anyMatch(o -> o.getRoom() != null && o.getRoom().getId().equals(room.getId()))) {
                 detail.setLabel("DEPARTING_TODAY");
-            } else if (arrivingSoon.stream().anyMatch(o -> o.getRoom().getId().equals(room.getId()))) {
+            } else if (arrivingSoon.stream().anyMatch(o -> o.getRoom() != null && o.getRoom().getId().equals(room.getId()))) {
                 detail.setLabel("ARRIVING_SOON");
             }
 

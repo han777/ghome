@@ -1,0 +1,172 @@
+<template>
+  <div class="admin-page">
+    <div class="page-header">
+      <div class="search-bar">
+        <input v-model="searchQuery" type="text" placeholder="Search product name...">
+      </div>
+      <button class="add-btn" @click="openModal()">+ New Product/Price</button>
+    </div>
+    
+    <div class="table-card">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>Category</th>
+            <th>Unit</th>
+            <th>Price</th>
+            <th>Effective Date</th>
+            <th>Expiry Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in filteredProducts" :key="item.id">
+            <td>{{ item.productName }}</td>
+            <td>
+              <span class="tag" :class="item.category === 2 ? 'damage' : 'sale'">
+                {{ item.category === 1 ? 'Sale' : 'Damage' }}
+              </span>
+            </td>
+            <td>{{ item.unit }}</td>
+            <td>¥{{ item.price }}</td>
+            <td>{{ item.effectiveDate || '-' }}</td>
+            <td>{{ item.expiryDate || '-' }}</td>
+            <td class="actions">
+              <button class="edit-btn" @click="openModal(item)">Edit</button>
+              <button class="delete-btn" @click="deleteProduct(item.id)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Product Modal -->
+    <div v-if="showModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>{{ form.id ? 'Edit Product' : 'Create Product' }}</h2>
+          <button class="close-btn" @click="showModal = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form class="admin-form">
+            <div class="form-item">
+              <label class="required">Product Name</label>
+              <input v-model="form.productName" required>
+            </div>
+            <div class="form-group-row">
+              <div class="form-item">
+                <label>Category</label>
+                <select v-model="form.category">
+                  <option :value="1">Sale (出售)</option>
+                  <option :value="2">Damage (损坏)</option>
+                </select>
+              </div>
+              <div class="form-item">
+                <label>Unit</label>
+                <input v-model="form.unit" placeholder="e.g. Pcs, Hour">
+              </div>
+            </div>
+            <div class="form-item">
+              <label class="required">Standard Price</label>
+              <input type="number" v-model="form.price" required>
+            </div>
+            <div class="form-group-row">
+              <div class="form-item">
+                <label>Effective Date</label>
+                <input type="date" v-model="form.effectiveDate">
+              </div>
+              <div class="form-item">
+                <label>Expiry Date</label>
+                <input type="date" v-model="form.expiryDate">
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="cancel-btn" @click="showModal = false">Cancel</button>
+          <button class="save-btn" @click="saveProduct">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, reactive, computed } from 'vue';
+import api from '../../utils/api';
+
+const products = ref<any[]>([]);
+const showModal = ref(false);
+const searchQuery = ref('');
+const form = reactive<any>({
+  id: null,
+  productName: '',
+  category: 1,
+  unit: '',
+  price: 0,
+  effectiveDate: '',
+  expiryDate: ''
+});
+
+const fetchData = async () => {
+  try {
+    const res = await api.get('/product-prices/all') as any;
+    products.value = res;
+  } catch (e) {
+    console.error('Failed to fetch products', e);
+  }
+};
+
+const filteredProducts = computed(() => {
+  if (!searchQuery.value) return products.value;
+  return products.value.filter(p => 
+    p.productName.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
+});
+
+const openModal = (item?: any) => {
+  if (item) {
+    Object.assign(form, item);
+  } else {
+    Object.assign(form, {
+      id: null,
+      productName: '',
+      category: 1,
+      unit: '',
+      price: 0,
+      effectiveDate: new Date().toISOString().split('T')[0],
+      expiryDate: ''
+    });
+  }
+  showModal.value = true;
+};
+
+const saveProduct = async () => {
+  try {
+    await api.post('/product-prices', form);
+    showModal.value = false;
+    fetchData();
+  } catch (e) {
+    alert('Failed to save product');
+  }
+};
+
+const deleteProduct = async (id: number) => {
+  if (!confirm('Are you sure?')) return;
+  try {
+    await api.delete(`/product-prices/${id}`);
+    fetchData();
+  } catch (e) {
+    alert('Failed to delete');
+  }
+};
+
+onMounted(fetchData);
+</script>
+
+<style scoped>
+@import "../../assets/admin.css";
+.tag.sale { background: #dcfce7; color: #166534; }
+.tag.damage { background: #fee2e2; color: #991b1b; }
+</style>

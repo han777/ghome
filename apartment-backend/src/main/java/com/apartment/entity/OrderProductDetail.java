@@ -4,12 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
-@Table(name = "order_fee")
+@Table(name = "order_product_detail")
 @Data
-public class OrderFee {
+public class OrderProductDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,8 +19,12 @@ public class OrderFee {
     @JsonIgnore
     private RoomOrder order;
 
-    private String feeType; // e.g., Breakfast, Damage, etc.
-    private BigDecimal amount;
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private ProductPrice product;
+
+    private BigDecimal actualPrice;
+    private Integer quantity = 1;
+    private LocalDate consumeDate;
     private String remarks;
-    private LocalDateTime createdAt;
 }

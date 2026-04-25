@@ -71,7 +71,7 @@
             </td>
             <td class="actions">
               <button class="edit-btn" @click="sendCode(order.id)" v-if="order.status === 1 || order.status === 2">Send Code</button>
-              <button class="edit-btn" @click="openFeeModal(order)">+ Fee</button>
+              <button class="edit-btn" @click="openModal(order, 'products')">+ Service</button>
               <button class="edit-btn" @click="openModal(order)">Edit</button>
               <button class="delete-btn" @click="cancelOrder(order.id)" v-if="order.status < 3">Cancel</button>
             </td>
@@ -82,14 +82,28 @@
 
     <!-- Order Modal -->
     <div v-if="showModal" class="modal-overlay">
-      <div class="modal-content">
+      <div class="modal-content" :class="{ 'modal-maximized': isMaximized }">
         <div class="modal-header">
-          <h2>{{ form.id ? 'Edit Order' : 'Create Order' }}</h2>
-          <button class="close-btn" @click="showModal = false">&times;</button>
+          <div class="header-left">
+            <h2>{{ form.id ? 'Edit Order' : 'Create Order' }}</h2>
+            <div class="modal-nav">
+              <a href="#section-basic" @click.prevent="scrollTo('section-basic')">🏠 Basic Info</a>
+              <a href="#section-products" @click.prevent="scrollTo('section-products')">📦 Services & Products</a>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button v-if="form.id && form.status < 3" class="checkout-btn" @click="handleCheckout">🔔 退房 (Checkout)</button>
+            <button class="maximize-btn" @click="isMaximized = !isMaximized">
+              {{ isMaximized ? '🗗' : '🗖' }}
+            </button>
+            <button class="close-btn" @click="showModal = false">&times;</button>
+          </div>
         </div>
-        <div class="modal-body">
-          <form class="admin-form">
-            <div class="form-group-row">
+        <div class="modal-body scrollable">
+          <!-- Basic Info Section -->
+          <section id="section-basic" class="form-section">
+            <h3 class="section-title">Basic Information</h3>
+            <div class="form-grid-4">
               <div class="form-item">
                 <label class="required">Room</label>
                 <select v-model="form.roomId" required>
@@ -100,14 +114,11 @@
                 </select>
               </div>
               <div class="form-item">
-                <label>Room Type (Auto)</label>
-                <input :value="selectedRoomType" disabled placeholder="Select a room first">
+                <label>Room Type</label>
+                <input :value="selectedRoomType" disabled>
               </div>
-            </div>
-
-            <div class="form-group-row">
               <div class="form-item">
-                <label class="required">Customer (System User)</label>
+                <label class="required">Customer</label>
                 <select v-model="form.userId" required>
                   <option :value="null">-- Select Customer --</option>
                   <option v-for="u in users" :key="u.id" :value="u.id">
@@ -119,9 +130,7 @@
                 <label>Guest Phone</label>
                 <input v-model="form.guestPhone">
               </div>
-            </div>
 
-            <div class="form-group-row">
               <div class="form-item">
                 <label class="required">Check-in Date</label>
                 <input type="date" v-model="form.startDate" required>
@@ -130,9 +139,6 @@
                 <label>Check-out Date</label>
                 <input type="date" v-model="form.endDate" required>
               </div>
-            </div>
-
-            <div class="form-group-row">
               <div class="form-item">
                 <label>Check-in Time</label>
                 <input type="time" v-model="form.checkInTime">
@@ -141,20 +147,15 @@
                 <label>Check-out Time</label>
                 <input type="time" v-model="form.checkOutTime">
               </div>
-            </div>
 
-            <div class="form-group-row">
               <div class="form-item">
                 <label>Room Card Code</label>
-                <input v-model="form.roomCardCode" placeholder="Enter card code">
+                <input v-model="form.roomCardCode" placeholder="Card code">
               </div>
               <div class="form-item">
                 <label>Check-in Type</label>
-                <input v-model="form.checkInType" placeholder="e.g. Normal, VIP">
+                <input v-model="form.checkInType" placeholder="e.g. Normal">
               </div>
-            </div>
-
-            <div class="form-group-row">
               <div class="form-item">
                 <label>Occupant Count</label>
                 <input type="number" v-model="form.occupantCount" min="1">
@@ -167,26 +168,19 @@
                   </option>
                 </select>
               </div>
-            </div>
 
-            <div class="form-item">
-              <label>Co-Occupants</label>
-              <input v-model="form.coOccupants" placeholder="Names of other guests">
-            </div>
-
-            <div class="form-item">
-              <label>Remarks</label>
-              <textarea v-model="form.remarks" rows="2"></textarea>
-            </div>
-
-            <div class="form-group-row">
-              <div class="form-item">
-                <label>Total Amount (Auto Calculated)</label>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-weight: 600; color: #0369a1;">¥</span>
-                  <input type="number" v-model="form.totalAmount">
+              <div class="form-item span-2">
+                <label>Co-Occupants</label>
+                <input v-model="form.coOccupants" placeholder="Names of other guests">
+              </div>
+              <div class="form-item span-2">
+                <label>Total Amount (Auto)</label>
+                <div class="amount-display">
+                  <span class="currency">¥</span>
+                  <input type="number" v-model="form.totalAmount" step="0.01">
                 </div>
               </div>
+
               <div class="form-item">
                 <label>Order Status</label>
                 <select v-model="form.status">
@@ -195,47 +189,69 @@
                   </option>
                 </select>
               </div>
+              <div class="form-item span-3">
+                <label>Remarks</label>
+                <input v-model="form.remarks" placeholder="General remarks...">
+              </div>
             </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">Cancel</button>
-          <button class="save-btn" @click="saveOrder">Save Changes</button>
-        </div>
-      </div>
-    </div>
+          </section>
 
-    <!-- Fee Modal -->
-    <div v-if="showFeeModal" class="modal-overlay">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Add Extra Fee</h2>
-          <button class="close-btn" @click="showFeeModal = false">&times;</button>
-        </div>
-        <div class="modal-body">
-          <form class="admin-form">
-            <div class="form-item">
-              <label>Fee Type</label>
-              <select v-model="feeForm.feeType">
-                <option value="Breakfast">Breakfast</option>
-                <option value="Damage">Damage</option>
-                <option value="Laundry">Laundry</option>
-                <option value="Other">Other</option>
-              </select>
+          <!-- Products & Services Section -->
+          <section id="section-products" class="form-section">
+            <div class="section-header">
+              <h3 class="section-title">Services & Products</h3>
+              <button class="add-btn small" @click="addProductDetail">+ Add Row</button>
             </div>
-            <div class="form-item">
-              <label>Amount</label>
-              <input type="number" v-model="feeForm.amount">
+            <div class="table-wrapper">
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Product/Service</th>
+                    <th>Unit</th>
+                    <th>Std. Price</th>
+                    <th>Act. Price</th>
+                    <th>Qty</th>
+                    <th>Total</th>
+                    <th>Remarks</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(detail, index) in form.productDetails" :key="index">
+                    <td><input type="date" v-model="detail.consumeDate" class="table-input" style="width: 120px;"></td>
+                    <td>
+                      <select v-model="detail.productId" @change="onProductChange(detail)" class="table-input">
+                        <option :value="null">-- Select --</option>
+                        <option v-for="p in productPrices" :key="p.id" :value="p.id">
+                          {{ p.productName }} ({{ p.category === 1 ? 'Sale' : 'Damage' }})
+                        </option>
+                      </select>
+                    </td>
+                    <td>{{ getProductById(detail.productId)?.unit || '-' }}</td>
+                    <td>¥{{ getProductById(detail.productId)?.price || 0 }}</td>
+                    <td><input type="number" v-model="detail.actualPrice" class="table-input no-border" style="width: 70px;"></td>
+                    <td><input type="number" v-model="detail.quantity" min="1" class="table-input no-border" style="width: 50px;"></td>
+                    <td>¥{{ (detail.actualPrice || 0) * (detail.quantity || 1) }}</td>
+                    <td><input v-model="detail.remarks" placeholder="..." class="table-input no-border"></td>
+                    <td><button class="delete-btn" @click="removeProductDetail(index)">×</button></td>
+                  </tr>
+                  <tr v-if="form.productDetails?.length === 0">
+                    <td colspan="9" class="empty-row">No services or products added</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div class="form-item">
-              <label>Remarks</label>
-              <input v-model="feeForm.remarks">
-            </div>
-          </form>
+          </section>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showFeeModal = false">Cancel</button>
-          <button class="save-btn" @click="saveFee">Add Fee</button>
+          <div class="footer-summary">
+            Total: <span class="price-highlight">¥{{ form.totalAmount }}</span>
+          </div>
+          <div class="footer-btns">
+            <button class="cancel-btn" @click="showModal = false">Cancel</button>
+            <button class="save-btn" @click="saveOrder">Save Changes</button>
+          </div>
         </div>
       </div>
     </div>
@@ -250,8 +266,10 @@ const orders = ref<any[]>([]);
 const dicts = ref<any[]>([]);
 const users = ref<any[]>([]);
 const rooms = ref<any[]>([]);
+const productPrices = ref<any[]>([]);
+const activeTab = ref('basic');
 const showModal = ref(false);
-const showFeeModal = ref(false);
+const isMaximized = ref(false);
 const searchQuery = ref('');
 const filterTodayArrival = ref(false);
 const filterTodayDeparture = ref(false);
@@ -273,28 +291,24 @@ const form = reactive<any>({
   coOccupants: '',
   remarks: '',
   company: '',
-  costCenter: ''
-});
-
-const feeForm = reactive({
-  orderId: null as number | null,
-  feeType: 'Breakfast',
-  amount: 0,
-  remarks: ''
+  costCenter: '',
+  productDetails: []
 });
 
 const fetchData = async () => {
   try {
-    const [orderRes, dictRes, userRes, roomRes] = await Promise.all([
+    const [orderRes, dictRes, userRes, roomRes, productRes] = await Promise.all([
       api.get('/orders/all'),
       api.get('/sys/dict/all'),
       api.get('/sys/users'),
-      api.get('/rooms/all')
-    ]) as any[];
+      api.get('/rooms/all'),
+      api.get('/product-prices/all')
+    ]) as [any, any, any, any, any];
     orders.value = orderRes;
     dicts.value = dictRes;
     users.value = userRes;
     rooms.value = roomRes;
+    productPrices.value = productRes;
   } catch (e) {
     console.error('Failed to fetch data', e);
   }
@@ -302,6 +316,7 @@ const fetchData = async () => {
 
 const filteredOrders = computed(() => {
   const today = new Date().toISOString().split('T')[0];
+  if (!Array.isArray(orders.value)) return [];
   return orders.value.filter(o => {
     // Search filter
     const name = o.user?.realName || o.user?.username || o.customerName || '';
@@ -354,18 +369,51 @@ const calculateDays = (start: string, end: string) => {
   return diffDays > 0 ? diffDays : 1;
 };
 
-watch([() => form.roomId, () => form.startDate, () => form.endDate, () => form.bizType], () => {
+watch([() => form.roomId, () => form.startDate, () => form.endDate, () => form.bizType, () => form.productDetails], () => {
+  let total = 0;
+  // 1. Room Fee
   if (form.roomId && form.startDate && form.endDate) {
     const room = rooms.value.find(r => r.id === form.roomId);
     if (room && room.roomType) {
       const days = calculateDays(form.startDate, form.endDate);
       const price = form.bizType === 1 ? room.roomType.priceShortRent : room.roomType.priceLongRent;
-      form.totalAmount = (price || 0) * days;
+      total += (price || 0) * days;
     }
   }
-});
+  // 2. Product/Service Fee
+  if (form.productDetails && form.productDetails.length > 0) {
+    form.productDetails.forEach((d: any) => {
+      total += (d.actualPrice || 0) * (d.quantity || 1);
+    });
+  }
+  form.totalAmount = total;
+}, { deep: true });
 
-const openModal = (order?: any) => {
+const getProductById = (id: number) => productPrices.value.find(p => p.id === id);
+
+const addProductDetail = () => {
+  if (!form.productDetails) form.productDetails = [];
+  form.productDetails.push({
+    productId: null,
+    actualPrice: 0,
+    quantity: 1,
+    consumeDate: new Date().toISOString().split('T')[0],
+    remarks: ''
+  });
+};
+
+const removeProductDetail = (index: number) => {
+  form.productDetails.splice(index, 1);
+};
+
+const onProductChange = (detail: any) => {
+  const p = getProductById(detail.productId);
+  if (p) {
+    detail.actualPrice = p.price;
+  }
+};
+
+const openModal = (order?: any, tab: string = 'basic') => {
   if (order) {
     Object.assign(form, order);
     // Ensure roomId is set for select binding
@@ -375,6 +423,15 @@ const openModal = (order?: any) => {
     // Ensure userId is set for select binding
     if (order.user) {
       form.userId = order.user.id;
+    }
+    // Handle nested productDetails
+    if (order.productDetails) {
+      form.productDetails = order.productDetails.map((d: any) => ({
+        ...d,
+        productId: d.product?.id
+      }));
+    } else {
+      form.productDetails = [];
     }
   } else {
     Object.assign(form, { 
@@ -395,10 +452,23 @@ const openModal = (order?: any) => {
       coOccupants: '',
       remarks: '',
       company: '', 
-      costCenter: '' 
+      costCenter: '',
+      productDetails: []
     });
   }
+  activeTab.value = tab;
   showModal.value = true;
+};
+
+const scrollTo = (id: string) => {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+};
+
+const handleCheckout = async () => {
+  if (!confirm('Confirm checkout? This will set order status to OUT.')) return;
+  form.status = 3; // OUT
+  await saveOrder();
 };
 
 const sendCode = async (id: number) => {
@@ -418,24 +488,6 @@ const cancelOrder = async (id: number) => {
     fetchData();
   } catch (e) {
     alert('Failed to cancel');
-  }
-};
-
-const openFeeModal = (order: any) => {
-  feeForm.orderId = order.id;
-  feeForm.feeType = 'Breakfast';
-  feeForm.amount = 0;
-  feeForm.remarks = '';
-  showFeeModal.value = true;
-};
-
-const saveFee = async () => {
-  try {
-    await api.post(`/orders/${feeForm.orderId}/add-fee`, feeForm);
-    showFeeModal.value = false;
-    fetchData();
-  } catch (e) {
-    alert('Failed to add fee');
   }
 };
 
@@ -468,6 +520,13 @@ const saveOrder = async () => {
     }
     if (form.userId) {
       payload.user = { id: form.userId };
+    }
+    // Handle nested productDetails payload
+    if (form.productDetails) {
+      payload.productDetails = form.productDetails.map((d: any) => ({
+        ...d,
+        product: d.productId ? { id: d.productId } : null
+      })).filter((d: any) => d.product !== null);
     }
     delete payload.roomId;
     delete payload.userId;
@@ -508,4 +567,78 @@ onMounted(fetchData);
   color: #fff;
   border-color: #0f172a;
 }
+
+/* Modal Tabs */
+.modal-tabs { display: flex; gap: 20px; border-bottom: 1px solid #e2e8f0; margin-bottom: 20px; }
+.modal-tabs button {
+  background: none; border: none; padding: 10px 0; font-weight: 600; color: #64748b; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+}
+.modal-tabs button.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+
+.tab-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.tab-header h3 { font-size: 16px; margin: 0; }
+.add-btn.small { padding: 4px 10px; font-size: 12px; }
+
+.detail-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.detail-table th { text-align: left; font-size: 12px; color: #64748b; padding: 10px; border-bottom: 1px solid #f1f5f9; }
+.detail-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; }
+.small-input { width: 60px; padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 4px; }
+.detail-table select { padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 4px; width: 100%; }
+
+/* New Grid and Maximized Styles */
+.modal-content {
+  max-width: 1200px;
+  width: 90%;
+}
+
+.modal-content.modal-maximized {
+  width: 98vw;
+  height: 98vh;
+  max-width: none;
+  margin: 1vh auto;
+}
+
+.modal-body.scrollable {
+  overflow-y: auto;
+  max-height: calc(90vh - 120px);
+}
+.modal-maximized .modal-body.scrollable {
+  max-height: calc(98vh - 120px);
+}
+
+.modal-nav { display: flex; gap: 15px; margin-left: 20px; }
+.modal-nav a { font-size: 14px; text-decoration: none; color: #64748b; font-weight: 600; }
+.modal-nav a:hover { color: #38bdf8; }
+
+.header-actions { display: flex; gap: 10px; align-items: center; }
+.maximize-btn, .checkout-btn {
+  background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 14px;
+}
+.checkout-btn { background: #fee2e2; color: #b91c1c; border-color: #fecaca; font-weight: 600; }
+.checkout-btn:hover { background: #fecaca; }
+
+.form-section { padding: 20px; border-bottom: 1px solid #f1f5f9; scroll-margin-top: 20px; }
+.section-title { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 15px; border-left: 4px solid #38bdf8; padding-left: 10px; }
+
+.form-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+.span-2 { grid-column: span 2; }
+.span-3 { grid-column: span 3; }
+
+.amount-display { display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 4px 12px; border-radius: 6px; border: 1px solid #e2e8f0; }
+.currency { font-weight: 700; color: #0369a1; }
+.amount-display input { background: transparent; border: none; font-weight: 700; font-size: 16px; width: 100%; color: #0369a1; }
+
+.table-wrapper { overflow-x: auto; }
+.table-input { padding: 4px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 13px; width: 100%; }
+.table-input.no-border { border-color: transparent; background: #f8fafc; }
+.empty-row { text-align: center; color: #94a3b8; padding: 30px; }
+
+.footer-summary { font-size: 16px; font-weight: 600; }
+.price-highlight { color: #ef4444; font-size: 20px; font-weight: 800; }
+.footer-btns { display: flex; gap: 10px; }
 </style>
