@@ -100,25 +100,37 @@ const getOrdersForRoom = (roomId: number) => {
   return orders.value.filter(o => o.room?.id === roomId && o.status !== 4);
 };
 
+const getOffset = (date: Date) => {
+  const monthStart = new Date(currentYear.value, currentMonth.value, 1);
+  const monthEnd = new Date(currentYear.value, currentMonth.value + 1, 0, 23, 59, 59, 999);
+  
+  if (date < monthStart) return 0;
+  if (date > monthEnd) return daysInMonth.value * 40;
+  
+  const dayOffset = (date.getDate() - 1) * 40;
+  const timeOffset = (date.getHours() / 24) * 40 + (date.getMinutes() / 60 / 24) * 40;
+  return dayOffset + timeOffset;
+};
+
 const getOrderBarStyle = (order: any) => {
-  const start = new Date(order.startDate);
-  const end = new Date(order.endDate);
+  const startStr = `${order.startDate}T${order.checkInTime && order.checkInTime.length <= 5 ? order.checkInTime + ':00' : (order.checkInTime || '14:00:00')}`;
+  const endStr = `${order.endDate}T${order.checkOutTime && order.checkOutTime.length <= 5 ? order.checkOutTime + ':00' : (order.checkOutTime || '12:00:00')}`;
+  const start = new Date(startStr);
+  const end = new Date(endStr);
   
   const monthStart = new Date(currentYear.value, currentMonth.value, 1);
-  const monthEnd = new Date(currentYear.value, currentMonth.value + 1, 0);
+  const monthEnd = new Date(currentYear.value, currentMonth.value + 1, 0, 23, 59, 59, 999);
   
   if (end < monthStart || start > monthEnd) return { display: 'none' };
   
-  const effectiveStart = start < monthStart ? 1 : start.getDate();
-  const effectiveEnd = end > monthEnd ? daysInMonth.value : end.getDate();
-  
-  const width = (effectiveEnd - effectiveStart + 1) * 40;
-  const left = (effectiveStart - 1) * 40;
+  const left = getOffset(start);
+  const right = getOffset(end);
+  const width = Math.max(right - left, 2); // Ensure min width
   
   return {
     left: left + 'px',
     width: width + 'px',
-    background: order.status === 2 ? '#3b82f6' : '#94a3b8'
+    background: '#3b82f6'
   };
 };
 
@@ -131,16 +143,13 @@ const getMaintenanceBarStyle = (m: any) => {
   const end = new Date(m.endTime);
   
   const monthStart = new Date(currentYear.value, currentMonth.value, 1);
-  const monthEnd = new Date(currentYear.value, currentMonth.value + 1, 0);
-  monthEnd.setHours(23, 59, 59, 999);
+  const monthEnd = new Date(currentYear.value, currentMonth.value + 1, 0, 23, 59, 59, 999);
   
   if (end < monthStart || start > monthEnd) return { display: 'none' };
   
-  const effectiveStart = start < monthStart ? 1 : start.getDate();
-  const effectiveEnd = end > monthEnd ? daysInMonth.value : end.getDate();
-  
-  const width = (effectiveEnd - effectiveStart + 1) * 40;
-  const left = (effectiveStart - 1) * 40;
+  const left = getOffset(start);
+  const right = getOffset(end);
+  const width = Math.max(right - left, 2);
   
   return {
     left: left + 'px',

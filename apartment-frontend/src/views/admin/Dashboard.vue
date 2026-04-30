@@ -334,7 +334,7 @@ onMounted(fetchData);
   margin-right: 6px;
 }
 
-.dot-free { background: #cbd5e1; }
+.dot-free { background: #22c55e; }
 .dot-occupied { background: #38bdf8; }
 .dot-repair { background: #ef4444; }
 .dot-locked { background: #94a3b8; }
@@ -438,9 +438,9 @@ onMounted(fetchData);
 }
 
 /* Status colors based on prompt */
-/* available卡片白色显示 */
-.status-free { background: #ffffff; color: #64748b; }
-.status-free .room-no { color: #3b82f6; }
+/* available卡片绿色显示 */
+.status-free { background: #86efac; color: #14532d; }
+.status-free .room-no { color: #14532d; }
 
 /* occupied浅蓝色底色 */
 .status-occupied { background: #7dd3fc; color: #ffffff; }
