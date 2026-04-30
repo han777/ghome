@@ -55,13 +55,12 @@ public class DataInitializer {
 
             // 3. Initialize Dictionaries from Enums
             initEnumDict(dictRepository, dictItemRepository, "ROOM_STATUS", "Room Status", new String[][]{
-                    {"Free", "0"},
-                    {"Occupied", "1"},
-                    {"Repair", "2"}
+                    {"Available", "0"},
+                    {"Locked", "1"}
             });
 
             initEnumDict(dictRepository, dictItemRepository, "ORDER_STATUS", "Order Status", new String[][]{
-                    {"Locking", "0"},
+                    {"Cooling-off", "0"},
                     {"Pending", "1"},
                     {"In", "2"},
                     {"Out", "3"},

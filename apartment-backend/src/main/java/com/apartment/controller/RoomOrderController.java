@@ -22,6 +22,7 @@ public class RoomOrderController {
 
     @PostMapping
     public RoomOrder saveOrder(@RequestBody RoomOrder order) {
+        orderService.validateOrder(order);
         if (order.getProductDetails() != null) {
             order.getProductDetails().forEach(detail -> detail.setOrder(order));
         }

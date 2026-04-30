@@ -26,6 +26,69 @@ public class RoomOrderService {
     @Autowired
     private RoomRepository roomRepository;
 
+    @Autowired
+    private com.apartment.repository.RoomMaintenanceRepository maintenanceRepository;
+
+    public void validateOrder(RoomOrder order) {
+        if (order.getRoom() == null || order.getRoom().getId() == null) {
+            throw new RuntimeException("房间不能为空");
+        }
+        if (order.getUser() == null || order.getUser().getId() == null) {
+            throw new RuntimeException("客人不能为空");
+        }
+        if (order.getStartDate() == null || order.getEndDate() == null) {
+            throw new RuntimeException("入住和离开日期不能为空");
+        }
+
+        java.time.LocalTime checkInTime = order.getCheckInTime() != null ? java.time.LocalTime.parse(order.getCheckInTime()) : java.time.LocalTime.of(14, 0);
+        java.time.LocalTime checkOutTime = order.getCheckOutTime() != null ? java.time.LocalTime.parse(order.getCheckOutTime()) : java.time.LocalTime.of(12, 0);
+        
+        LocalDateTime startDT = LocalDateTime.of(order.getStartDate(), checkInTime);
+        LocalDateTime endDT = LocalDateTime.of(order.getEndDate(), checkOutTime);
+        
+        if (!startDT.isBefore(endDT)) {
+            throw new RuntimeException("离开时间必须晚于入住时间");
+        }
+
+        java.util.List<Integer> activeStatuses = java.util.Arrays.asList(1, 2);
+
+        // 1. Room Overlap
+        List<RoomOrder> roomOrders = orderRepository.findByRoomIdAndStatusIn(order.getRoom().getId(), activeStatuses);
+        for (RoomOrder existing : roomOrders) {
+            if (order.getId() != null && order.getId().equals(existing.getId())) continue;
+            
+            java.time.LocalTime exCheckIn = existing.getCheckInTime() != null ? java.time.LocalTime.parse(existing.getCheckInTime()) : java.time.LocalTime.of(14, 0);
+            java.time.LocalTime exCheckOut = existing.getCheckOutTime() != null ? java.time.LocalTime.parse(existing.getCheckOutTime()) : java.time.LocalTime.of(12, 0);
+            LocalDateTime exStartDT = LocalDateTime.of(existing.getStartDate(), exCheckIn);
+            LocalDateTime exEndDT = LocalDateTime.of(existing.getEndDate(), exCheckOut);
+            
+            if (startDT.isBefore(exEndDT) && endDT.isAfter(exStartDT)) {
+                throw new RuntimeException("房间的入住到离开时间与已有的未结订单的入住时间到离开时间冲突！");
+            }
+        }
+
+        // 2. Room Maintenance Overlap
+        long maintenanceCount = maintenanceRepository.countOverlappingMaintenances(order.getRoom().getId(), startDT, endDT);
+        if (maintenanceCount > 0) {
+            throw new RuntimeException("房间的入住到离开时间与维修的开始时间到结束时间冲突！");
+        }
+
+        // 3. Guest Overlap
+        List<RoomOrder> guestOrders = orderRepository.findByUserIdAndStatusIn(order.getUser().getId(), activeStatuses);
+        for (RoomOrder existing : guestOrders) {
+            if (order.getId() != null && order.getId().equals(existing.getId())) continue;
+            
+            java.time.LocalTime exCheckIn = existing.getCheckInTime() != null ? java.time.LocalTime.parse(existing.getCheckInTime()) : java.time.LocalTime.of(14, 0);
+            java.time.LocalTime exCheckOut = existing.getCheckOutTime() != null ? java.time.LocalTime.parse(existing.getCheckOutTime()) : java.time.LocalTime.of(12, 0);
+            LocalDateTime exStartDT = LocalDateTime.of(existing.getStartDate(), exCheckIn);
+            LocalDateTime exEndDT = LocalDateTime.of(existing.getEndDate(), exCheckOut);
+            
+            if (startDT.isBefore(exEndDT) && endDT.isAfter(exStartDT)) {
+                throw new RuntimeException("客人的入住到离开时间与已有的未结订单的入住时间到离开时间冲突！");
+            }
+        }
+    }
+
     @Transactional
     public RoomOrder sendDoorCode(Long orderId) {
         if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");

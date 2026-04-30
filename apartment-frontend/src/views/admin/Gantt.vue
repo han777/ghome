@@ -32,6 +32,15 @@
             >
               {{ order.customerName }}
             </div>
+            <div 
+              v-for="m in getMaintenancesForRoom(room.id)" 
+              :key="'m' + m.id"
+              class="order-bar maintenance-bar"
+              :style="getMaintenanceBarStyle(m)"
+              title="Maintenance"
+            >
+              维修
+            </div>
             <div v-for="day in daysInMonth" :key="day" class="grid-cell"></div>
           </div>
         </div>
@@ -46,6 +55,7 @@ import api from '../../utils/api';
 
 const rooms = ref<any[]>([]);
 const orders = ref<any[]>([]);
+const maintenances = ref<any[]>([]);
 const currentYear = ref(new Date().getFullYear());
 const currentMonth = ref(new Date().getMonth());
 
@@ -55,12 +65,14 @@ const daysInMonth = computed(() => {
 
 const fetchData = async () => {
   try {
-    const [roomRes, orderRes] = await Promise.all([
+    const [roomRes, orderRes, maintRes] = await Promise.all([
       api.get('/rooms/all'),
-      api.get('/orders/all')
+      api.get('/orders/all'),
+      api.get('/maintenances/all')
     ]) as any[];
     rooms.value = roomRes;
     orders.value = orderRes;
+    maintenances.value = maintRes;
   } catch (e) {
     console.error('Failed to fetch data', e);
   }
@@ -107,6 +119,33 @@ const getOrderBarStyle = (order: any) => {
     left: left + 'px',
     width: width + 'px',
     background: order.status === 2 ? '#3b82f6' : '#94a3b8'
+  };
+};
+
+const getMaintenancesForRoom = (roomId: number) => {
+  return maintenances.value.filter(m => m.room?.id === roomId && m.status !== 2); // Exclude cancelled
+};
+
+const getMaintenanceBarStyle = (m: any) => {
+  const start = new Date(m.startTime);
+  const end = new Date(m.endTime);
+  
+  const monthStart = new Date(currentYear.value, currentMonth.value, 1);
+  const monthEnd = new Date(currentYear.value, currentMonth.value + 1, 0);
+  monthEnd.setHours(23, 59, 59, 999);
+  
+  if (end < monthStart || start > monthEnd) return { display: 'none' };
+  
+  const effectiveStart = start < monthStart ? 1 : start.getDate();
+  const effectiveEnd = end > monthEnd ? daysInMonth.value : end.getDate();
+  
+  const width = (effectiveEnd - effectiveStart + 1) * 40;
+  const left = (effectiveStart - 1) * 40;
+  
+  return {
+    left: left + 'px',
+    width: width + 'px',
+    background: '#ef4444' // Red color for maintenance
   };
 };
 

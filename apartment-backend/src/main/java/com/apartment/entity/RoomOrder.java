@@ -28,14 +28,16 @@ public class RoomOrder {
     private LocalDate startDate;
     private LocalDate endDate;
 
-    private Integer status = 0; // 0: Locking, 1: Pending, 2: In, 3: Out, 4: Canceled
+    private Integer status = 0; // 0: Cooling-off, 1: Pending, 2: In, 3: Out, 4: Canceled
     private String doorCode;
     private BigDecimal totalAmount;
+    private BigDecimal roomFee;
+    private BigDecimal serviceFee;
     private String guestPhone;
     
     // New fields
     private String checkInTime = "14:00";
-    private String checkOutTime = "13:59";
+    private String checkOutTime = "12:00";
     private String roomCardCode;
     private String checkInType;
     private Integer occupantCount = 1;

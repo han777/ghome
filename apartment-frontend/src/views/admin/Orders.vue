@@ -173,6 +173,20 @@
                 <label>Co-Occupants</label>
                 <input v-model="form.coOccupants" placeholder="Names of other guests">
               </div>
+              <div class="form-item">
+                <label>Room Fee</label>
+                <div class="amount-display">
+                  <span class="currency">¥</span>
+                  <input type="number" v-model="form.roomFee" step="0.01" disabled>
+                </div>
+              </div>
+              <div class="form-item">
+                <label>Service Fee</label>
+                <div class="amount-display">
+                  <span class="currency">¥</span>
+                  <input type="number" v-model="form.serviceFee" step="0.01" disabled>
+                </div>
+              </div>
               <div class="form-item span-2">
                 <label>Total Amount (Auto)</label>
                 <div class="amount-display">
@@ -280,11 +294,13 @@ const form = reactive<any>({
   bizType: 1,
   startDate: new Date().toISOString().split('T')[0],
   endDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+  roomFee: 0,
+  serviceFee: 0,
   totalAmount: 0,
   status: 1,
   guestPhone: '',
   checkInTime: '14:00',
-  checkOutTime: '13:59',
+  checkOutTime: '12:00',
   roomCardCode: '',
   checkInType: '',
   occupantCount: 1,
@@ -346,7 +362,7 @@ const getDictOptions = (code: string) => {
 
 const getOrderStatusClass = (status: number) => {
   switch(status) {
-    case 0: return 'repair'; // Locking
+    case 0: return 'repair'; // Cooling-off
     case 1: return 'occupied'; // Pending
     case 2: return 'active'; // In
     case 3: return 'repair'; // Out
@@ -370,23 +386,26 @@ const calculateDays = (start: string, end: string) => {
 };
 
 watch([() => form.roomId, () => form.startDate, () => form.endDate, () => form.bizType, () => form.productDetails], () => {
-  let total = 0;
+  let rFee = 0;
+  let sFee = 0;
   // 1. Room Fee
   if (form.roomId && form.startDate && form.endDate) {
     const room = rooms.value.find(r => r.id === form.roomId);
     if (room && room.roomType) {
       const days = calculateDays(form.startDate, form.endDate);
       const price = form.bizType === 1 ? room.roomType.priceShortRent : room.roomType.priceLongRent;
-      total += (price || 0) * days;
+      rFee = (price || 0) * days;
     }
   }
   // 2. Product/Service Fee
   if (form.productDetails && form.productDetails.length > 0) {
     form.productDetails.forEach((d: any) => {
-      total += (d.actualPrice || 0) * (d.quantity || 1);
+      sFee += (d.actualPrice || 0) * (d.quantity || 1);
     });
   }
-  form.totalAmount = total;
+  form.roomFee = rFee;
+  form.serviceFee = sFee;
+  form.totalAmount = rFee + sFee;
 }, { deep: true });
 
 const getProductById = (id: number) => productPrices.value.find(p => p.id === id);
@@ -441,11 +460,13 @@ const openModal = (order?: any, tab: string = 'basic') => {
       bizType: 1, 
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+      roomFee: 0,
+      serviceFee: 0,
       totalAmount: 0, 
       status: 1, 
       guestPhone: '', 
       checkInTime: '14:00',
-      checkOutTime: '13:59',
+      checkOutTime: '12:00',
       roomCardCode: '',
       checkInType: '',
       occupantCount: 1,
@@ -534,8 +555,9 @@ const saveOrder = async () => {
     await api.post('/orders', payload);
     showModal.value = false;
     fetchData();
-  } catch (e) {
-    alert('Failed to save order');
+  } catch (e: any) {
+    const msg = e.response?.data?.message || e.response?.data || e.message || 'Failed to save order';
+    alert('保存失败: ' + (typeof msg === 'string' ? msg : JSON.stringify(msg)));
   }
 };
 

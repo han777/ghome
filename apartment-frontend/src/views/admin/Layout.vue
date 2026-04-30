@@ -34,6 +34,10 @@
           <span class="icon">📅</span>
           <span class="text">线性房态</span>
         </router-link>
+        <router-link to="/admin/maintenances" class="nav-item">
+          <span class="icon">🔧</span>
+          <span class="text">维修管理</span>
+        </router-link>
         <router-link to="/admin/reports" class="nav-item">
           <span class="icon">📈</span>
           <span class="text">财务报表</span>
@@ -99,6 +103,7 @@ const titles: Record<string, string> = {
   'Buildings': '楼栋管理',
   'RoomTypes': '房型管理',
   'Gantt': '线性房态',
+  'Maintenances': '维修管理',
   'Reports': '财务报表',
   'ProductPrices': '商品服务价格'
 };

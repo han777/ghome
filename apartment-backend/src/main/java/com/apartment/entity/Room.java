@@ -24,6 +24,9 @@ public class Room {
 
     private String direction; // SOUTH, NORTH
 
-    private Integer status = 0; // 0: Free, 1: Occupied, 2: Locked/Repair
+    private Integer status = 0; // 0: Available, 1: Locked
     private Double area;
+
+    @Transient
+    private Boolean isMaintenance;
 }

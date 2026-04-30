@@ -55,6 +55,7 @@
               <th>Direction</th>
               <th>Area (㎡)</th>
               <th>Status</th>
+              <th>Maintenance</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -74,6 +75,11 @@
                   {{ getDictLabel('ROOM_STATUS', room.status) }}
                 </span>
               </td>
+              <td>
+                <span class="status-badge" :class="room.isMaintenance ? 'repair' : 'active'">
+                  {{ room.isMaintenance ? '是' : '否' }}
+                </span>
+              </td>
               <td class="actions">
                 <button class="edit-btn" @click="openModal(room)">Edit</button>
                 <button class="delete-btn" @click="deleteRoom(room.id)">Delete</button>
@@ -88,7 +94,10 @@
         <div v-for="room in filteredRooms" :key="room.id" class="room-card" :class="getStatusClass(room.status) + '-border'">
           <div class="card-header">
             <span class="room-number">{{ room.roomNo }}</span>
-            <span class="status-dot" :class="getStatusClass(room.status)"></span>
+            <div style="display: flex; gap: 4px;">
+              <span class="status-dot" :class="getStatusClass(room.status)" title="Room Status"></span>
+              <span class="status-dot" :class="room.isMaintenance ? 'repair' : 'active'" title="Maintenance Status"></span>
+            </div>
           </div>
           <div class="card-body">
             <div class="info-row">
@@ -119,8 +128,12 @@
     <!-- Room Modal -->
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header" style="position: relative;">
           <h2>{{ form.id ? 'Edit Room' : 'Add Room' }}</h2>
+          <div style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 8px;">
+            <button v-if="form.id" class="save-btn" @click.prevent="openMaintenanceList" style="padding: 4px 12px; font-size: 13px;">维修统计</button>
+            <button v-if="form.id" class="edit-btn" @click.prevent="quickMaintenance" style="padding: 4px 12px; font-size: 13px;">维修</button>
+          </div>
           <button class="close-btn" @click="showModal = false">&times;</button>
         </div>
         <div class="modal-body">
@@ -183,7 +196,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import api from '../../utils/api';
+
+const router = useRouter();
 
 const rooms = ref<any[]>([]);
 const dicts = ref<any[]>([]);
@@ -246,8 +262,8 @@ const getDictOptions = (code: string) => {
 
 const getStatusClass = (status: number) => {
   if (status === 0) return 'active';
-  if (status === 1) return 'occupied';
-  return 'repair';
+  if (status === 1) return 'locked';
+  return '';
 };
 
 const openModal = (room?: any) => {
@@ -260,6 +276,34 @@ const openModal = (room?: any) => {
     Object.assign(form, { id: null, roomNo: '', direction: 'SOUTH', status: 0, floorId: null, roomTypeId: null, area: null });
   }
   showModal.value = true;
+};
+
+const openMaintenanceList = () => {
+  if (form.id) {
+    router.push(`/admin/maintenances?roomId=${form.id}`);
+  }
+};
+
+const quickMaintenance = async () => {
+  if (!form.id) return;
+  try {
+    const now = new Date();
+    const startStr = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    const end = new Date(now.getTime());
+    end.setFullYear(end.getFullYear() + 3);
+    const endStr = new Date(end.getTime() - end.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    
+    await api.post('/maintenances', {
+      room: { id: form.id },
+      startTime: startStr,
+      endTime: endStr,
+      status: 0
+    });
+    alert('维修记录已创建');
+    fetchData(); // This will refresh the isMaintenance status
+  } catch (e: any) {
+    alert(e.response?.data || 'Failed to create maintenance record');
+  }
 };
 
 const saveRoom = async () => {
@@ -356,7 +400,7 @@ onMounted(fetchData);
 }
 
 .room-card.active-border { border-color: #dcfce7; }
-.room-card.occupied-border { border-color: #fef9c3; }
+.room-card.locked-border { border-color: #fecaca; }
 .room-card.repair-border { border-color: #fee2e2; }
 
 .card-header {
@@ -378,7 +422,7 @@ onMounted(fetchData);
 }
 
 .status-dot.active { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
-.status-dot.occupied { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
+.status-dot.locked { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
 .status-dot.repair { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
 
 .card-body {
@@ -421,7 +465,7 @@ onMounted(fetchData);
 .icon-btn:hover { background: #f1f5f9; }
 .icon-btn.delete:hover { background: #fee2e2; color: #ef4444; }
 
-.occupied { background: #fef9c3; color: #854d0e; }
+.locked { background: #fee2e2; color: #991b1b; }
 .repair { background: #fee2e2; color: #991b1b; }
 .tag { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
 </style>

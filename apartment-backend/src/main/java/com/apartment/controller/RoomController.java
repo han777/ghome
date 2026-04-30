@@ -12,9 +12,20 @@ public class RoomController {
     @Autowired
     private RoomRepository roomRepository;
 
+    @Autowired
+    private com.apartment.repository.RoomMaintenanceRepository maintenanceRepository;
+
     @GetMapping("/all")
     public List<Room> getAllRooms() {
-        return roomRepository.findAll();
+        List<Room> rooms = roomRepository.findAll();
+        java.time.LocalDateTime startOfDay = java.time.LocalDate.now().atStartOfDay();
+        java.time.LocalDateTime endOfDay = java.time.LocalDate.now().atTime(23, 59, 59);
+        List<com.apartment.entity.RoomMaintenance> activeMaintenances = maintenanceRepository.findActiveMaintenancesInPeriod(startOfDay, endOfDay);
+        java.util.Set<Long> maintenanceRoomIds = activeMaintenances.stream().map(m -> m.getRoom().getId()).collect(java.util.stream.Collectors.toSet());
+        for (Room room : rooms) {
+            room.setIsMaintenance(maintenanceRoomIds.contains(room.getId()));
+        }
+        return rooms;
     }
 
     @PostMapping
