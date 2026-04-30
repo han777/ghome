@@ -17,7 +17,10 @@ public class RoomStatusDashboardDTO {
         private Long roomId;
         private String roomNo;
         private Integer status;
-        private String label; // "Arriving Today", "Departing Today", etc.
         private String roomTypeName;
+        private Long floorId;
+        private String floorName;
+        private List<String> labels;
+        private String guestName;
     }
 }
