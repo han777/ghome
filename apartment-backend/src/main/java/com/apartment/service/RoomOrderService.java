@@ -37,8 +37,8 @@ public class RoomOrderService {
         if (order.getRoomOccupies() == null || order.getRoomOccupies().isEmpty()) {
             throw new RuntimeException("房间不能为空");
         }
-        if (order.getOrderNo() == null) {
-            order.setOrderNo("ORD" + System.currentTimeMillis());
+        if (order.getOrderNo() == null || order.getOrderNo().isEmpty()) {
+            order.setOrderNo(generateOrderNo());
         }
         if (order.getStartDate() == null || order.getEndDate() == null) {
             throw new RuntimeException("入住和离开日期不能为空");
@@ -217,5 +217,18 @@ public class RoomOrderService {
         occupyRepository.save(occupy);
         
         return order;
+    }
+
+    public synchronized String generateOrderNo() {
+        LocalDateTime now = LocalDateTime.now();
+        String prefix = "RO" + now.format(java.time.format.DateTimeFormatter.ofPattern("yyMM"));
+        
+        return orderRepository.findTopByOrderNoStartingWithOrderByOrderNoDesc(prefix)
+            .map(order -> {
+                String lastNo = order.getOrderNo();
+                int seq = Integer.parseInt(lastNo.substring(6)) + 1;
+                return prefix + String.format("%04d", seq);
+            })
+            .orElse(prefix + "0001");
     }
 }

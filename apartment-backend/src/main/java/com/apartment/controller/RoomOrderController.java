@@ -25,10 +25,8 @@ public class RoomOrderController {
 
     @PostMapping
     public RoomOrder saveOrder(@RequestBody RoomOrder order) {
-        if (order.getUser() == null || order.getUser().getId() == null) {
-            String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
-            userRepository.findByUsername(username).ifPresent(order::setUser);
-        }
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        userRepository.findByUsername(username).ifPresent(order::setUser);
         if (order.getRoomOccupies() != null) {
             order.getRoomOccupies().forEach(occupy -> occupy.setOrder(order));
         }

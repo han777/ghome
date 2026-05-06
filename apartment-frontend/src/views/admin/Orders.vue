@@ -37,8 +37,6 @@
             <th>Room List</th>
             <th>Business Type</th>
             <th>Stay Period</th>
-            <th>Guest Info</th>
-            <th>Key Code</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -74,27 +72,12 @@
               </div>
             </td>
             <td>
-              <div style="font-size: 12px; color: #64748b;">
-                📞 {{ order.guestPhone || '-' }}<br>
-                🏢 {{ order.company || '-' }}
-              </div>
-            </td>
-            <td>
-              <div class="room-tags">
-                <template v-for="ro in order.roomOccupies" :key="ro.id">
-                  <code v-if="ro.doorCode">{{ ro.doorCode }}</code>
-                </template>
-                <span v-if="!order.roomOccupies || order.roomOccupies.length === 0 || !order.roomOccupies.some(ro => ro.doorCode)">-</span>
-              </div>
-            </td>
-            <td>
               <span class="status-badge" :class="getOrderStatusClass(order.status)">
                 {{ getDictLabel('ORDER_STATUS', order.status) }}
               </span>
             </td>
             <td class="actions">
               <button class="edit-btn" @click="sendCode(order.id)" v-if="order.status === 1 || order.status === 2">Send Code</button>
-              <button class="edit-btn" @click="openModal(order, 'products')">+ Service</button>
               <button class="edit-btn" @click="openModal(order)">Edit</button>
               <button class="delete-btn" @click="cancelOrder(order.id)" v-if="order.status < 3">Cancel</button>
             </td>
@@ -755,9 +738,7 @@ const saveOrder = async () => {
       return;
     }
 
-    if (!form.orderNo && !form.id) {
-      form.orderNo = 'ORD' + Date.now().toString().slice(-6);
-    }
+
     // Map IDs to objects for backend
     const payload = { ...form };
     
