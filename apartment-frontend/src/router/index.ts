@@ -90,6 +90,43 @@ const router = createRouter({
                     component: () => import('../views/admin/Maintenances.vue')
                 }
             ]
+        },
+        {
+            path: '/m',
+            component: () => import('../views/mobile/MobileLayout.vue'),
+            redirect: '/m/booking',
+            children: [
+                {
+                    path: 'booking',
+                    name: 'MobileBooking',
+                    component: () => import('../views/mobile/Booking.vue')
+                },
+                {
+                    path: 'records',
+                    name: 'MobileRecords',
+                    component: () => import('../views/mobile/Records.vue')
+                },
+                {
+                    path: 'mine',
+                    name: 'MobileMine',
+                    component: () => import('../views/mobile/Mine.vue')
+                }
+            ]
+        },
+        {
+            path: '/m/auth',
+            name: 'MobileAuth',
+            component: () => import('../views/mobile/Auth.vue')
+        },
+        {
+            path: '/m/room-select',
+            name: 'MobileRoomSelect',
+            component: () => import('../views/mobile/RoomSelect.vue')
+        },
+        {
+            path: '/m/confirm',
+            name: 'MobileConfirm',
+            component: () => import('../views/mobile/Confirm.vue')
         }
     ]
 })
