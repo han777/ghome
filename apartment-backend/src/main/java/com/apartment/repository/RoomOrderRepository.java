@@ -21,6 +21,9 @@ public interface RoomOrderRepository extends JpaRepository<RoomOrder, Long> {
     
     java.util.List<RoomOrder> findByUserIdAndStatusIn(Long userId, java.util.Collection<Integer> statuses);
     
+    @Query("SELECT o FROM RoomOrder o JOIN o.roomOccupies ro WHERE ro.occupantUser.id = ?1 AND o.status IN ?2")
+    java.util.List<RoomOrder> findByOccupantUserIdAndStatusIn(Long occupantUserId, java.util.Collection<Integer> statuses);
+    
     @Query("SELECT DISTINCT ro.room.id FROM RoomOrder o JOIN o.roomOccupies ro WHERE o.status IN (1, 2) AND o.startDate < ?2 AND o.endDate > ?1")
     java.util.List<Long> findOccupiedRoomIds(LocalDate start, LocalDate end);
 

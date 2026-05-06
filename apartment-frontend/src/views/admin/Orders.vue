@@ -143,6 +143,14 @@
                   </option>
                 </select>
               </div>
+
+              <div class="form-item">
+                <label>Customer Type</label>
+                <select v-model="form.customerType">
+                  <option :value="1">Individual (个人)</option>
+                  <option :value="2">Group (团体)</option>
+                </select>
+              </div>
               
               <div class="form-item">
                 <label>Order Status</label>
@@ -189,12 +197,13 @@
                   </div>
                   <div class="card-item">
                     <label>Room</label>
-                    <select v-model="occupy.roomId" @change="onRoomChange(occupy)">
-                      <option :value="null">-- Select Room --</option>
-                      <option v-for="r in availableRooms" :key="r.id" :value="r.id" :disabled="isRoomTaken(r.id, occupy.roomId)">
-                        {{ r.roomNo }} ({{ r.roomType?.typeCode }})
-                      </option>
-                    </select>
+                    <div class="room-selector-btn" @click="openRoomPicker(occupy, index)">
+                      <span v-if="occupy.roomId" class="selected-room-info">
+                        <strong>{{ getRoomNo(occupy.roomId) }}</strong> 
+                        <small>({{ getRoomTypeLabel(occupy.roomId) }})</small>
+                      </span>
+                      <span v-else class="placeholder">Select Room...</span>
+                    </div>
                   </div>
                   <div class="card-item">
                     <label>Occupant User</label>
@@ -374,6 +383,61 @@
         </div>
       </div>
     </div>
+
+    <!-- Room Picker Modal -->
+    <div v-if="showRoomPicker" class="modal-overlay" style="z-index: 2100;">
+      <div class="modal-content room-picker-modal">
+        <div class="modal-header">
+          <div class="header-left">
+            <h2>Select Available Room</h2>
+            <p class="subtitle">Showing rooms with no locks, no maintenance, and no overlapping bookings.</p>
+          </div>
+          <button class="close-btn" @click="showRoomPicker = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="picker-filter-bar">
+            <div class="filter-group">
+              <label>Check-in</label>
+              <input type="date" v-model="roomPickerFilters.startDate" @change="fetchPickerAvailableRooms">
+            </div>
+            <div class="filter-group">
+              <label>Check-out</label>
+              <input type="date" v-model="roomPickerFilters.endDate" @change="fetchPickerAvailableRooms">
+            </div>
+            <div class="filter-group">
+              <label>Room Type</label>
+              <select v-model="roomPickerFilters.roomTypeId">
+                <option :value="null">-- All Types --</option>
+                <option v-for="t in roomTypes" :key="t.id" :value="t.id">
+                  {{ t.typeCode }} ({{ t.nameIntl?.zh || t.nameIntl?.en }})
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="room-selection-grid">
+            <div 
+              v-for="r in filteredPickerRooms" 
+              :key="r.id" 
+              class="room-pick-card"
+              @click="selectRoomFromPicker(r)"
+            >
+              <div class="room-badge">Room</div>
+              <div class="room-no">{{ r.roomNo }}</div>
+              <div class="room-meta">
+                <span class="type-tag">{{ r.roomType?.typeCode }}</span>
+                <span class="price">¥{{ form.bizType === 1 ? r.roomType?.priceShortRent : r.roomType?.priceLongRent }}</span>
+              </div>
+            </div>
+            <div v-if="filteredPickerRooms.length === 0" class="empty-picker">
+              <div class="empty-icon">📭</div>
+              <p>No available rooms found for the selected period and type.</p>
+              <small>Try different dates or clear the room type filter.</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -395,6 +459,15 @@ const filterTodayDeparture = ref(false);
 const showChangeRoomModal = ref(false);
 const changingOccupy = ref<any>(null);
 const changeRoomNewRoomId = ref<number | null>(null);
+const roomTypes = ref<any[]>([]);
+const showRoomPicker = ref(false);
+const pickingOccupyIndex = ref<number | null>(null);
+const roomPickerFilters = reactive({
+  startDate: '',
+  endDate: '',
+  roomTypeId: null as number | null
+});
+const pickerAvailableRooms = ref<any[]>([]);
 const availableRooms = ref<any[]>([]);
 
 const form = reactive<any>({
@@ -407,6 +480,7 @@ const form = reactive<any>({
   serviceFee: 0,
   totalAmount: 0,
   status: 1,
+  customerType: 1,
   bookerId: null,
   bookPhone: '',
   remarks: '',
@@ -418,18 +492,20 @@ const form = reactive<any>({
 
 const fetchData = async () => {
   try {
-    const [orderRes, dictRes, userRes, roomRes, productRes] = await Promise.all([
+    const [orderRes, dictRes, userRes, roomRes, productRes, typeRes] = await Promise.all([
       api.get('/orders/all'),
       api.get('/sys/dict/all'),
       api.get('/sys/users'),
       api.get('/rooms/all'),
-      api.get('/product-prices/all')
-    ]) as [any, any, any, any, any];
+      api.get('/product-prices/all'),
+      api.get('/room-types/all')
+    ]) as any[];
     orders.value = orderRes;
     dicts.value = dictRes;
     users.value = userRes;
     rooms.value = roomRes;
     productPrices.value = productRes;
+    roomTypes.value = typeRes;
     // Initial fetch for available rooms if form dates are set
     if (form.startDate && form.endDate) fetchAvailableRooms();
   } catch (e) {
@@ -443,8 +519,8 @@ const fetchAvailableRooms = async () => {
     return;
   }
   try {
-    const res = await api.get(`/rooms/available?startDate=${form.startDate}&endDate=${form.endDate}`);
-    availableRooms.value = res as any[];
+    const res = await api.get(`/rooms/available?startDate=${form.startDate}&endDate=${form.endDate}`) as any;
+    availableRooms.value = res;
     // Also include currently selected rooms in the available list so they don't show as empty/unknown
     const currentRoomIds = form.roomOccupies?.map((ro: any) => ro.roomId).filter(Boolean) || [];
     currentRoomIds.forEach((id: number) => {
@@ -500,11 +576,6 @@ const getOrderStatusClass = (status: number) => {
   }
 };
 
-const selectedRoomType = computed(() => {
-  if (!form.roomId) return '';
-  const room = rooms.value.find(r => r.id === form.roomId);
-  return room?.roomType?.typeCode || '';
-});
 
 const calculateDays = (start: string, end: string) => {
   if (!start || !end) return 0;
@@ -548,15 +619,11 @@ const getRoomTypeLabel = (id: number) => {
   return room?.roomType?.typeCode || 'Unknown';
 };
 
-const isRoomTaken = (roomId: number, currentRoomId: number) => {
-  if (roomId === currentRoomId) return false;
-  return form.roomOccupies.some((ro: any) => ro.roomId === roomId);
-};
 
 const addRoomRow = () => {
   form.roomOccupies.push({
     roomId: null,
-    occupantUserId: form.userId,
+    occupantUserId: form.customerType === 1 ? form.bookerId : null,
     occupantCount: 1,
     status: 0,
     roomCardNo: '',
@@ -566,7 +633,7 @@ const addRoomRow = () => {
   });
 };
 
-const removeRoomRow = (index: number) => {
+const removeRoomRow = (index: any) => {
   form.roomOccupies.splice(index, 1);
 };
 
@@ -610,7 +677,61 @@ const onBookerChange = () => {
   }
 };
 
-const onRoomChange = (occupy: any) => {
+const openRoomPicker = (occupy: any, index: number) => {
+  pickingOccupyIndex.value = index;
+  roomPickerFilters.startDate = occupy.checkInTime ? occupy.checkInTime.split('T')[0] : form.startDate;
+  roomPickerFilters.endDate = occupy.checkOutTime ? occupy.checkOutTime.split('T')[0] : form.endDate;
+  roomPickerFilters.roomTypeId = null; // Reset filter
+  showRoomPicker.value = true;
+  fetchPickerAvailableRooms();
+};
+
+const fetchPickerAvailableRooms = async () => {
+  if (!roomPickerFilters.startDate || !roomPickerFilters.endDate) {
+    pickerAvailableRooms.value = [];
+    return;
+  }
+  try {
+    const res = await api.get(`/rooms/available?startDate=${roomPickerFilters.startDate}&endDate=${roomPickerFilters.endDate}`) as any;
+    pickerAvailableRooms.value = res;
+  } catch (e) {
+    console.error('Failed to fetch picker available rooms', e);
+  }
+};
+
+const filteredPickerRooms = computed(() => {
+  let list = pickerAvailableRooms.value;
+  // Apply "not locked" and "not maintenance" logic
+  // status 0 = Available, 1 = Locked
+  list = list.filter(r => r.status === 0 && !r.isMaintenance);
+  
+  // Apply room type filter
+  if (roomPickerFilters.roomTypeId) {
+    list = list.filter(r => r.roomType?.id === roomPickerFilters.roomTypeId);
+  }
+  
+  // Filter out rooms already selected in THIS order (except the one being edited if it was already set)
+  const otherSelectedRoomIds = form.roomOccupies
+    .map((ro: any, idx: number) => idx !== pickingOccupyIndex.value ? ro.roomId : null)
+    .filter(Boolean);
+    
+  list = list.filter(r => !otherSelectedRoomIds.includes(r.id));
+  
+  return list;
+});
+
+const selectRoomFromPicker = (room: any) => {
+  if (pickingOccupyIndex.value === null) return;
+  const occupy = form.roomOccupies[pickingOccupyIndex.value];
+  occupy.roomId = room.id;
+  // Sync check-in/out times with the picker dates if they were changed
+  occupy.checkInTime = `${roomPickerFilters.startDate}T14:00`;
+  occupy.checkOutTime = `${roomPickerFilters.endDate}T12:00`;
+  showRoomPicker.value = false;
+  onRoomChange(occupy);
+};
+
+const onRoomChange = (_occupy: any) => {
   // Logic after room selection
 };
 
@@ -674,6 +795,7 @@ const openModal = (order?: any, tab: string = 'basic') => {
       serviceFee: 0,
       totalAmount: 0, 
       status: 1, 
+      customerType: 1,
       bookerId: null,
       bookPhone: '',
       remarks: '',
@@ -797,13 +919,83 @@ onMounted(fetchData);
   transition: all 0.2s;
 }
 .filter-chip:hover { border-color: #cbd5e1; background: #f8fafc; }
-.filter-chip.active {
-  background: #0f172a;
-  color: #fff;
-  border-color: #0f172a;
+.filter-chip.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+/* Room Selector Button */
+.room-selector-btn {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+.room-selector-btn:hover { border-color: #3b82f6; background: #f8fafc; }
+.selected-room-info strong { color: #0f172a; margin-right: 4px; }
+.selected-room-info small { color: #64748b; font-size: 11px; }
+.placeholder { color: #94a3b8; font-size: 13px; }
+
+/* Room Picker Modal */
+.room-picker-modal { max-width: 800px !important; }
+.subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
+.picker-filter-bar {
+  display: flex;
+  gap: 20px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.filter-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.filter-group label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+.filter-group input, .filter-group select {
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
 }
 
-/* Modal Tabs */
+.room-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.room-pick-card {
+  background: #fff;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.room-pick-card:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.room-badge { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+.room-no { font-size: 18px; font-weight: 800; color: #1e293b; margin: 4px 0; }
+.room-meta { display: flex; flex-direction: column; gap: 4px; }
+.type-tag { font-size: 11px; font-weight: 600; color: #3b82f6; background: #eff6ff; padding: 2px 6px; border-radius: 4px; align-self: flex-start; }
+.price { font-size: 13px; font-weight: 700; color: #10b981; }
+
+.empty-picker {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px;
+  color: #94a3b8;
+}
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+
 .modal-tabs { display: flex; gap: 20px; border-bottom: 1px solid #e2e8f0; margin-bottom: 20px; }
 .modal-tabs button {
   background: none; border: none; padding: 10px 0; font-weight: 600; color: #64748b; cursor: pointer;

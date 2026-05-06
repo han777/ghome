@@ -53,10 +53,15 @@ public class RoomOrderService {
         }
 
         java.util.List<Integer> activeStatuses = java.util.Arrays.asList(1, 2);
+        int currentStatusCount = 0;
 
         for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
             if (occupy.getRoom() == null || occupy.getRoom().getId() == null) {
                 throw new RuntimeException("房号不能为空");
+            }
+            
+            if (occupy.getStatus() != null && occupy.getStatus() == 0) {
+                currentStatusCount++;
             }
             
             // 1. Room Overlap check for each room
@@ -76,6 +81,28 @@ public class RoomOrderService {
             long maintenanceCount = maintenanceRepository.countOverlappingMaintenances(occupy.getRoom().getId(), startDT, endDT);
             if (maintenanceCount > 0) {
                 throw new RuntimeException("房间 " + occupy.getRoom().getRoomNo() + " 处于维修状态！");
+            }
+
+            // 3. Occupant User Overlap check (Only if occupant is set)
+            if (occupy.getOccupantUser() != null && occupy.getOccupantUser().getId() != null) {
+                List<RoomOrder> occupantOrders = orderRepository.findByOccupantUserIdAndStatusIn(occupy.getOccupantUser().getId(), activeStatuses);
+                for (RoomOrder existing : occupantOrders) {
+                    if (order.getId() != null && order.getId().equals(existing.getId())) continue;
+
+                    LocalDateTime exStartDT = LocalDateTime.of(existing.getStartDate(), java.time.LocalTime.of(14, 0));
+                    LocalDateTime exEndDT = LocalDateTime.of(existing.getEndDate(), java.time.LocalTime.of(12, 0));
+
+                    if (startDT.isBefore(exEndDT) && endDT.isAfter(exStartDT)) {
+                        throw new RuntimeException("入住人 " + occupy.getOccupantUser().getRealName() + " 在此期间已有其他房间预约，存在时段冲突！");
+                    }
+                }
+            }
+        }
+
+        // 4. Individual guest constraint: only one current occupy allowed
+        if (order.getCustomerType() != null && order.getCustomerType() == 1) {
+            if (currentStatusCount > 1) {
+                throw new RuntimeException("个人客人订单只允许一条记录为当前状态");
             }
         }
 

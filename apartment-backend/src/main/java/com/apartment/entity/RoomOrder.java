@@ -24,6 +24,7 @@ public class RoomOrder {
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties("order")
     private java.util.List<RoomOccupy> roomOccupies;
 
+    private Integer customerType = 1; // 1: Individual, 2: Group
     private Integer bizType; // 1: Short, 2: Long
     private LocalDate startDate;
     private LocalDate endDate;
