@@ -24,13 +24,13 @@
         <div class="gantt-body">
           <div v-for="room in rooms" :key="room.id" class="room-row">
             <div 
-              v-for="order in getOrdersForRoom(room.id)" 
-              :key="order.id"
+              v-for="occ in getOccupiesForRoom(room.id)" 
+              :key="occ.id"
               class="order-bar"
-              :style="getOrderBarStyle(order)"
-              :title="order.customerName"
+              :style="getOccupyBarStyle(occ)"
+              :title="occ.occupantUser?.realName"
             >
-              {{ order.customerName }}
+              {{ occ.occupantUser?.realName }}
             </div>
             <div 
               v-for="m in getMaintenancesForRoom(room.id)" 
@@ -54,7 +54,7 @@ import { ref, onMounted, computed } from 'vue';
 import api from '../../utils/api';
 
 const rooms = ref<any[]>([]);
-const orders = ref<any[]>([]);
+const occupies = ref<any[]>([]);
 const maintenances = ref<any[]>([]);
 const currentYear = ref(new Date().getFullYear());
 const currentMonth = ref(new Date().getMonth());
@@ -65,13 +65,13 @@ const daysInMonth = computed(() => {
 
 const fetchData = async () => {
   try {
-    const [roomRes, orderRes, maintRes] = await Promise.all([
+    const [roomRes, occupyRes, maintRes] = await Promise.all([
       api.get('/rooms/all'),
-      api.get('/orders/all'),
+      api.get('/occupies/all'),
       api.get('/maintenances/all')
     ]) as any[];
     rooms.value = roomRes;
-    orders.value = orderRes;
+    occupies.value = occupyRes;
     maintenances.value = maintRes;
   } catch (e) {
     console.error('Failed to fetch data', e);
@@ -96,8 +96,8 @@ const nextMonth = () => {
   }
 };
 
-const getOrdersForRoom = (roomId: number) => {
-  return orders.value.filter(o => o.room?.id === roomId && o.status !== 4);
+const getOccupiesForRoom = (roomId: number) => {
+  return occupies.value.filter(occ => occ.room?.id === roomId && occ.order?.status !== 4);
 };
 
 const getOffset = (date: Date) => {
@@ -112,11 +112,27 @@ const getOffset = (date: Date) => {
   return dayOffset + timeOffset;
 };
 
-const getOrderBarStyle = (order: any) => {
-  const startStr = `${order.startDate}T${order.checkInTime && order.checkInTime.length <= 5 ? order.checkInTime + ':00' : (order.checkInTime || '14:00:00')}`;
-  const endStr = `${order.endDate}T${order.checkOutTime && order.checkOutTime.length <= 5 ? order.checkOutTime + ':00' : (order.checkOutTime || '12:00:00')}`;
-  const start = new Date(startStr);
-  const end = new Date(endStr);
+const getOccupyBarStyle = (occ: any) => {
+  let start: Date;
+  let end: Date;
+
+  if (occ.checkInTime) {
+    start = new Date(occ.checkInTime);
+  } else if (occ.order) {
+    const startStr = `${occ.order.startDate}T14:00:00`;
+    start = new Date(startStr);
+  } else {
+    return { display: 'none' };
+  }
+
+  if (occ.checkOutTime) {
+    end = new Date(occ.checkOutTime);
+  } else if (occ.order) {
+    const endStr = `${occ.order.endDate}T12:00:00`;
+    end = new Date(endStr);
+  } else {
+    return { display: 'none' };
+  }
   
   const monthStart = new Date(currentYear.value, currentMonth.value, 1);
   const monthEnd = new Date(currentYear.value, currentMonth.value + 1, 0, 23, 59, 59, 999);

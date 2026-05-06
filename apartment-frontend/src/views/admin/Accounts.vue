@@ -12,6 +12,7 @@
           <tr>
             <th>Username</th>
             <th>Real Name</th>
+            <th>Phone</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -20,6 +21,7 @@
           <tr v-for="user in users" :key="user.id">
             <td class="name">{{ user.username }}</td>
             <td>{{ user.realName }}</td>
+            <td>{{ user.phone || '-' }}</td>
             <td>
               <span class="status-badge" :class="{ active: user.status === 1 }">
                 {{ user.status === 1 ? 'Active' : 'Disabled' }}
@@ -52,6 +54,10 @@
               <input v-model="form.realName">
             </div>
             <div class="form-item">
+              <label>Phone</label>
+              <input v-model="form.phone">
+            </div>
+            <div class="form-item">
               <label>Status</label>
               <select v-model="form.status">
                 <option :value="1">Active</option>
@@ -79,6 +85,7 @@ const form = reactive<any>({
   id: null,
   username: '',
   realName: '',
+  phone: '',
   status: 1
 });
 
@@ -95,7 +102,7 @@ const openModal = (user?: any) => {
   if (user) {
     Object.assign(form, user);
   } else {
-    Object.assign(form, { id: null, username: '', realName: '', status: 1 });
+    Object.assign(form, { id: null, username: '', realName: '', phone: '', status: 1 });
   }
   showModal.value = true;
 };

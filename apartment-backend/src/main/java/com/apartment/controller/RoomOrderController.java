@@ -15,6 +15,9 @@ public class RoomOrderController {
     @Autowired
     private com.apartment.service.RoomOrderService orderService;
 
+    @Autowired
+    private com.apartment.repository.SysUserRepository userRepository;
+
     @GetMapping("/all")
     public List<RoomOrder> getAllOrders() {
         return orderRepository.findAll();
@@ -22,6 +25,13 @@ public class RoomOrderController {
 
     @PostMapping
     public RoomOrder saveOrder(@RequestBody RoomOrder order) {
+        if (order.getUser() == null || order.getUser().getId() == null) {
+            String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+            userRepository.findByUsername(username).ifPresent(order::setUser);
+        }
+        if (order.getRoomOccupies() != null) {
+            order.getRoomOccupies().forEach(occupy -> occupy.setOrder(order));
+        }
         orderService.validateOrder(order);
         if (order.getProductDetails() != null) {
             order.getProductDetails().forEach(detail -> detail.setOrder(order));
@@ -49,9 +59,14 @@ public class RoomOrderController {
         return orderService.cancelOrder(id);
     }
 
-    @PostMapping("/{id}/change-room")
-    public RoomOrder changeRoom(@PathVariable Long id, @RequestParam Long roomId) {
-        return orderService.changeRoom(id, roomId);
+    @PostMapping("/occupy/{occupyId}/change-room")
+    public RoomOrder changeRoom(@PathVariable Long occupyId, @RequestParam Long roomId) {
+        return orderService.changeRoom(occupyId, roomId);
+    }
+
+    @PostMapping("/{id}/add-room")
+    public RoomOrder addRoom(@PathVariable Long id, @RequestParam Long roomId) {
+        return orderService.addRoom(id, roomId);
     }
 
     @DeleteMapping("/{id}")

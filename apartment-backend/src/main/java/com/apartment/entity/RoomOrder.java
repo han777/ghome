@@ -20,28 +20,24 @@ public class RoomOrder {
     @JoinColumn(name = "user_id")
     private SysUser user;
 
-    @ManyToOne
-    @JoinColumn(name = "room_id")
-    private Room room;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("order")
+    private java.util.List<RoomOccupy> roomOccupies;
 
     private Integer bizType; // 1: Short, 2: Long
     private LocalDate startDate;
     private LocalDate endDate;
 
     private Integer status = 0; // 0: Cooling-off, 1: Pending, 2: In, 3: Out, 4: Canceled
-    private String doorCode;
     private BigDecimal totalAmount;
     private BigDecimal roomFee;
     private BigDecimal serviceFee;
-    private String guestPhone;
+    @ManyToOne
+    @JoinColumn(name = "book_user_id")
+    private SysUser booker;
+
+    private String bookPhone;
     
-    // New fields
-    private String checkInTime = "14:00";
-    private String checkOutTime = "12:00";
-    private String roomCardCode;
-    private String checkInType;
-    private Integer occupantCount = 1;
-    private String coOccupants;
     private String remarks;
 
     private String company;
@@ -51,4 +47,7 @@ public class RoomOrder {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<OrderProductDetail> productDetails;
+
+    @Transient
+    private Integer roomCount;
 }

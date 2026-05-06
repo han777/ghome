@@ -14,6 +14,31 @@ public class RoomController {
 
     @Autowired
     private com.apartment.repository.RoomMaintenanceRepository maintenanceRepository;
+    
+    @Autowired
+    private com.apartment.repository.RoomOrderRepository orderRepository;
+
+    @GetMapping("/available")
+    public List<Room> getAvailableRooms(@RequestParam String startDate, @RequestParam String endDate) {
+        java.time.LocalDate start = java.time.LocalDate.parse(startDate);
+        java.time.LocalDate end = java.time.LocalDate.parse(endDate);
+        
+        java.time.LocalDateTime startDT = start.atTime(14, 0);
+        java.time.LocalDateTime endDT = end.atTime(12, 0);
+        
+        // 1. Get rooms occupied by active orders
+        java.util.List<Long> occupiedRoomIds = orderRepository.findOccupiedRoomIds(start, end);
+        
+        // 2. Get rooms under maintenance
+        java.util.List<com.apartment.entity.RoomMaintenance> maintenances = maintenanceRepository.findActiveMaintenancesInPeriod(startDT, endDT);
+        java.util.Set<Long> unavailableRoomIds = new java.util.HashSet<>(occupiedRoomIds);
+        maintenances.forEach(m -> unavailableRoomIds.add(m.getRoom().getId()));
+        
+        List<Room> allRooms = roomRepository.findAll();
+        return allRooms.stream()
+                .filter(r -> !unavailableRoomIds.contains(r.getId()))
+                .collect(java.util.stream.Collectors.toList());
+    }
 
     @GetMapping("/all")
     public List<Room> getAllRooms() {

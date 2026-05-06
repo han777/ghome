@@ -57,20 +57,20 @@ public class RoomStatusService {
             }
 
             List<String> labels = new ArrayList<>();
-            if (arrivingToday.stream().anyMatch(o -> o.getRoom() != null && o.getRoom().getId().equals(room.getId()))) {
+            if (arrivingToday.stream().anyMatch(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))) {
                 labels.add("ARRIVING_TODAY");
             }
-            if (departingToday.stream().anyMatch(o -> o.getRoom() != null && o.getRoom().getId().equals(room.getId()))) {
+            if (departingToday.stream().anyMatch(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))) {
                 labels.add("DEPARTING_TODAY");
             }
-            if (arrivingSoon.stream().anyMatch(o -> o.getRoom() != null && o.getRoom().getId().equals(room.getId()))) {
+            if (arrivingSoon.stream().anyMatch(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))) {
                 labels.add("ARRIVING_SOON");
             }
             detail.setLabels(labels);
 
             // Determine status
             boolean isMaintenance = activeMaintenances.stream().anyMatch(m -> m.getRoom() != null && m.getRoom().getId().equals(room.getId()));
-            RoomOrder currentOrder = activeOrders.stream().filter(o -> o.getRoom() != null && o.getRoom().getId().equals(room.getId())).findFirst().orElse(null);
+            RoomOrder currentOrder = activeOrders.stream().filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId()))).findFirst().orElse(null);
 
             if (isMaintenance) {
                 detail.setStatus(3); // 3: Maintenance
@@ -78,7 +78,7 @@ public class RoomStatusService {
                 detail.setStatus(2); // 2: Locked
             } else if (currentOrder != null) {
                 detail.setStatus(1); // 1: Occupied
-                detail.setGuestName(currentOrder.getUser() != null ? currentOrder.getUser().getRealName() : currentOrder.getGuestPhone());
+                detail.setGuestName(currentOrder.getBooker() != null ? currentOrder.getBooker().getRealName() : "-");
             } else {
                 detail.setStatus(0); // 0: Available
             }

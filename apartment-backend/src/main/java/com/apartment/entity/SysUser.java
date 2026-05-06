@@ -24,6 +24,7 @@ public class SysUser {
     private String wecomId;
 
     private String realName;
+    private String phone;
 
     private Integer status = 1;
 
