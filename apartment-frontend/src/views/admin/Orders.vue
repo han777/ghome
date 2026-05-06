@@ -172,7 +172,12 @@
           <section id="section-rooms" class="form-section">
             <div class="section-header">
               <h3 class="section-title">Room Occupancy</h3>
-              <button class="add-btn small" @click="addRoomRow">+ Add Room</button>
+              <div class="header-actions">
+                <span class="room-count-badge" v-if="form.roomOccupies?.length">
+                  {{ form.roomOccupies.length }} ROOMS
+                </span>
+                <button class="add-btn small" @click="addRoomRow">+ Add Room</button>
+              </div>
             </div>
             <div class="room-cards-container">
               <div v-for="(occupy, index) in form.roomOccupies" :key="index" class="room-card">
@@ -1046,7 +1051,8 @@ onMounted(fetchData);
 .checkout-btn:hover { background: #fecaca; }
 
 .form-section { padding: 20px; border-bottom: 1px solid #f1f5f9; scroll-margin-top: 20px; }
-.section-title { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 15px; border-left: 4px solid #38bdf8; padding-left: 10px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.section-title { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 0; border-left: 4px solid #38bdf8; padding-left: 10px; }
 
 .form-grid-4 {
   display: grid;
