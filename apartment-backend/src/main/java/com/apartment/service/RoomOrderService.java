@@ -246,16 +246,25 @@ public class RoomOrderService {
         return order;
     }
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     public synchronized String generateOrderNo() {
         LocalDateTime now = LocalDateTime.now();
         String prefix = "RO" + now.format(java.time.format.DateTimeFormatter.ofPattern("yyMM"));
         
-        return orderRepository.findTopByOrderNoStartingWithOrderByOrderNoDesc(prefix)
-            .map(order -> {
-                String lastNo = order.getOrderNo();
-                int seq = Integer.parseInt(lastNo.substring(6)) + 1;
-                return prefix + String.format("%04d", seq);
-            })
-            .orElse(prefix + "0001");
+        try {
+            Long seq = orderRepository.getNextOrderSeq();
+            return prefix + String.format("%04d", seq % 10000);
+        } catch (Exception e) {
+            // If sequence doesn't exist, create it and retry once
+            try {
+                jdbcTemplate.execute("CREATE SEQUENCE IF NOT EXISTS room_order_no_seq START WITH 1");
+                Long seq = orderRepository.getNextOrderSeq();
+                return prefix + String.format("%04d", seq % 10000);
+            } catch (Exception e2) {
+                throw new RuntimeException("Failed to generate order number using sequence", e2);
+            }
+        }
     }
 }

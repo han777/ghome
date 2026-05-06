@@ -28,4 +28,7 @@ public interface RoomOrderRepository extends JpaRepository<RoomOrder, Long> {
     java.util.List<Long> findOccupiedRoomIds(LocalDate start, LocalDate end);
 
     java.util.Optional<RoomOrder> findTopByOrderNoStartingWithOrderByOrderNoDesc(String prefix);
+    
+    @Query(value = "SELECT nextval('room_order_no_seq')", nativeQuery = true)
+    Long getNextOrderSeq();
 }
