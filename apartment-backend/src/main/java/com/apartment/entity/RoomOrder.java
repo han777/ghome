@@ -3,7 +3,6 @@ package com.apartment.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,8 +25,8 @@ public class RoomOrder {
 
     private Integer customerType = 1; // 1: Individual, 2: Group
     private Integer bizType; // 1: Short, 2: Long
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
 
     private Integer status = 0; // 0: Cooling-off, 1: Pending, 2: In, 3: Out, 4: Canceled
     private BigDecimal totalAmount;
@@ -51,4 +50,11 @@ public class RoomOrder {
 
     @Transient
     private Integer roomCount;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }

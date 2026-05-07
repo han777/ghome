@@ -11,7 +11,7 @@
     </header>
 
     <div class="sub-header">
-      <div class="selection-info">2026.04.10-2026.04.11 商务大床房</div>
+      <div class="selection-info">{{ startDate }} - {{ endDate }} {{ roomTypeName }}</div>
     </div>
 
     <div class="legend">
@@ -26,83 +26,118 @@
         <div class="room-grid">
           <div 
             v-for="room in floor.rooms" 
-            :key="room.number" 
+            :key="room.id" 
             class="room-item"
-            :class="[room.status, { selected: selectedRoom === room.number }]"
+            :class="[room.statusClass, { selected: selectedRoomId === room.id }]"
             @click="handleSelect(room)"
           >
-            <div class="room-num">{{ room.number }}</div>
-            <div class="room-dir">{{ room.dir }}</div>
+            <div class="room-num">{{ room.roomNo }}</div>
+            <div class="room-dir">{{ room.roomType?.typeCode }}</div>
           </div>
         </div>
+      </div>
+      <div v-if="floors.length === 0" class="empty-rooms">
+        所选时段暂无可用房间
       </div>
     </div>
 
     <div class="footer-actions">
       <button class="mobile-btn-outline" @click="router.back()">取消</button>
-      <button class="mobile-btn-primary" @click="confirmSelection">确定</button>
+      <button class="mobile-btn-primary" :disabled="!selectedRoomId" @click="confirmSelection">确定</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import api from '../../utils/api';
 
 const router = useRouter();
-const selectedRoom = ref('8412');
+const route = useRoute();
 
-const floors = ref([
-  {
-    level: 4,
-    rooms: [
-      { number: '8418', dir: '南', status: 'unavailable' },
-      { number: '8416', dir: '南', status: 'unavailable' },
-      { number: '8412', dir: '南', status: 'available' },
-      { number: '8411', dir: '北', status: 'available' },
-      { number: '8410', dir: '南', status: 'unavailable' },
-      { number: '8409', dir: '北', status: 'unavailable' },
-      { number: '8408', dir: '南', status: 'unavailable' },
-      { number: '8407', dir: '北', status: 'available' },
-      { number: '8406', dir: '南', status: 'available' },
-      { number: '8405', dir: '北', status: 'available' },
-      { number: '8403', dir: '北', status: 'available' },
-      { number: '8402', dir: '南', status: 'available' },
-      { number: '8401', dir: '北', status: 'available' },
-    ]
-  },
-  {
-    level: 3,
-    rooms: [
-      { number: '8320', dir: '南', status: 'available' },
-      { number: '8318', dir: '南', status: 'unavailable' },
-      { number: '8316', dir: '南', status: 'unavailable' },
-      { number: '8312', dir: '南', status: 'unavailable' },
-      { number: '8311', dir: '北', status: 'unavailable' },
-      { number: '8310', dir: '南', status: 'unavailable' },
-      { number: '8309', dir: '北', status: 'available' },
-      { number: '8308', dir: '南', status: 'unavailable' },
-      { number: '8307', dir: '北', status: 'available' },
-      { number: '8306', dir: '南', status: 'unavailable' },
-      { number: '8305', dir: '北', status: 'available' },
-      { number: '8303', dir: '北', status: 'available' },
-      { number: '8302', dir: '南', status: 'available' },
-      { number: '8301', dir: '北', status: 'available' },
-    ]
-  }
-]);
+const startDate = route.query.start as string;
+const endDate = route.query.end as string;
+const typeId = route.query.typeId as string;
 
-const handleSelect = (room: any) => {
-  if (room.status === 'available') {
-    selectedRoom.value = room.number;
+const selectedRoomId = ref<number | null>(null);
+const roomTypeName = ref('加载中...');
+const floors = ref<any[]>([]);
+
+const fetchRooms = async () => {
+  try {
+    // Backend expects LocalDateTime, so we append times
+    const startDT = startDate + 'T14:00:00';
+    const endDT = endDate + 'T12:00:00';
+    
+    const [roomsRes, typesRes] = await Promise.all([
+      api.get(`/rooms/available?startDate=${startDT}&endDate=${endDT}`),
+      api.get('/room-types/all')
+    ]) as any[];
+
+    const roomType = typesRes.find((t: any) => t.id.toString() === typeId);
+    roomTypeName.value = roomType ? (roomType.nameIntl?.zh || roomType.typeCode) : '未知房型';
+
+    // Filter rooms by type
+    const filteredRooms = roomsRes.filter((r: any) => r.roomType?.id.toString() === typeId);
+
+    // Group by floor
+    const grouped = filteredRooms.reduce((acc: any, room: any) => {
+      const floorLevel = room.floor?.level || 0;
+      if (!acc[floorLevel]) {
+        acc[floorLevel] = { level: floorLevel, rooms: [] };
+      }
+      room.statusClass = 'available';
+      acc[floorLevel].rooms.push(room);
+      return acc;
+    }, {});
+
+    floors.value = Object.values(grouped).sort((a: any, b: any) => b.level - a.level);
+  } catch (e) {
+    console.error('Failed to fetch rooms', e);
   }
 };
 
-const confirmSelection = () => {
-  router.push({
-    path: '/m/confirm',
-    query: { room: selectedRoom.value }
-  });
+onMounted(fetchRooms);
+
+const handleSelect = (room: any) => {
+  selectedRoomId.value = room.id;
+};
+
+const confirmSelection = async () => {
+  if (!selectedRoomId.value) return;
+  
+  try {
+    const startDT = startDate + 'T14:00:00';
+    const endDT = endDate + 'T12:00:00';
+
+    // Generate Order
+    const orderData = {
+      startDate: startDT,
+      endDate: endDT,
+      bizType: 1, // Short term
+      status: 0,  // Cooling-off (犹豫期)
+      createdAt: new Date().toISOString().slice(0, 16),
+      roomOccupies: [
+        {
+          room: { id: selectedRoomId.value },
+          occupantCount: 1,
+          checkInTime: startDT,
+          checkOutTime: endDT,
+          status: 0 // Current
+        }
+      ]
+    };
+
+    const res = await api.post('/orders', orderData) as any;
+    
+    router.push({
+      path: '/m/confirm',
+      query: { orderId: res.id.toString() }
+    });
+  } catch (e: any) {
+    alert('预订失败: ' + (e.response?.data?.message || e.message));
+  }
 };
 </script>
 

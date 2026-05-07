@@ -26,10 +26,17 @@ public class RoomOrderController {
     @PostMapping
     public RoomOrder saveOrder(@RequestBody RoomOrder order) {
         String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
-        userRepository.findByUsername(username).ifPresent(order::setUser);
-        if (order.getRoomOccupies() != null) {
-            order.getRoomOccupies().forEach(occupy -> occupy.setOrder(order));
-        }
+        userRepository.findByUsername(username).ifPresent(u -> {
+            order.setUser(u);
+            if (order.getRoomOccupies() != null) {
+                order.getRoomOccupies().forEach(occupy -> {
+                    occupy.setOrder(order);
+                    if (occupy.getOccupantUser() == null) {
+                        occupy.setOccupantUser(u);
+                    }
+                });
+            }
+        });
         orderService.validateOrder(order);
         if (order.getProductDetails() != null) {
             order.getProductDetails().forEach(detail -> detail.setOrder(order));
@@ -55,6 +62,11 @@ public class RoomOrderController {
     @PostMapping("/{id}/cancel")
     public RoomOrder cancel(@PathVariable Long id) {
         return orderService.cancelOrder(id);
+    }
+
+    @PostMapping("/{id}/checkout")
+    public RoomOrder checkout(@PathVariable Long id) {
+        return orderService.checkoutOrder(id);
     }
 
     @PostMapping("/occupy/{occupyId}/change-room")

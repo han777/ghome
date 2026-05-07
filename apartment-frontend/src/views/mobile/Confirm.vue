@@ -1,5 +1,5 @@
 <template>
-  <div class="confirm-page">
+  <div class="confirm-page" v-if="order">
     <header class="mobile-header">
       <div class="header-left" @click="router.back()">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
@@ -10,11 +10,14 @@
       </div>
     </header>
 
-    <div class="alert-banner">
+    <div class="alert-banner" v-if="!isExpired">
       <div class="alert-icon">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z" /></svg>
       </div>
-      <div class="alert-text">请于2026-04-10 14:21:23前提交订单，超时则自动取消预定</div>
+      <div class="alert-text">请于 {{ deadlineStr }} 前提交订单，超时则自动取消预定。剩余时间：{{ countdownStr }}</div>
+    </div>
+    <div class="alert-banner expired" v-else>
+      <div class="alert-text">订单已失效，请重新预订。</div>
     </div>
 
     <div class="content">
@@ -23,24 +26,22 @@
         <div class="stay-row">
           <div class="stay-item">
             <div class="stay-label">入住日期</div>
-            <div class="stay-val">2026年04月10日</div>
-            <div class="stay-day">星期五</div>
+            <div class="stay-val">{{ formatDate(order.startDate) }}</div>
           </div>
           <div class="stay-item align-right">
             <div class="stay-label">退房日期</div>
-            <div class="stay-val">2026年04月11日</div>
-            <div class="stay-day">星期六</div>
+            <div class="stay-val">{{ formatDate(order.endDate) }}</div>
           </div>
         </div>
         <div class="divider"></div>
         <div class="stay-row">
           <div class="stay-item">
             <div class="stay-label">房型</div>
-            <div class="stay-val-mid">商务大床房</div>
+            <div class="stay-val-mid">{{ roomTypeName }}</div>
           </div>
           <div class="stay-item align-right">
             <div class="stay-label">房间号</div>
-            <div class="stay-val-mid primary-text">{{ roomNumber }}</div>
+            <div class="stay-val-mid primary-text">{{ roomNo }}</div>
           </div>
         </div>
       </div>
@@ -50,8 +51,8 @@
         <div class="price-row">
           <span class="price-label">汇总金额</span>
           <div class="price-val-group">
-            <span class="price-total">¥ 250.00</span>
-            <span class="price-detail">( ¥ 250/晚×1 )</span>
+            <span class="price-total">¥ {{ order.totalAmount?.toFixed(2) }}</span>
+            <span class="price-detail">( ¥ {{ roomPrice }}/晚×{{ stayDays }} )</span>
           </div>
         </div>
       </div>
@@ -62,11 +63,27 @@
       <div class="mobile-card occupant-card">
         <div class="card-header">
           <span class="card-title">入住人</span>
-          <span class="add-btn">+ 新增同住人</span>
+          <span class="add-btn" @click="showCompanionInput = true">+ 新增同住人</span>
         </div>
-        <div class="occupant-row">
-          <span class="occ-name">黄冠读</span>
-          <span class="occ-tag">本人</span>
+        
+        <div class="occupant-list">
+          <div class="occupant-row">
+            <span class="occ-name">{{ order.user?.realName || order.user?.username || '当前用户' }}</span>
+            <span class="occ-tag">本人</span>
+          </div>
+          
+          <!-- Existing Companions -->
+          <div v-for="(name, index) in companions" :key="index" class="occupant-row secondary">
+            <span class="occ-name">{{ name }}</span>
+            <span class="remove-btn" @click="removeCompanion(index)">移除</span>
+          </div>
+
+          <!-- New Companion Input -->
+          <div v-if="showCompanionInput" class="companion-input-row">
+            <input v-model="newCompanionName" placeholder="输入同住人姓名" class="occ-input" ref="nameInput">
+            <button class="confirm-occ-btn" @click="addCompanion">确认</button>
+            <button class="cancel-occ-btn" @click="showCompanionInput = false">取消</button>
+          </div>
         </div>
       </div>
 
@@ -81,24 +98,148 @@
     <div class="bottom-bar">
       <div class="bar-total">
         <div class="total-label">合计</div>
-        <div class="total-price">¥ 250.00</div>
+        <div class="total-price">¥ {{ order.totalAmount?.toFixed(2) }}</div>
       </div>
-      <button class="bar-btn cancel" @click="router.back()">取消订单</button>
-      <button class="bar-btn submit" @click="submitOrder">提交订单</button>
+      <button class="bar-btn cancel" @click="cancelOrder">取消订单</button>
+      <button class="bar-btn submit" :disabled="isExpired" @click="submitOrder">提交订单</button>
     </div>
+  </div>
+  <div v-else class="loading-state">
+    加载中...
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import api from '../../utils/api';
+
 const router = useRouter();
 const route = useRoute();
-const roomNumber = route.query.room || '8412';
+const orderId = route.query.orderId;
 
-const submitOrder = () => {
-  alert('订单提交成功！');
-  router.push('/m/booking');
+const order = ref<any>(null);
+const companions = ref<string[]>([]);
+const showCompanionInput = ref(false);
+const newCompanionName = ref('');
+const countdown = ref(900); // 15 mins in seconds
+const isExpired = ref(false);
+let timer: any = null;
+
+const roomNo = computed(() => order.value?.roomOccupies?.[0]?.room?.roomNo || '-');
+const roomTypeName = computed(() => order.value?.roomOccupies?.[0]?.room?.roomType?.typeCode || '-');
+const roomPrice = computed(() => order.value?.roomOccupies?.[0]?.room?.roomType?.priceShortRent || 0);
+
+const stayDays = computed(() => {
+  if (!order.value) return 0;
+  const s = new Date(order.value.startDate);
+  const e = new Date(order.value.endDate);
+  const diff = e.getTime() - s.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+});
+
+const deadlineStr = computed(() => {
+  if (!order.value?.createdAt) return '-';
+  const created = new Date(order.value.createdAt);
+  const deadline = new Date(created.getTime() + 15 * 60000);
+  return deadline.toLocaleTimeString();
+});
+
+const countdownStr = computed(() => {
+  const m = Math.floor(countdown.value / 60);
+  const s = countdown.value % 60;
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+});
+
+const fetchOrder = async () => {
+  try {
+    const res = await api.get(`/orders/all`) as any[];
+    const found = res.find(o => o.id.toString() === orderId);
+    if (found) {
+      order.value = found;
+      // Initialize companions from DB if any
+      const coStr = found.roomOccupies?.[0]?.coOccupants;
+      if (coStr) {
+        companions.value = coStr.split(',').filter(Boolean);
+      }
+      
+      // Start countdown based on createdAt
+      const created = new Date(found.createdAt || Date.now());
+      const elapsed = Math.floor((Date.now() - created.getTime()) / 1000);
+      countdown.value = Math.max(0, 900 - elapsed);
+      if (countdown.value <= 0) isExpired.value = true;
+      
+      startTimer();
+    }
+  } catch (e) {
+    console.error('Failed to fetch order', e);
+  }
 };
+
+const startTimer = () => {
+  if (timer) clearInterval(timer);
+  timer = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value--;
+    } else {
+      isExpired.value = true;
+      clearInterval(timer);
+    }
+  }, 1000);
+};
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+};
+
+const addCompanion = () => {
+  if (newCompanionName.value.trim()) {
+    companions.value.push(newCompanionName.value.trim());
+    newCompanionName.value = '';
+    showCompanionInput.value = false;
+  }
+};
+
+const removeCompanion = (index: number) => {
+  companions.value.splice(index, 1);
+};
+
+const cancelOrder = async () => {
+  if (confirm('确定要取消预订吗？')) {
+    try {
+      await api.post(`/orders/${orderId}/cancel`);
+      router.push('/m/booking');
+    } catch (e) {
+      console.error('Cancel failed', e);
+    }
+  }
+};
+
+const submitOrder = async () => {
+  try {
+    // Update order status and companions
+    const updatedOrder = { ...order.value };
+    updatedOrder.status = 1; // Pending
+    if (updatedOrder.roomOccupies?.[0]) {
+      updatedOrder.roomOccupies[0].coOccupants = companions.value.join(',');
+      updatedOrder.roomOccupies[0].order = { id: orderId }; // Avoid recursion if backend isn't careful
+    }
+    
+    await api.post('/orders', updatedOrder);
+    
+    alert('预订成功！');
+    router.push('/m/records');
+  } catch (e: any) {
+    alert('提交失败: ' + (e.response?.data?.message || e.message));
+  }
+};
+
+onMounted(fetchOrder);
+onUnmounted(() => {
+  if (timer) clearInterval(timer);
+});
 </script>
 
 <style scoped>
@@ -132,6 +273,15 @@ const submitOrder = () => {
   font-size: 13px;
   color: #000;
   line-height: 1.4;
+}
+
+.alert-banner.expired {
+  background: #fff1f0;
+  border-color: #ffa39e;
+}
+
+.alert-banner.expired .alert-text {
+  color: #cf1322;
 }
 
 .stay-card {
@@ -227,6 +377,12 @@ const submitOrder = () => {
   font-size: 14px;
 }
 
+.occupant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .occupant-row {
   background: #f8f8f8;
   padding: 12px;
@@ -234,6 +390,11 @@ const submitOrder = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.occupant-row.secondary {
+  background: #fff;
+  border: 1px dashed #ddd;
 }
 
 .occ-name {
@@ -246,6 +407,43 @@ const submitOrder = () => {
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 4px;
+}
+
+.remove-btn {
+  color: #ff4d4f;
+  font-size: 12px;
+}
+
+.companion-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.occ-input {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 14px;
+}
+
+.confirm-occ-btn, .cancel-occ-btn {
+  border: none;
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.confirm-occ-btn {
+  background: var(--mobile-primary);
+  color: #fff;
+}
+
+.cancel-occ-btn {
+  background: #eee;
+  color: #666;
 }
 
 .notice-row {

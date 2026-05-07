@@ -20,17 +20,14 @@ public class RoomController {
 
     @GetMapping("/available")
     public List<Room> getAvailableRooms(@RequestParam String startDate, @RequestParam String endDate) {
-        java.time.LocalDate start = java.time.LocalDate.parse(startDate);
-        java.time.LocalDate end = java.time.LocalDate.parse(endDate);
-        
-        java.time.LocalDateTime startDT = start.atTime(14, 0);
-        java.time.LocalDateTime endDT = end.atTime(12, 0);
+        java.time.LocalDateTime start = java.time.LocalDateTime.parse(startDate);
+        java.time.LocalDateTime end = java.time.LocalDateTime.parse(endDate);
         
         // 1. Get rooms occupied by active orders
         java.util.List<Long> occupiedRoomIds = orderRepository.findOccupiedRoomIds(start, end);
         
         // 2. Get rooms under maintenance
-        java.util.List<com.apartment.entity.RoomMaintenance> maintenances = maintenanceRepository.findActiveMaintenancesInPeriod(startDT, endDT);
+        java.util.List<com.apartment.entity.RoomMaintenance> maintenances = maintenanceRepository.findActiveMaintenancesInPeriod(start, end);
         java.util.Set<Long> unavailableRoomIds = new java.util.HashSet<>(occupiedRoomIds);
         maintenances.forEach(m -> unavailableRoomIds.add(m.getRoom().getId()));
         

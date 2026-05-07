@@ -44,9 +44,8 @@ public class RoomOrderService {
             throw new RuntimeException("入住和离开日期不能为空");
         }
 
-        // Use global stay dates for basic validation
-        LocalDateTime startDT = LocalDateTime.of(order.getStartDate(), java.time.LocalTime.of(14, 0));
-        LocalDateTime endDT = LocalDateTime.of(order.getEndDate(), java.time.LocalTime.of(12, 0));
+        LocalDateTime startDT = order.getStartDate();
+        LocalDateTime endDT = order.getEndDate();
         
         if (!startDT.isBefore(endDT)) {
             throw new RuntimeException("离开时间必须晚于入住时间");
@@ -69,8 +68,8 @@ public class RoomOrderService {
             for (RoomOrder existing : roomOrders) {
                 if (order.getId() != null && order.getId().equals(existing.getId())) continue;
                 
-                LocalDateTime exStartDT = LocalDateTime.of(existing.getStartDate(), java.time.LocalTime.of(14, 0));
-                LocalDateTime exEndDT = LocalDateTime.of(existing.getEndDate(), java.time.LocalTime.of(12, 0));
+                LocalDateTime exStartDT = existing.getStartDate();
+                LocalDateTime exEndDT = existing.getEndDate();
                 
                 if (startDT.isBefore(exEndDT) && endDT.isAfter(exStartDT)) {
                     throw new RuntimeException("房间 " + occupy.getRoom().getRoomNo() + " 的入住到离开时间与已有的未结订单冲突！");
@@ -89,8 +88,8 @@ public class RoomOrderService {
                 for (RoomOrder existing : occupantOrders) {
                     if (order.getId() != null && order.getId().equals(existing.getId())) continue;
 
-                    LocalDateTime exStartDT = LocalDateTime.of(existing.getStartDate(), java.time.LocalTime.of(14, 0));
-                    LocalDateTime exEndDT = LocalDateTime.of(existing.getEndDate(), java.time.LocalTime.of(12, 0));
+                    LocalDateTime exStartDT = existing.getStartDate();
+                    LocalDateTime exEndDT = existing.getEndDate();
 
                     if (startDT.isBefore(exEndDT) && endDT.isAfter(exStartDT)) {
                         throw new RuntimeException("入住人 " + occupy.getOccupantUser().getRealName() + " 在此期间已有其他房间预约，存在时段冲突！");
@@ -164,6 +163,28 @@ public class RoomOrderService {
     }
 
     @Transactional
+    public RoomOrder checkoutOrder(Long orderId) {
+        if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
+        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+        order.setStatus(3); // Out
+        LocalDateTime now = LocalDateTime.now();
+        order.setEndDate(now);
+        if (order.getRoomOccupies() != null) {
+            for (RoomOccupy occupy : order.getRoomOccupies()) {
+                occupy.setStatus(1); // Finish
+                occupy.setCheckOutTime(now);
+                Room room = occupy.getRoom();
+                if (room != null) {
+                    room.setStatus(0); // Available
+                    roomRepository.save(room);
+                }
+                occupyRepository.save(occupy);
+            }
+        }
+        return orderRepository.save(order);
+    }
+
+    @Transactional
     public RoomOrder changeRoom(Long occupyId, Long newRoomId) {
         if (occupyId == null || newRoomId == null) throw new IllegalArgumentException("IDs cannot be null");
         
@@ -204,7 +225,7 @@ public class RoomOrderService {
 
         // 3. Update Order Total Amount (Price Difference for remaining days)
         // Calculate remaining days (at least 1 if today is the check-out day)
-        long remainingDays = java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), order.getEndDate());
+        long remainingDays = java.time.temporal.ChronoUnit.DAYS.between(now, order.getEndDate());
         if (remainingDays <= 0) remainingDays = 1;
 
         BigDecimal diff = BigDecimal.ZERO;

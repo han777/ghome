@@ -7,7 +7,6 @@ import com.apartment.repository.RoomOrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -48,9 +47,7 @@ public class RoomMaintenanceController {
 
         // Only check overlap if it's not cancelled
         if (maintenance.getStatus() != 2) {
-            LocalDate startDate = maintenance.getStartTime().toLocalDate();
-            LocalDate endDate = maintenance.getEndTime().toLocalDate();
-            long orderCount = orderRepository.countOverlappingActiveOrders(maintenance.getRoom().getId(), startDate, endDate);
+            long orderCount = orderRepository.countOverlappingActiveOrders(maintenance.getRoom().getId(), maintenance.getStartTime(), maintenance.getEndTime());
             if (orderCount > 0) {
                 return ResponseEntity.badRequest().body("维修时间与执行中的订单时间重叠，不允许保存");
             }

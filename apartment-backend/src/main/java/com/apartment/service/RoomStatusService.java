@@ -30,11 +30,14 @@ public class RoomStatusService {
         LocalDate today = now.toLocalDate();
         RoomStatusDashboardDTO dto = new RoomStatusDashboardDTO();
 
-        List<RoomOrder> arrivingToday = orderRepository.findByStartDate(today);
-        List<RoomOrder> departingToday = orderRepository.findByEndDate(today);
-        List<RoomOrder> arrivingSoon = orderRepository.findByStartDateBetween(today.plusDays(1), today.plusDays(3));
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(23, 59, 59);
+
+        List<RoomOrder> arrivingToday = orderRepository.findByStartDateBetween(startOfDay, endOfDay);
+        List<RoomOrder> departingToday = orderRepository.findByEndDateBetween(startOfDay, endOfDay);
+        List<RoomOrder> arrivingSoon = orderRepository.findByStartDateBetween(today.plusDays(1).atStartOfDay(), today.plusDays(3).atTime(23, 59, 59));
         List<RoomOrder> activeOrders = orderRepository.findAll().stream()
-            .filter(o -> Arrays.asList(1, 2).contains(o.getStatus()) && !o.getStartDate().isAfter(today) && !o.getEndDate().isBefore(today))
+            .filter(o -> Arrays.asList(1, 2).contains(o.getStatus()) && !o.getStartDate().isAfter(now) && !o.getEndDate().isBefore(now))
             .collect(Collectors.toList());
 
         List<com.apartment.entity.RoomMaintenance> activeMaintenances = maintenanceRepository.findActiveMaintenancesInPeriod(now, now);

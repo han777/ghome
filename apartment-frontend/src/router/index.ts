@@ -127,6 +127,11 @@ const router = createRouter({
             path: '/m/confirm',
             name: 'MobileConfirm',
             component: () => import('../views/mobile/Confirm.vue')
+        },
+        {
+            path: '/m/order-detail/:id',
+            name: 'MobileOrderDetail',
+            component: () => import('../views/mobile/OrderDetail.vue')
         }
     ]
 })

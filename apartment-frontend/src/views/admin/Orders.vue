@@ -128,11 +128,11 @@
 
               <div class="form-item">
                 <label class="required">Stay Start Date</label>
-                <input type="date" v-model="form.startDate" required>
+                <input type="datetime-local" v-model="form.startDate" required>
               </div>
               <div class="form-item">
                 <label>Stay End Date</label>
-                <input type="date" v-model="form.endDate" required>
+                <input type="datetime-local" v-model="form.endDate" required>
               </div>
 
               <div class="form-item">
@@ -165,6 +165,11 @@
                 <label>Remarks</label>
                 <input v-model="form.remarks" placeholder="General remarks...">
               </div>
+
+              <div class="form-item">
+                <label>Created At</label>
+                <input type="datetime-local" v-model="form.createdAt">
+              </div>
             </div>
           </section>
 
@@ -183,11 +188,11 @@
               <div v-for="(occupy, index) in form.roomOccupies" :key="index" class="room-card">
                 <div class="card-header">
                   <div class="card-title">
-                    <span class="room-no">Room {{ getRoomNo(occupy.roomId) || 'NEW' }}</span>
-                    <span class="room-type">{{ getRoomTypeLabel(occupy.roomId) }}</span>
+                    <span class="room-no">Room {{ getRoomNo(Number(occupy.roomId)) || 'NEW' }}</span>
+                    <span class="room-type">{{ getRoomTypeLabel(Number(occupy.roomId)) }}</span>
                   </div>
                   <div class="card-actions">
-                    <button class="card-action-btn change" v-if="occupy.id" @click="startChangeRoom(occupy, index)">换房</button>
+                    <button class="card-action-btn change" v-if="occupy.id" @click="startChangeRoom(occupy)">换房</button>
                     <button class="card-action-btn delete" @click="removeRoomRow(index)">×</button>
                   </div>
                 </div>
@@ -200,16 +205,16 @@
                     <label>Actual Check-out</label>
                     <input type="datetime-local" v-model="occupy.checkOutTime">
                   </div>
-                  <div class="card-item">
-                    <label>Room</label>
-                    <div class="room-selector-btn" @click="openRoomPicker(occupy, index)">
-                      <span v-if="occupy.roomId" class="selected-room-info">
-                        <strong>{{ getRoomNo(occupy.roomId) }}</strong> 
-                        <small>({{ getRoomTypeLabel(occupy.roomId) }})</small>
-                      </span>
-                      <span v-else class="placeholder">Select Room...</span>
+                    <div class="card-item">
+                      <label>Room</label>
+                      <div class="room-selector-btn" @click="openRoomPicker(occupy, index)">
+                        <span v-if="occupy.roomId" class="selected-room-info">
+                          <strong>{{ getRoomNo(Number(occupy.roomId)) }}</strong> 
+                          <small>({{ getRoomTypeLabel(Number(occupy.roomId)) }})</small>
+                        </span>
+                        <span v-else class="placeholder">Select Room...</span>
+                      </div>
                     </div>
-                  </div>
                   <div class="card-item">
                     <label>Occupant User</label>
                     <select v-model="occupy.occupantUserId">
@@ -282,8 +287,8 @@
                         </option>
                       </select>
                     </td>
-                    <td>{{ getProductById(detail.productId)?.unit || '-' }}</td>
-                    <td>¥{{ getProductById(detail.productId)?.price || 0 }}</td>
+                    <td>{{ getProductById(Number(detail.productId))?.unit || '-' }}</td>
+                    <td>¥{{ getProductById(Number(detail.productId))?.price || 0 }}</td>
                     <td><input type="number" v-model="detail.actualPrice" class="table-input no-border" style="width: 70px;"></td>
                     <td><input type="number" v-model="detail.quantity" min="1" class="table-input no-border" style="width: 50px;"></td>
                     <td>¥{{ (detail.actualPrice || 0) * (detail.quantity || 1) }}</td>
@@ -479,8 +484,9 @@ const form = reactive<any>({
   id: null,
   userId: null,
   bizType: 1,
-  startDate: new Date().toISOString().split('T')[0],
-  endDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+  startDate: new Date().toISOString().slice(0, 10) + 'T14:00',
+  endDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10) + 'T12:00',
+  createdAt: new Date().toISOString().slice(0, 16),
   roomFee: 0,
   serviceFee: 0,
   totalAmount: 0,
@@ -524,7 +530,9 @@ const fetchAvailableRooms = async () => {
     return;
   }
   try {
-    const res = await api.get(`/rooms/available?startDate=${form.startDate}&endDate=${form.endDate}`) as any;
+    const start = form.startDate.length === 10 ? form.startDate + 'T14:00:00' : form.startDate;
+    const end = form.endDate.length === 10 ? form.endDate + 'T12:00:00' : form.endDate;
+    const res = await api.get(`/rooms/available?startDate=${start}&endDate=${end}`) as any;
     availableRooms.value = res;
     // Also include currently selected rooms in the available list so they don't show as empty/unknown
     const currentRoomIds = form.roomOccupies?.map((ro: any) => ro.roomId).filter(Boolean) || [];
@@ -794,8 +802,9 @@ const openModal = (order?: any, tab: string = 'basic') => {
       id: null, 
       userId: null, 
       bizType: 1, 
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+      startDate: new Date().toISOString().slice(0, 10) + 'T14:00',
+      endDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10) + 'T12:00',
+      createdAt: new Date().toISOString().slice(0, 16),
       roomFee: 0,
       serviceFee: 0,
       totalAmount: 0, 

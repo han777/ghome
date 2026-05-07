@@ -5,19 +5,20 @@
     </header>
     <div class="content">
       <div v-if="records.length > 0">
-        <div v-for="record in records" :key="record.id" class="mobile-card record-card">
+        <div v-for="record in records" :key="record.id" class="mobile-card record-card" @click="goToDetail(record)">
           <div class="record-header">
-            <span class="room-type">{{ record.roomType }}</span>
-            <span class="status-tag" :class="record.status">{{ record.statusText }}</span>
+            <span class="room-type">{{ record.roomTypeName }}</span>
+            <span class="status-tag" :class="record.statusClass">{{ record.statusText }}</span>
           </div>
           <div class="record-body">
-            <p>入住：{{ record.checkIn }}</p>
-            <p>退房：{{ record.checkOut }}</p>
-            <p>房号：{{ record.roomNum }}</p>
+            <p>单号：{{ record.orderNo }}</p>
+            <p>入住：{{ formatDate(record.startDate) }}</p>
+            <p>退房：{{ formatDate(record.endDate) }}</p>
+            <p>房号：{{ record.roomNo }}</p>
           </div>
           <div class="record-footer">
-            <span class="total-price">¥ {{ record.price }}</span>
-            <button class="mobile-btn-outline small">查看详情</button>
+            <span class="total-price">¥ {{ record.totalAmount?.toFixed(2) }}</span>
+            <button class="mobile-btn-outline small" @click="goToDetail(record)">查看详情</button>
           </div>
         </div>
       </div>
@@ -29,30 +30,67 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import api from '../../utils/api';
 
-const records = ref([
-  {
-    id: 1,
-    roomType: '商务大床房',
-    roomNum: '8412',
-    checkIn: '2026-04-10',
-    checkOut: '2026-04-11',
-    price: 250,
-    status: 'completed',
-    statusText: '已完成'
-  },
-  {
-    id: 2,
-    roomType: '行政套房',
-    roomNum: '9001',
-    checkIn: '2026-03-15',
-    checkOut: '2026-03-16',
-    price: 400,
-    status: 'completed',
-    statusText: '已完成'
+const router = useRouter();
+const records = ref<any[]>([]);
+
+const fetchRecords = async () => {
+  try {
+    const res = await api.get('/orders/all') as any[];
+    // Filter by current user (backend returns all for now, we should ideally have a /my-orders)
+    // For now, we'll just sort them
+    records.value = res.sort((a, b) => b.id - a.id).map(o => ({
+      ...o,
+      roomTypeName: o.roomOccupies?.[0]?.room?.roomType?.typeCode || '未知',
+      roomNo: o.roomOccupies?.[0]?.room?.roomNo || '-',
+      statusText: getStatusText(o.status),
+      statusClass: getStatusClass(o.status)
+    }));
+  } catch (e) {
+    console.error('Failed to fetch records', e);
   }
-]);
+};
+
+const getStatusText = (status: number) => {
+  const map: any = {
+    0: '待确认',
+    1: '预订中',
+    2: '已入住',
+    3: '已退房',
+    4: '已取消'
+  };
+  return map[status] || '未知';
+};
+
+const getStatusClass = (status: number) => {
+  const map: any = {
+    0: 'pending',
+    1: 'booking',
+    2: 'active',
+    3: 'completed',
+    4: 'cancelled'
+  };
+  return map[status] || '';
+};
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
+
+const goToDetail = (record: any) => {
+  if (record.status === 0) {
+    router.push({ path: '/m/confirm', query: { orderId: record.id.toString() } });
+  } else {
+    router.push(`/m/order-detail/${record.id}`);
+  }
+};
+
+onMounted(fetchRecords);
 </script>
 
 <style scoped>
@@ -73,7 +111,11 @@ const records = ref([
   padding: 2px 8px;
   border-radius: 4px;
 }
+.status-tag.pending { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+.status-tag.booking { background: #e6f4ff; color: #1677ff; border: 1px solid #91caff; }
+.status-tag.active { background: #f9f0ff; color: #722ed1; border: 1px solid #d3adf7; }
 .status-tag.completed { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+.status-tag.cancelled { background: #fff1f0; color: #f5222d; border: 1px solid #ffa39e; }
 .record-body p {
   font-size: 14px;
   color: #666;

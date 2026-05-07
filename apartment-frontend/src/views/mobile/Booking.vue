@@ -17,17 +17,17 @@
       <div class="mobile-card date-card">
         <div class="date-item">
           <span class="date-label">入住日期</span>
-          <span class="date-value">2026年04月10日</span>
-          <span class="date-day">星期五</span>
+          <input type="date" v-model="startDate" class="date-input" :min="minDate" @change="validateDates">
+          <span class="date-day">{{ getDayOfWeek(startDate) }}</span>
         </div>
         <div class="date-duration">
-          <span class="duration-badge">共1晚</span>
+          <span class="duration-badge">共{{ stayDays }}晚</span>
           <div class="duration-line"></div>
         </div>
         <div class="date-item">
           <span class="date-label">退房日期</span>
-          <span class="date-value">2026年04月11日</span>
-          <span class="date-day">星期六</span>
+          <input type="date" v-model="endDate" class="date-input" :min="startDate" @change="validateDates">
+          <span class="date-day">{{ getDayOfWeek(endDate) }}</span>
         </div>
       </div>
 
@@ -35,14 +35,20 @@
 
       <!-- Room Type List -->
       <div class="room-list">
-        <div v-for="room in roomTypes" :key="room.id" class="mobile-card room-card" @click="selectRoom(room)">
-          <div class="room-img" :style="{ backgroundImage: `url(${room.image})` }"></div>
+        <div 
+          v-for="type in roomTypes" 
+          :key="type.id" 
+          class="mobile-card room-card" 
+          :class="{ selected: selectedTypeId === type.id }"
+          @click="selectedTypeId = type.id"
+        >
+          <div class="room-img" :style="{ backgroundImage: `url(${type.imageUrl || defaultRoomImage})` }"></div>
           <div class="room-info">
-            <div class="room-name">{{ room.name }}</div>
-            <div class="room-desc">{{ room.desc }}</div>
+            <div class="room-name">{{ type.nameIntl?.zh || type.typeCode }}</div>
+            <div class="room-desc">{{ type.remarks }}</div>
             <div class="room-price-row">
               <span class="price-symbol">¥</span>
-              <span class="price-value">{{ room.price }}</span>
+              <span class="price-value">{{ type.priceShortRent }}</span>
               <span class="price-unit">/晚</span>
             </div>
           </div>
@@ -56,48 +62,77 @@
       </div>
 
       <div class="bottom-action">
-        <button class="mobile-btn-primary" @click="goToRoomSelect">立即预订</button>
+        <button 
+          class="mobile-btn-primary" 
+          :disabled="!selectedTypeId || stayDays <= 0"
+          @click="goToRoomSelect"
+        >
+          立即预订
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import api from '../../utils/api';
 
 const router = useRouter();
 
-const roomTypes = ref([
-  {
-    id: 1,
-    name: '行政套房',
-    desc: '仅限副总监及以上预订',
-    price: 400,
-    image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=400'
-  },
-  {
-    id: 2,
-    name: '商务大床房',
-    desc: '',
-    price: 250,
-    image: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&q=80&w=400'
-  },
-  {
-    id: 3,
-    name: '商务双床房',
-    desc: '',
-    price: 250,
-    image: 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&q=80&w=400'
-  }
-]);
+const minDate = new Date().toISOString().split('T')[0];
+const startDate = ref(new Date().toISOString().split('T')[0]);
+const endDate = ref(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+const roomTypes = ref<any[]>([]);
+const selectedTypeId = ref<number | null>(null);
+const defaultRoomImage = 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&q=80&w=400';
 
-const selectRoom = (room: any) => {
-  console.log('Selected:', room.name);
+const stayDays = computed(() => {
+  if (!startDate.value || !endDate.value) return 0;
+  const s = new Date(startDate.value);
+  const e = new Date(endDate.value);
+  const diff = e.getTime() - s.getTime();
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return days > 0 ? days : 0;
+});
+
+const getDayOfWeek = (dateStr: string) => {
+  if (!dateStr) return '';
+  const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+  return days[new Date(dateStr).getDay()];
 };
 
+const validateDates = () => {
+  if (endDate.value <= startDate.value) {
+    const nextDay = new Date(new Date(startDate.value).getTime() + 86400000);
+    endDate.value = nextDay.toISOString().split('T')[0];
+  }
+};
+
+const fetchRoomTypes = async () => {
+  try {
+    const res = await api.get('/room-types/all') as any;
+    roomTypes.value = res;
+    if (res.length > 0) {
+      selectedTypeId.value = res[0].id;
+    }
+  } catch (e) {
+    console.error('Failed to fetch room types', e);
+  }
+};
+
+onMounted(fetchRoomTypes);
+
 const goToRoomSelect = () => {
-  router.push('/m/room-select');
+  router.push({
+    path: '/m/room-select',
+    query: {
+      start: startDate.value,
+      end: endDate.value,
+      typeId: selectedTypeId.value?.toString()
+    }
+  });
 };
 </script>
 
@@ -146,6 +181,15 @@ const goToRoomSelect = () => {
   color: #333;
 }
 
+.date-input {
+  border: none;
+  font-size: 15px;
+  font-weight: bold;
+  color: #333;
+  background: transparent;
+  width: 100%;
+}
+
 .date-day {
   font-size: 12px;
   color: var(--mobile-text-secondary);
@@ -183,6 +227,13 @@ const goToRoomSelect = () => {
   padding: 0;
   overflow: hidden;
   height: 100px;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.room-card.selected {
+  border-color: var(--mobile-primary);
+  box-shadow: 0 4px 12px rgba(var(--mobile-primary-rgb), 0.2);
 }
 
 .room-img {
