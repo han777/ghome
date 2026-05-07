@@ -18,6 +18,11 @@ public class SysManagementController {
 
     // --- Users ---
     @GetMapping("/users") public List<SysUser> getUsers() { return userRepository.findAll(); }
+    @GetMapping("/profile")
+    public SysUser getProfile() {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username).orElse(null);
+    }
     @PostMapping("/users")
     public SysUser saveUser(@RequestBody SysUser user) {
         if (user.getId() == null) {

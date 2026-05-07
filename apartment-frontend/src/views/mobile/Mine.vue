@@ -12,40 +12,40 @@
 
     <div class="content">
       <!-- Profile Card -->
-      <div class="mobile-card profile-card">
+      <div class="mobile-card profile-card" v-if="user">
         <div class="avatar-wrap">
           <div class="avatar">
             <svg viewBox="0 0 24 24" width="32" height="32" fill="#1677ff"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" /></svg>
           </div>
         </div>
-        <h2 class="user-name">黄**</h2>
-        <p class="user-phone">185*****200</p>
+        <h2 class="user-name">{{ user.realName || user.username }}</h2>
+        <p class="user-phone">{{ maskPhone(user.phone) }}</p>
       </div>
 
       <!-- Stats Grid -->
       <div class="stats-grid">
         <div class="mobile-card stat-item">
-          <div class="stat-val">2</div>
+          <div class="stat-val">{{ stats.total }}</div>
           <div class="stat-label">总预定</div>
         </div>
         <div class="mobile-card stat-item">
-          <div class="stat-val primary-text">0</div>
+          <div class="stat-val primary-text">{{ stats.pending }}</div>
           <div class="stat-label">待入住</div>
         </div>
         <div class="mobile-card stat-item">
-          <div class="stat-val">2</div>
+          <div class="stat-val">{{ stats.completed }}</div>
           <div class="stat-label">已完成</div>
         </div>
       </div>
 
       <!-- List Rows -->
-      <div class="mobile-card info-list">
+      <div class="mobile-card info-list" v-if="user">
         <div class="info-row">
           <div class="row-left">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="#999"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" /></svg>
             <span class="row-label">姓 名</span>
           </div>
-          <span class="row-val">黄**</span>
+          <span class="row-val">{{ user.realName || '-' }}</span>
         </div>
         <div class="divider"></div>
         <div class="info-row">
@@ -53,7 +53,7 @@
             <svg viewBox="0 0 24 24" width="20" height="20" fill="#999"><path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z" /></svg>
             <span class="row-label">手机号</span>
           </div>
-          <span class="row-val">185*****200</span>
+          <span class="row-val">{{ user.phone || '-' }}</span>
         </div>
       </div>
 
@@ -65,13 +65,56 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import api from '../../utils/api';
+
 const router = useRouter();
+const user = ref<any>(null);
+const stats = ref({
+  total: 0,
+  pending: 0,
+  completed: 0
+});
+
+const fetchProfile = async () => {
+  try {
+    user.value = await api.get('/sys/profile');
+  } catch (e) {
+    console.error('Failed to fetch profile', e);
+  }
+};
+
+const fetchStats = async () => {
+  try {
+    const orders = await api.get('/orders/all') as any[];
+    // Filter by current user
+    const myOrders = orders.filter(o => o.user?.username === user.value?.username);
+    
+    stats.value = {
+      total: myOrders.length,
+      pending: myOrders.filter(o => [0, 1].includes(o.status)).length, // Cooling-off or Pending
+      completed: myOrders.filter(o => o.status === 3).length // Out
+    };
+  } catch (e) {
+    console.error('Failed to fetch stats', e);
+  }
+};
+
+const maskPhone = (phone: string) => {
+  if (!phone) return '-';
+  return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+};
 
 const handleLogout = () => {
   localStorage.removeItem('token');
   router.push('/m/auth');
 };
+
+onMounted(async () => {
+  await fetchProfile();
+  await fetchStats();
+});
 </script>
 
 <style scoped>
