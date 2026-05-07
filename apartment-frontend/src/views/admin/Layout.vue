@@ -3,67 +3,30 @@
     <aside class="sidebar">
       <div class="logo">
         <span class="logo-icon">🏢</span>
-        <span class="logo-text">Genesis Admin</span>
+        <span class="logo-text">G-HOME Admin</span>
       </div>
-      <nav class="nav-menu">
-        <router-link to="/admin/dashboard" class="nav-item">
-          <span class="icon">📊</span>
-          <span class="text">房态仪表盘</span>
-        </router-link>
-        <router-link to="/admin/rooms" class="nav-item">
-          <span class="icon">🏠</span>
-          <span class="text">房间管理</span>
-        </router-link>
-        <router-link to="/admin/orders" class="nav-item">
-          <span class="icon">📝</span>
-          <span class="text">订单管理</span>
-        </router-link>
-        <router-link to="/admin/buildings" class="nav-item">
-          <span class="icon">🏘️</span>
-          <span class="text">楼栋管理</span>
-        </router-link>
-        <router-link to="/admin/room-types" class="nav-item">
-          <span class="icon">🛌</span>
-          <span class="text">房型价格</span>
-        </router-link>
-        <router-link to="/admin/product-prices" class="nav-item">
-          <span class="icon">🏷️</span>
-          <span class="text">商品服务价格</span>
-        </router-link>
-        <router-link to="/admin/gantt" class="nav-item">
-          <span class="icon">📅</span>
-          <span class="text">线性房态</span>
-        </router-link>
-        <router-link to="/admin/maintenances" class="nav-item">
-          <span class="icon">🔧</span>
-          <span class="text">维修管理</span>
-        </router-link>
-        <router-link to="/admin/reports" class="nav-item">
-          <span class="icon">📈</span>
-          <span class="text">财务报表</span>
-        </router-link>
-        <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 8px 16px;"></div>
-        <router-link to="/admin/accounts" class="nav-item">
-          <span class="icon">👤</span>
-          <span class="text">用户管理</span>
-        </router-link>
-        <router-link to="/admin/roles" class="nav-item">
-          <span class="icon">🛡️</span>
-          <span class="text">角色管理</span>
-        </router-link>
-        <router-link to="/admin/menus" class="nav-item">
-          <span class="icon">📜</span>
-          <span class="text">菜单管理</span>
-        </router-link>
-        <router-link to="/admin/dicts" class="nav-item">
-          <span class="icon">📖</span>
-          <span class="text">字典管理</span>
-        </router-link>
-        <router-link to="/admin/depts" class="nav-item">
-          <span class="icon">🏢</span>
-          <span class="text">部门管理</span>
-        </router-link>
-      </nav>
+      <div class="nav-menu">
+        <div v-for="group in menuGroups" :key="group.title" class="menu-group">
+          <div class="group-header" @click="toggleGroup(group.title)">
+            <span class="icon">{{ group.icon }}</span>
+            <span class="text">{{ group.title }}</span>
+            <span class="arrow" :class="{ 'is-expanded': isExpanded(group.title) }">▼</span>
+          </div>
+          <transition name="expand">
+            <div v-show="isExpanded(group.title)" class="group-items">
+              <router-link 
+                v-for="item in group.items" 
+                :key="item.path" 
+                :to="item.path" 
+                class="nav-item"
+              >
+                <span class="icon">{{ item.icon }}</span>
+                <span class="text">{{ item.name }}</span>
+              </router-link>
+            </div>
+          </transition>
+        </div>
+      </div>
       <div class="user-info">
         <div class="avatar">A</div>
         <div class="details">
@@ -85,11 +48,59 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
 const router = useRouter();
+
+const menuGroups = [
+  {
+    title: '客房业务',
+    icon: '🏨',
+    items: [
+      { name: '房态仪表盘', path: '/admin/dashboard', icon: '📊' },
+      { name: '订单管理', path: '/admin/orders', icon: '📝' },
+      { name: '维修管理', path: '/admin/maintenances', icon: '🔧' },
+      { name: '线性房态', path: '/admin/gantt', icon: '📅' },
+      { name: '财务报表', path: '/admin/reports', icon: '📈' },
+    ]
+  },
+  {
+    title: '数据管理',
+    icon: '📊',
+    items: [
+      { name: '楼栋管理', path: '/admin/buildings', icon: '🏘️' },
+      { name: '房型价格', path: '/admin/room-types', icon: '🛌' },
+      { name: '房间列表', path: '/admin/rooms', icon: '🏠' },
+      { name: '商品服务价格', path: '/admin/product-prices', icon: '🏷️' },
+    ]
+  },
+  {
+    title: '系统管理',
+    icon: '⚙️',
+    items: [
+      { name: '用户管理', path: '/admin/accounts', icon: '👤' },
+      { name: '角色管理', path: '/admin/roles', icon: '🛡️' },
+      { name: '字典管理', path: '/admin/dicts', icon: '📖' },
+      { name: '菜单管理', path: '/admin/menus', icon: '📜' },
+      { name: '部门管理', path: '/admin/depts', icon: '🏢' },
+    ]
+  }
+];
+
+const expandedGroups = ref(menuGroups.map(g => g.title));
+
+const toggleGroup = (title: string) => {
+  const index = expandedGroups.value.indexOf(title);
+  if (index > -1) {
+    expandedGroups.value.splice(index, 1);
+  } else {
+    expandedGroups.value.push(title);
+  }
+};
+
+const isExpanded = (title: string) => expandedGroups.value.includes(title);
 
 const titles: Record<string, string> = {
   'Dashboard': '房态仪表盘',
@@ -101,7 +112,7 @@ const titles: Record<string, string> = {
   'Rooms': '房间管理',
   'Orders': '订单管理',
   'Buildings': '楼栋管理',
-  'RoomTypes': '房型管理',
+  'RoomTypes': '房型价格',
   'Gantt': '线性房态',
   'Maintenances': '维修管理',
   'Reports': '财务报表',
@@ -120,7 +131,9 @@ const logout = () => {
 .admin-layout {
   display: flex;
   height: 100vh;
+  width: 100vw;
   background-color: #f8fafc;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -130,15 +143,17 @@ const logout = () => {
   color: #fff;
   display: flex;
   flex-direction: column;
-  padding: 20px 0;
+  padding: 0;
   box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+  height: 100%;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  margin-bottom: 40px;
+  padding: 24px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
 .logo-icon {
@@ -157,18 +172,65 @@ const logout = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 0 12px;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.menu-group {
+  margin-bottom: 4px;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 24px;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.group-header:hover {
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+}
+
+.group-header .icon {
+  margin-right: 12px;
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+}
+
+.group-header .text {
+  flex: 1;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.group-header .arrow {
+  font-size: 10px;
+  transition: transform 0.3s ease;
+  opacity: 0.5;
+}
+
+.group-header .arrow.is-expanded {
+  transform: rotate(180deg);
+}
+
+.group-items {
+  background: rgba(0,0,0,0.1);
+  overflow: hidden;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
-  border-radius: 8px;
+  padding: 10px 24px 10px 52px;
   color: #94a3b8;
   text-decoration: none;
   transition: all 0.3s ease;
+  font-size: 14px;
 }
 
 .nav-item:hover {
@@ -179,28 +241,24 @@ const logout = () => {
 .nav-item.router-link-active {
   background: #38bdf8;
   color: #fff;
-  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+  box-shadow: inset 4px 0 0 #fff;
 }
 
 .nav-item .icon {
-  font-size: 18px;
   margin-right: 12px;
-  width: 24px;
+  font-size: 16px;
+  width: 20px;
   text-align: center;
-}
-
-.nav-item .text {
-  font-size: 15px;
-  font-weight: 500;
 }
 
 .user-info {
   margin-top: auto;
-  padding: 20px 16px;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  padding: 20px 24px;
+  border-top: 1px solid rgba(255,255,255,0.05);
   display: flex;
   align-items: center;
   gap: 12px;
+  background: rgba(0,0,0,0.2);
 }
 
 .avatar {
@@ -219,6 +277,7 @@ const logout = () => {
   font-size: 14px;
   font-weight: 600;
   margin: 0;
+  color: #fff;
 }
 
 .details .role {
@@ -256,6 +315,7 @@ const logout = () => {
   display: flex;
   align-items: center;
   padding: 0 32px;
+  flex-shrink: 0;
 }
 
 .top-header h1 {
@@ -268,5 +328,18 @@ const logout = () => {
   flex: 1;
   padding: 32px;
   overflow-y: auto;
+}
+
+/* Accordion Transition */
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s ease-in-out;
+  max-height: 500px;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  max-height: 0;
+  opacity: 0;
 }
 </style>
