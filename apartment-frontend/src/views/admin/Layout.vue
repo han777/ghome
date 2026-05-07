@@ -176,6 +176,13 @@ const logout = () => {
   flex-direction: column;
   padding: 0;
   overflow-y: auto;
+  /* Hide scrollbar but keep functionality */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.nav-menu::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 
 .menu-group {
@@ -336,7 +343,7 @@ const logout = () => {
 .expand-enter-active,
 .expand-leave-active {
   transition: all 0.3s ease-in-out;
-  max-height: 500px;
+  max-height: 1000px;
 }
 
 .expand-enter-from,
