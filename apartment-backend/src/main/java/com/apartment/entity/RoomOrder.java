@@ -29,9 +29,9 @@ public class RoomOrder {
     private LocalDateTime endDate;
 
     private Integer status = 0; // 0: Cooling-off, 1: Pending, 2: In, 3: Out, 4: Canceled
-    private BigDecimal totalAmount;
-    private BigDecimal roomFee;
-    private BigDecimal serviceFee;
+    private BigDecimal totalAmount = BigDecimal.ZERO;
+    private BigDecimal roomFee = BigDecimal.ZERO;
+    private BigDecimal serviceFee = BigDecimal.ZERO;
     @ManyToOne
     @JoinColumn(name = "book_user_id")
     private SysUser booker;

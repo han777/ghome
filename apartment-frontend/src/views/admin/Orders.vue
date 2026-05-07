@@ -78,7 +78,7 @@
             </td>
             <td class="actions">
               <button class="edit-btn" @click="sendCode(order.id)" v-if="order.status === 1 || order.status === 2">Send Code</button>
-              <button class="edit-btn" @click="openModal(order)">Edit</button>
+              <button class="edit-btn" @click="openModal(order)">Detail</button>
               <button class="delete-btn" @click="cancelOrder(order.id)" v-if="order.status < 3">Cancel</button>
             </td>
           </tr>
@@ -168,7 +168,7 @@
 
               <div class="form-item">
                 <label>Created At</label>
-                <input type="datetime-local" v-model="form.createdAt">
+                <input type="datetime-local" v-model="form.createdAt" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
               </div>
             </div>
           </section>

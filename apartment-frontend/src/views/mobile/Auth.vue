@@ -55,12 +55,15 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 const router = useRouter();
+const route = useRoute();
 
 const handleLogin = () => {
+  // In a real app, you'd verify the phone/code here
   localStorage.setItem('token', 'mock-token');
-  router.push('/m/booking');
+  const redirect = route.query.redirect as string;
+  router.push(redirect || '/m/booking');
 };
 </script>
 

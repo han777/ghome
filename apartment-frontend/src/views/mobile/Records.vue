@@ -17,7 +17,7 @@
             <p>房号：{{ record.roomNo }}</p>
           </div>
           <div class="record-footer">
-            <span class="total-price">¥ {{ record.totalAmount?.toFixed(2) }}</span>
+            <span class="total-price">¥ {{ (record.totalAmount || 0).toFixed(2) }}</span>
             <button class="mobile-btn-outline small" @click="goToDetail(record)">查看详情</button>
           </div>
         </div>

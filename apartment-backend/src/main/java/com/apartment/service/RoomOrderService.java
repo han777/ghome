@@ -105,6 +105,36 @@ public class RoomOrderService {
             }
         }
 
+        // 5. Calculate Prices if not set
+        if (order.getTotalAmount() == null || order.getTotalAmount().compareTo(BigDecimal.ZERO) == 0) {
+            calculatePrices(order);
+        }
+    }
+
+    public void calculatePrices(RoomOrder order) {
+        BigDecimal totalRoomFee = BigDecimal.ZERO;
+        long days = java.time.temporal.ChronoUnit.DAYS.between(order.getStartDate(), order.getEndDate());
+        if (days <= 0) days = 1;
+
+        if (order.getRoomOccupies() != null) {
+            for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
+                com.apartment.entity.Room room = occupy.getRoom();
+                if (room != null && (room.getRoomType() == null)) {
+                    room = roomRepository.findById(room.getId()).orElse(room);
+                }
+                if (room != null && room.getRoomType() != null) {
+                    BigDecimal price = (order.getBizType() != null && order.getBizType() == 2) ? 
+                        room.getRoomType().getPriceLongRent() : 
+                        room.getRoomType().getPriceShortRent();
+                    if (price != null) {
+                        totalRoomFee = totalRoomFee.add(price.multiply(new BigDecimal(days)));
+                    }
+                }
+            }
+        }
+        order.setRoomFee(totalRoomFee);
+        if (order.getServiceFee() == null) order.setServiceFee(BigDecimal.ZERO);
+        order.setTotalAmount(totalRoomFee.add(order.getServiceFee()));
     }
 
     @Transactional

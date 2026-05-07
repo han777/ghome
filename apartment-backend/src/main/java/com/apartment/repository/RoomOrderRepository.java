@@ -32,4 +32,6 @@ public interface RoomOrderRepository extends JpaRepository<RoomOrder, Long> {
     
     @Query(value = "SELECT nextval('room_order_no_seq')", nativeQuery = true)
     Long getNextOrderSeq();
+
+    java.util.List<RoomOrder> findByUserIdAndStatus(Long userId, Integer status);
 }

@@ -98,7 +98,7 @@
     <div class="bottom-bar">
       <div class="bar-total">
         <div class="total-label">合计</div>
-        <div class="total-price">¥ {{ order.totalAmount?.toFixed(2) }}</div>
+        <div class="total-price">¥ {{ (order.totalAmount || 0).toFixed(2) }}</div>
       </div>
       <button class="bar-btn cancel" @click="cancelOrder">取消订单</button>
       <button class="bar-btn submit" :disabled="isExpired" @click="submitOrder">提交订单</button>
@@ -219,12 +219,12 @@ const cancelOrder = async () => {
 
 const submitOrder = async () => {
   try {
-    // Update order status and companions
-    const updatedOrder = { ...order.value };
+    const updatedOrder = JSON.parse(JSON.stringify(order.value));
     updatedOrder.status = 1; // Pending
-    if (updatedOrder.roomOccupies?.[0]) {
+    if (updatedOrder.roomOccupies && updatedOrder.roomOccupies[0]) {
       updatedOrder.roomOccupies[0].coOccupants = companions.value.join(',');
-      updatedOrder.roomOccupies[0].order = { id: orderId }; // Avoid recursion if backend isn't careful
+      // Clean up to avoid recursion issues if any, but keep ID for mapping
+      updatedOrder.roomOccupies[0].order = { id: Number(orderId) };
     }
     
     await api.post('/orders', updatedOrder);

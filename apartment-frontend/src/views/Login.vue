@@ -26,10 +26,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import api from '../utils/api';
 
 const router = useRouter();
+const route = useRoute();
 const username = ref('admin');
 const password = ref('admin');
 const loading = ref(false);
@@ -47,7 +48,8 @@ const handleLogin = async () => {
     
     if (res.token) {
       localStorage.setItem('token', res.token);
-      router.push('/admin');
+      const redirect = route.query.redirect as string;
+      router.push(redirect || '/admin');
     }
   } catch (e: any) {
     error.value = e.response?.data?.message || 'Invalid username or password';

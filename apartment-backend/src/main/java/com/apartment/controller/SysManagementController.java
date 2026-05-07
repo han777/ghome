@@ -26,7 +26,7 @@ public class SysManagementController {
     @PostMapping("/users")
     public SysUser saveUser(@RequestBody SysUser user) {
         if (user.getId() == null) {
-            user.setPassword(passwordEncoder.encode("123456")); // Default password for new users
+            user.setPassword(passwordEncoder.encode("password123")); // Default password for new users
         } else {
             SysUser existing = userRepository.findById(user.getId()).orElse(null);
             if (existing != null && (user.getPassword() == null || user.getPassword().isEmpty())) {
@@ -34,6 +34,13 @@ public class SysManagementController {
             }
         }
         return userRepository.save(user);
+    }
+
+    @PostMapping("/users/{id}/password")
+    public void changePassword(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+        SysUser user = userRepository.findById(id).orElseThrow();
+        user.setPassword(passwordEncoder.encode(body.get("password")));
+        userRepository.save(user);
     }
     @DeleteMapping("/users/{id}")
     public void deleteUser(@PathVariable Long id) { userRepository.deleteById(id); }

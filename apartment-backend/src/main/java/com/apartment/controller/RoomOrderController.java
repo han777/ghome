@@ -27,6 +27,13 @@ public class RoomOrderController {
     public RoomOrder saveOrder(@RequestBody RoomOrder order) {
         String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         userRepository.findByUsername(username).ifPresent(u -> {
+            // If creating a new order in status 0 (Cooling-off), delete existing ones for this user
+            if (order.getId() == null && order.getStatus() != null && order.getStatus() == 0) {
+                java.util.List<RoomOrder> existing = orderRepository.findByUserIdAndStatus(u.getId(), 0);
+                if (!existing.isEmpty()) {
+                    orderRepository.deleteAll(existing);
+                }
+            }
             order.setUser(u);
             if (order.getRoomOccupies() != null) {
                 order.getRoomOccupies().forEach(occupy -> {

@@ -117,7 +117,6 @@ const confirmSelection = async () => {
       endDate: endDT,
       bizType: 1, // Short term
       status: 0,  // Cooling-off (犹豫期)
-      createdAt: new Date().toISOString().slice(0, 16),
       roomOccupies: [
         {
           room: { id: selectedRoomId.value },

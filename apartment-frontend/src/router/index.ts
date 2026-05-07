@@ -95,6 +95,7 @@ const router = createRouter({
             path: '/m',
             component: () => import('../views/mobile/MobileLayout.vue'),
             redirect: '/m/booking',
+            meta: { requiresAuth: true },
             children: [
                 {
                     path: 'booking',
@@ -131,7 +132,8 @@ const router = createRouter({
         {
             path: '/m/order-detail/:id',
             name: 'MobileOrderDetail',
-            component: () => import('../views/mobile/OrderDetail.vue')
+            component: () => import('../views/mobile/OrderDetail.vue'),
+            meta: { requiresAuth: true }
         }
     ]
 })
@@ -139,7 +141,8 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
     const token = localStorage.getItem('token')
     if (to.meta.requiresAuth && !token) {
-        next('/login')
+        const loginPath = to.path.startsWith('/m/') ? '/m/auth' : '/login'
+        next({ path: loginPath, query: { redirect: to.fullPath } })
     } else {
         next()
     }

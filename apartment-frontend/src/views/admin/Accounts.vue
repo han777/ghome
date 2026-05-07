@@ -12,6 +12,7 @@
           <tr>
             <th>Username</th>
             <th>Real Name</th>
+            <th>Email</th>
             <th>Phone</th>
             <th>Status</th>
             <th>Actions</th>
@@ -21,6 +22,7 @@
           <tr v-for="user in users" :key="user.id">
             <td class="name">{{ user.username }}</td>
             <td>{{ user.realName }}</td>
+            <td>{{ user.email || '-' }}</td>
             <td>{{ user.phone || '-' }}</td>
             <td>
               <span class="status-badge" :class="{ active: user.status === 1 }">
@@ -29,6 +31,7 @@
             </td>
             <td class="actions">
               <button class="edit-btn" @click="openModal(user)">Edit</button>
+              <button class="edit-btn" style="background-color: #f59e0b; color: white; border-color: #f59e0b;" @click="promptChangePassword(user)">Password</button>
               <button class="delete-btn" @click="deleteUser(user.id)">Delete</button>
             </td>
           </tr>
@@ -52,6 +55,10 @@
             <div class="form-item">
               <label>Real Name</label>
               <input v-model="form.realName">
+            </div>
+            <div class="form-item">
+              <label>Email</label>
+              <input v-model="form.email" type="email">
             </div>
             <div class="form-item">
               <label>Phone</label>
@@ -85,9 +92,22 @@ const form = reactive<any>({
   id: null,
   username: '',
   realName: '',
+  email: '',
   phone: '',
   status: 1
 });
+
+const promptChangePassword = async (user: any) => {
+  const newPass = prompt(`Enter new password for ${user.username}:`, 'password123');
+  if (newPass) {
+    try {
+      await api.post(`/sys/users/${user.id}/password`, { password: newPass });
+      alert('Password updated successfully');
+    } catch (e) {
+      alert('Failed to update password');
+    }
+  }
+};
 
 const fetchUsers = async () => {
   try {
@@ -102,7 +122,7 @@ const openModal = (user?: any) => {
   if (user) {
     Object.assign(form, user);
   } else {
-    Object.assign(form, { id: null, username: '', realName: '', phone: '', status: 1 });
+    Object.assign(form, { id: null, username: '', realName: '', email: '', phone: '', status: 1 });
   }
   showModal.value = true;
 };
