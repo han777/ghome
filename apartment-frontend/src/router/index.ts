@@ -60,6 +60,11 @@ const router = createRouter({
                     component: () => import('../views/admin/Orders.vue')
                 },
                 {
+                    path: 'history-orders',
+                    name: 'HistoryOrders',
+                    component: () => import('../views/admin/HistoryOrders.vue')
+                },
+                {
                     path: 'buildings',
                     name: 'Buildings',
                     component: () => import('../views/admin/Buildings.vue')

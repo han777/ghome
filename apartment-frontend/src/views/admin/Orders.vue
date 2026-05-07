@@ -2,8 +2,9 @@
   <div class="admin-page">
     <div class="page-header">
       <div class="search-bar">
-        <input v-model="searchQuery" type="text" placeholder="Search orders by name...">
+        <input v-model="searchQuery" type="text" placeholder="搜索订房人、创建人、入住人...">
       </div>
+      <button class="refresh-btn" @click="fetchData" title="Refresh">🔄 Refresh</button>
       <button class="add-btn" @click="openModal()">+ New Order</button>
     </div>
 
@@ -23,6 +24,12 @@
         >
           🛫 Today Departure
         </button>
+      </div>
+      <div class="status-filters">
+        <label v-for="opt in getDictOptions('ORDER_STATUS')" :key="opt.value" class="filter-checkbox">
+          <input type="checkbox" :value="parseInt(opt.value)" v-model="statusFilter">
+          {{ opt.label }}
+        </label>
       </div>
     </div>
     
@@ -169,6 +176,10 @@
               <div class="form-item">
                 <label>Created At</label>
                 <input type="datetime-local" v-model="form.createdAt" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
+              </div>
+              <div class="form-item">
+                <label>Creator</label>
+                <input :value="form.user?.realName || form.user?.username || 'System'" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
               </div>
             </div>
           </section>
@@ -466,6 +477,7 @@ const isMaximized = ref(false);
 const searchQuery = ref('');
 const filterTodayArrival = ref(false);
 const filterTodayDeparture = ref(false);
+const statusFilter = ref<number[]>([1, 2]); // Default: Pending (1), In (2)
 const showChangeRoomModal = ref(false);
 const changingOccupy = ref<any>(null);
 const changeRoomNewRoomId = ref<number | null>(null);
@@ -511,7 +523,10 @@ const fetchData = async () => {
       api.get('/product-prices/all'),
       api.get('/room-types/all')
     ]) as any[];
-    orders.value = orderRes;
+    // Sort by latest first
+    orders.value = (orderRes || []).sort((a: any, b: any) => 
+       new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
     dicts.value = dictRes;
     users.value = userRes;
     rooms.value = roomRes;
@@ -554,16 +569,28 @@ const filteredOrders = computed(() => {
   if (!Array.isArray(orders.value)) return [];
   return orders.value.filter(o => {
     // Search filter
-    const name = o.user?.realName || o.user?.username || o.customerName || '';
-    const matchSearch = !searchQuery.value || name.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const q = searchQuery.value.toLowerCase();
+    const bookerName = o.booker?.realName?.toLowerCase() || '';
+    const creatorName = o.user?.realName?.toLowerCase() || o.user?.username?.toLowerCase() || '';
+    const occupants = o.roomOccupies?.map((ro: any) => 
+      (ro.occupantUser?.realName || ro.coOccupants || '').toLowerCase()
+    ).join(' ') || '';
+    
+    const matchSearch = !q || 
+      bookerName.includes(q) || 
+      creatorName.includes(q) || 
+      occupants.includes(q);
+    
+    // Status filter
+    const matchStatus = statusFilter.value.length === 0 || statusFilter.value.includes(o.status);
     
     // Today Arrival filter
-    const matchArrival = !filterTodayArrival.value || o.startDate === today;
+    const matchArrival = !filterTodayArrival.value || o.startDate?.split('T')[0] === today;
     
     // Today Departure filter
-    const matchDeparture = !filterTodayDeparture.value || o.endDate === today;
+    const matchDeparture = !filterTodayDeparture.value || o.endDate?.split('T')[0] === today;
     
-    return matchSearch && matchArrival && matchDeparture;
+    return matchSearch && matchStatus && matchArrival && matchDeparture;
   });
 });
 
@@ -919,7 +946,51 @@ onMounted(fetchData);
 .occupied { background: #fef9c3; color: #854d0e; }
 .repair { background: #fee2e2; color: #991b1b; }
 
-.filter-row { margin-bottom: -12px; }
+.refresh-btn {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.refresh-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.status-filters {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-left: auto;
+  padding: 10px;
+}
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  user-select: none;
+}
+.filter-checkbox input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.filter-row { margin-bottom: -12px; display: flex; align-items: center; }
 .quick-filters { display: flex; gap: 10px; }
 .filter-chip {
   padding: 6px 12px;
