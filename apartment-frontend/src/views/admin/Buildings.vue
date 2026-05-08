@@ -11,10 +11,10 @@
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Building Name</th>
-            <th>Description</th>
+            <th>楼栋名称</th>
+            <th>描述</th>
             <th>Floors</th>
-            <th>Actions</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -30,8 +30,8 @@
               </div>
             </td>
             <td class="actions">
-              <button class="edit-btn" @click="openModal(b)">Edit</button>
-              <button class="delete-btn" @click="deleteBuilding(b.id)">Delete</button>
+              <button class="edit-btn" @click="openModal(b)">编辑</button>
+              <button class="delete-btn" @click="deleteBuilding(b.id)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -48,11 +48,11 @@
         <div class="modal-body">
           <form class="admin-form">
             <div class="form-item">
-              <label>Building Name</label>
+              <label>楼栋名称</label>
               <input v-model="form.name" required>
             </div>
             <div class="form-item">
-              <label>Description</label>
+              <label>描述</label>
               <textarea v-model="form.description"></textarea>
             </div>
             <div class="form-item" v-if="form.id">
@@ -66,8 +66,8 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">Cancel</button>
-          <button class="save-btn" @click="saveBuilding">Save Changes</button>
+          <button class="cancel-btn" @click="showModal = false">取消</button>
+          <button class="save-btn" @click="saveBuilding">保存更改</button>
         </div>
       </div>
     </div>

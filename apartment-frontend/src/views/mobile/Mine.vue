@@ -4,7 +4,7 @@
       <div class="header-left" @click="router.back()">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
       </div>
-      <div class="mobile-header-title">我的</div>
+      <div class="mobile-header-title">{{ $t('mine.title2') }}</div>
       <div class="header-right">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z" /></svg>
       </div>
@@ -26,15 +26,15 @@
       <div class="stats-grid">
         <div class="mobile-card stat-item">
           <div class="stat-val">{{ stats.total }}</div>
-          <div class="stat-label">总预定</div>
+          <div class="stat-label">{{ $t('mine.totalBookings') }}</div>
         </div>
         <div class="mobile-card stat-item">
           <div class="stat-val primary-text">{{ stats.pending }}</div>
-          <div class="stat-label">待入住</div>
+          <div class="stat-label">{{ $t('mine.pendingCheckIn') }}</div>
         </div>
         <div class="mobile-card stat-item">
           <div class="stat-val">{{ stats.completed }}</div>
-          <div class="stat-label">已完成</div>
+          <div class="stat-label">{{ $t('mine.completed') }}</div>
         </div>
       </div>
 
@@ -43,7 +43,7 @@
         <div class="info-row">
           <div class="row-left">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="#999"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" /></svg>
-            <span class="row-label">姓 名</span>
+            <span class="row-label">{{ $t('mine.nameLabel') }}</span>
           </div>
           <span class="row-val">{{ user.realName || '-' }}</span>
         </div>
@@ -51,25 +51,47 @@
         <div class="info-row">
           <div class="row-left">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="#999"><path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z" /></svg>
-            <span class="row-label">手机号</span>
+            <span class="row-label">{{ $t('mine.phoneLabel') }}</span>
           </div>
           <span class="row-val">{{ user.phone || '-' }}</span>
+        </div>
+        <div class="divider"></div>
+        <div class="info-row lang-row" @click="toggleLanguage">
+          <div class="row-left">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="#999"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+            <span class="row-label">{{ $t('mine.language') }}</span>
+          </div>
+          <div class="lang-toggle">
+            <span class="lang-pill" :class="{ 'lang-active': locale === 'zh' }">中</span>
+            <span class="lang-pill" :class="{ 'lang-active': locale === 'en' }">EN</span>
+          </div>
         </div>
       </div>
 
       <div class="logout-wrap">
-        <button class="mobile-btn-outline" @click="handleLogout">退出登录</button>
+        <button class="mobile-btn-outline" @click="handleLogout">{{ $t('mine.logout') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+
+
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../../utils/api';
 
 const router = useRouter();
+const { locale } = useI18n();
+
+
+const toggleLanguage = () => {
+  locale.value = locale.value === 'zh' ? 'en' : 'zh';
+  localStorage.setItem('locale', locale.value);
+};
+
 const user = ref<any>(null);
 const stats = ref({
   total: 0,
@@ -214,5 +236,31 @@ onMounted(async () => {
 
 .logout-wrap {
   padding: 24px 16px;
+}
+
+.lang-row {
+  cursor: pointer;
+  user-select: none;
+}
+
+.lang-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lang-pill {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: #f0f0f0;
+  color: #888;
+  transition: all 0.25s ease;
+}
+
+.lang-pill.lang-active {
+  background: #1677ff;
+  color: #fff;
 }
 </style>

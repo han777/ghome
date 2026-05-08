@@ -4,7 +4,7 @@
       <div class="header-left" @click="router.back()">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
       </div>
-      <div class="mobile-header-title">订单详情</div>
+      <div class="mobile-header-title">{{ $t('orderDetail.title') }}</div>
     </header>
 
     <!-- Status Banner -->
@@ -21,12 +21,12 @@
       <div class="mobile-card key-card" v-if="order.doorCode || order.roomOccupies?.[0]?.doorCode">
         <div class="card-header-row">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="#1677ff"><path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z" /></svg>
-          <span class="card-title-small">入住密码</span>
+          <span class="card-title-small">{{ $t('orderDetail.doorPassword') }}</span>
         </div>
         <div class="key-display">
           {{ order.doorCode || order.roomOccupies?.[0]?.doorCode }}
         </div>
-        <div class="key-expiry">生效日期：{{ formatDate(order.startDate, true) }}</div>
+        <div class="key-expiry">{{ $t('orderDetail.effectiveDate') }}{{ formatDate(order.startDate, true) }}</div>
       </div>
 
       <!-- Stay Info Card -->
@@ -34,33 +34,33 @@
         <div class="info-item">
           <div class="info-label-row">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="#999"><path d="M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3H18V1M17,12H12V17H17V12Z" /></svg>
-            <span class="info-label">入住时间</span>
+            <span class="info-label">{{ $t('booking.checkIn') }}</span>
           </div>
           <div class="info-value-row">
             <span class="info-date">{{ formatDate(order.startDate) }}</span>
             <span class="info-weekday">{{ getDayOfWeek(order.startDate) }}</span>
-            <span class="info-time">14:00后</span>
+            <span class="info-time">{{ $t('orderDetail.after14') }}</span>
           </div>
         </div>
         <div class="info-item">
           <div class="info-label-row">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="#999"><path d="M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3H18V1M17,12H12V17H17V12Z" /></svg>
-            <span class="info-label">退房时间</span>
+            <span class="info-label">{{ $t('booking.checkOut') }}</span>
           </div>
           <div class="info-value-row">
             <span class="info-date">{{ formatDate(order.endDate) }}</span>
             <span class="info-weekday">{{ getDayOfWeek(order.endDate) }}</span>
-            <span class="info-time">12:00前</span>
+            <span class="info-time">{{ $t('orderDetail.before12') }}</span>
           </div>
         </div>
         <div class="divider"></div>
         <div class="info-row-grid">
           <div class="grid-item">
-            <div class="grid-label">房型</div>
+            <div class="grid-label">{{ $t('booking.roomType') }}</div>
             <div class="grid-value">{{ roomTypeName }}</div>
           </div>
           <div class="grid-item align-right">
-            <div class="grid-label">房间号</div>
+            <div class="grid-label">{{ $t('confirm.roomNo') }}</div>
             <div class="grid-value primary-text">{{ roomNo }}</div>
           </div>
         </div>
@@ -70,12 +70,12 @@
       <div class="mobile-card occupant-card">
         <div class="card-header-row">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="#999"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" /></svg>
-          <span class="card-title">入住人信息</span>
+          <span class="card-title">{{ $t('confirm.occupantInfo') }}</span>
         </div>
         <div class="occupant-list">
           <div class="occupant-row">
-            <span class="occ-name">{{ order.user?.realName || order.user?.username || '当前用户' }}</span>
-            <span class="occ-tag">本人</span>
+            <span class="occ-name">{{ order.user?.realName || order.user?.username || t('confirm.currentUser') }}</span>
+            <span class="occ-tag">{{ $t('orderDetail.myself') }}</span>
           </div>
           <div v-for="(name, index) in companions" :key="index" class="occupant-row">
             <span class="occ-name">{{ name }}</span>
@@ -87,37 +87,37 @@
       <div class="mobile-card price-card">
         <div class="card-header-row">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="#999"><path d="M21,18V19A2,2 0 0,1 19,21H5C3.89,21 3,20.1 3,19V5A2,2 0 0,1 5,3H19A2,2 0 0,1 21,5V6H12C10.89,6 10,6.9 10,8V16A2,2 0 0,0 12,18H21M12,16H22V8H12V16M16,13.5A1.5,1.5 0 0,1 14.5,12A1.5,1.5 0 0,1 16,10.5A1.5,1.5 0 0,1 17.5,12A1.5,1.5 0 0,1 16,13.5Z" /></svg>
-          <span class="card-title">费用明细</span>
+          <span class="card-title">{{ $t('confirm.payment') }}</span>
         </div>
         <div class="price-detail-list">
           <div class="price-detail-row">
-            <span class="detail-label">房费（¥ {{ roomPrice }}/晚 × {{ stayDays }}晚）</span>
+            <span class="detail-label">{{ $t('confirm.roomCharge') }}{{ $t('confirm.perNightMath', { price: roomPrice, days: stayDays }) }}</span>
             <span class="detail-value">¥ {{ (roomPrice * stayDays).toFixed(2) }}</span>
           </div>
           <div v-for="fee in extraFees" :key="fee.id" class="price-detail-row">
-            <span class="detail-label">{{ fee.remarks || '其他费用' }}</span>
+            <span class="detail-label">{{ fee.remarks || t('orderDetail.otherFee') }}</span>
             <span class="detail-value">¥ {{ fee.amount.toFixed(2) }}</span>
           </div>
         </div>
         <div class="divider"></div>
         <div class="total-row">
-          <span class="total-label">合计</span>
+          <span class="total-label">{{ $t('orderDetail.totalLabel') }}</span>
           <span class="total-value">¥ {{ order.totalAmount?.toFixed(2) }}</span>
         </div>
       </div>
 
       <div class="policy-notes">
-        <p>财务统一结算，无需个人垫付、报销</p>
-        <p>取消预订：须于入住日前1天24:00前操作</p>
-        <p>提前退房：须于实际退房日前1天24:00前操作</p>
+        <p>{{ $t('orderDetail.financeNote') }}</p>
+        <p>{{ $t('orderDetail.cancelRule') }}</p>
+        <p>{{ $t('orderDetail.checkoutRule') }}</p>
       </div>
     </div>
 
     <!-- Bottom Actions -->
     <div class="bottom-actions">
       <template v-if="order.status === 0">
-        <button class="action-btn primary" @click="submitOrder">提交订单</button>
-        <button class="action-btn" @click="cancelBooking">取消预订</button>
+        <button class="action-btn primary" @click="submitOrder">{{ $t('confirm.submit') }}</button>
+        <button class="action-btn" @click="cancelBooking">{{ $t('orderDetail.cancelBtn') }}</button>
       </template>
       <template v-else>
         <button 
@@ -125,29 +125,31 @@
           :disabled="order.status !== 2"
           @click="earlyCheckOut"
         >
-          提前退房
+          {{ $t('orderDetail.earlyCheckoutBtn') }}
         </button>
         <button 
           class="action-btn" 
           :disabled="![0, 1].includes(order.status)"
           @click="cancelBooking"
         >
-          取消预订
+          {{ $t('orderDetail.cancelBtn') }}
         </button>
       </template>
     </div>
   </div>
   <div v-else class="loading-state">
-    加载中...
+    {{ $t('booking.loading') }}
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '../../utils/api';
 
 const router = useRouter();
+const { t } = useI18n();
 const route = useRoute();
 const orderId = route.params.id;
 
@@ -168,13 +170,13 @@ const stayDays = computed(() => {
 
 const statusText = computed(() => {
   const map: any = {
-    0: '待确认',
-    1: '预订中',
-    2: '入住中',
-    3: '已退房',
-    4: '已取消'
+    0: t('records.status0'),
+    1: t('records.status1'),
+    2: t('records.status2'),
+    3: t('records.status3'),
+    4: t('records.status4')
   };
-  return map[order.value?.status] || '未知';
+  return map[order.value?.status] || t('records.unknown');
 });
 
 const statusClass = computed(() => {
@@ -211,7 +213,7 @@ const fetchOrder = async () => {
 const formatDate = (dateStr: string, includeTime = false) => {
   if (!dateStr) return '';
   const d = new Date(dateStr);
-  const datePart = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  const datePart = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
   if (includeTime) {
     const timePart = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
     return `${datePart} ${timePart}`;
@@ -221,35 +223,35 @@ const formatDate = (dateStr: string, includeTime = false) => {
 
 const getDayOfWeek = (dateStr: string) => {
   if (!dateStr) return '';
-  const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+  const days = [t('booking.sun'), t('booking.mon'), t('booking.tue'), t('booking.wed'), t('booking.thu'), t('booking.fri'), t('booking.sat')];
   return days[new Date(dateStr).getDay()];
 };
 
 const cancelBooking = async () => {
-  if (confirm('确定要取消预订吗？')) {
+  if (confirm(t('orderDetail.cancelConfirmMsg'))) {
     try {
       await api.post(`/orders/${orderId}/cancel`);
-      alert('已取消预订');
+      alert(t('orderDetail.cancelSuccess'));
       fetchOrder();
     } catch (e: any) {
-      alert('取消失败: ' + (e.response?.data?.message || e.message));
+      alert(t('orderDetail.cancelFail') + (e.response?.data?.message || e.message));
     }
   }
 };
 
 const earlyCheckOut = async () => {
-  if (confirm('确定要提前退房吗？')) {
+  if (confirm(t('orderDetail.checkoutConfirmMsg'))) {
     try {
       // In this system, check-out might just be a status update or a specific API
       // Assuming we have an endpoint or we can update status
       // Let's check if there's a checkout endpoint
       await api.post(`/orders/${orderId}/checkout`); // Mocking checkout endpoint if exists
-      alert('已办理提前退房');
+      alert(t('orderDetail.checkoutSuccess'));
       fetchOrder();
     } catch (e: any) {
       // If endpoint doesn't exist, maybe update status directly? 
       // But status 3 is usually set by system or admin.
-      alert('退房失败: ' + (e.response?.data?.message || e.message));
+      alert(t('orderDetail.checkoutFail') + (e.response?.data?.message || e.message));
     }
   }
 };
@@ -259,7 +261,7 @@ const submitOrder = async () => {
     const updatedOrder = { ...order.value };
     updatedOrder.status = 1;
     await api.post('/orders', updatedOrder);
-    alert('订单提交成功');
+    alert(t('orderDetail.submitSuccess'));
     fetchOrder();
   } catch (e: any) {
     alert('提交失败: ' + (e.response?.data?.message || e.message));

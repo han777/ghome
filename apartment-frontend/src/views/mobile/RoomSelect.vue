@@ -4,7 +4,7 @@
       <div class="header-left" @click="router.back()">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
       </div>
-      <div class="mobile-header-title">选择房间</div>
+      <div class="mobile-header-title">{{ $t('roomSelect.title2') }}{{ $t('orderDetail.roomNo') }}</div>
       <div class="header-right">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
       </div>
@@ -15,14 +15,14 @@
     </div>
 
     <div class="legend">
-      <div class="legend-item"><span class="dot selected"></span> 已选</div>
-      <div class="legend-item"><span class="dot available"></span> 可选</div>
-      <div class="legend-item"><span class="dot unavailable"></span> 不可选</div>
+      <div class="legend-item"><span class="dot selected"></span> {{ $t('roomSelect.selected') }}</div>
+      <div class="legend-item"><span class="dot available"></span> {{ $t('roomSelect.available') }}</div>
+      <div class="legend-item"><span class="dot unavailable"></span> 不{{ $t('roomSelect.available') }}</div>
     </div>
 
     <div class="content">
       <div v-for="floor in floors" :key="floor.level" class="floor-section">
-        <div class="floor-title">{{ floor.level }}楼</div>
+        <div class="floor-title">{{ floor.level }}{{ $t('roomSelect.floor') }}</div>
         <div class="room-grid">
           <div 
             v-for="room in floor.rooms" 
@@ -37,23 +37,26 @@
         </div>
       </div>
       <div v-if="floors.length === 0" class="empty-rooms">
-        所选时段暂无可用房间
+        所选时段暂无可用{{ $t('orderDetail.roomNo') }}
       </div>
     </div>
 
     <div class="footer-actions">
-      <button class="mobile-btn-outline" @click="router.back()">取消</button>
-      <button class="mobile-btn-primary" :disabled="!selectedRoomId" @click="confirmSelection">确定</button>
+      <button class="mobile-btn-outline" @click="router.back()">{{ $t('roomSelect.cancel') }}</button>
+      <button class="mobile-btn-primary" :disabled="!selectedRoomId" @click="confirmSelection">{{ $t('roomSelect.confirm') }}</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+import { translateField } from '../../utils/lang';
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '../../utils/api';
 
 const router = useRouter();
+const { t, locale } = useI18n();
 const route = useRoute();
 
 const startDate = route.query.start as string;
@@ -61,7 +64,7 @@ const endDate = route.query.end as string;
 const typeId = route.query.typeId as string;
 
 const selectedRoomId = ref<number | null>(null);
-const roomTypeName = ref('加载中...');
+const roomTypeName = ref(t('booking.loading'));
 const floors = ref<any[]>([]);
 
 const fetchRooms = async () => {
@@ -76,7 +79,7 @@ const fetchRooms = async () => {
     ]) as any[];
 
     const roomType = typesRes.find((t: any) => t.id.toString() === typeId);
-    roomTypeName.value = roomType ? (roomType.nameIntl?.zh || roomType.typeCode) : '未知房型';
+    roomTypeName.value = roomType ? (translateField(roomType.nameIntlJson, locale.value) || roomType.typeCode) : t('roomSelect.unknown') + t('booking.roomType');
 
     // Filter rooms by type
     const filteredRooms = roomsRes.filter((r: any) => r.roomType?.id.toString() === typeId);
@@ -135,7 +138,7 @@ const confirmSelection = async () => {
       query: { orderId: res.id.toString() }
     });
   } catch (e: any) {
-    alert('预订失败: ' + (e.response?.data?.message || e.message));
+    alert(t('roomSelect.fail') + (e.response?.data?.message || e.message));
   }
 };
 </script>

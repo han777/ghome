@@ -11,11 +11,11 @@
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Dict Code</th>
-            <th>Dict Name</th>
-            <th>Description</th>
+            <th>字典编码</th>
+            <th>字典名称</th>
+            <th>描述</th>
             <th>Items</th>
-            <th>Actions</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -31,8 +31,8 @@
               </div>
             </td>
             <td class="actions">
-              <button class="edit-btn" @click="openModal(dict)">Edit</button>
-              <button class="delete-btn" @click="deleteDict(dict.id)">Delete</button>
+              <button class="edit-btn" @click="openModal(dict)">编辑</button>
+              <button class="delete-btn" @click="deleteDict(dict.id)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -49,15 +49,15 @@
         <div class="modal-body">
           <form class="admin-form">
             <div class="form-item">
-              <label>Dict Code</label>
+              <label>字典编码</label>
               <input v-model="form.dictCode" required>
             </div>
             <div class="form-item">
-              <label>Dict Name</label>
+              <label>字典名称</label>
               <input v-model="form.dictName" required>
             </div>
             <div class="form-item">
-              <label>Description</label>
+              <label>描述</label>
               <textarea v-model="form.description"></textarea>
             </div>
             <div class="form-item">
@@ -72,8 +72,8 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">Cancel</button>
-          <button class="save-btn" @click="saveDict">Save Changes</button>
+          <button class="cancel-btn" @click="showModal = false">取消</button>
+          <button class="save-btn" @click="saveDict">保存更改</button>
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@
   <div class="admin-page">
     <div class="page-header">
       <div class="search-bar">
-        <input v-model="searchQuery" type="text" placeholder="Search product name...">
+        <input v-model="searchQuery" type="text" placeholder="搜索产品名称...">
       </div>
       <button class="add-btn" @click="openModal()">+ New Product/Price</button>
     </div>
@@ -11,13 +11,13 @@
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Product Name</th>
+            <th>产品名称</th>
             <th>Category</th>
-            <th>Unit</th>
-            <th>Price</th>
+            <th>单位</th>
+            <th>价格</th>
             <th>Effective Date</th>
             <th>Expiry Date</th>
-            <th>Actions</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -33,8 +33,8 @@
             <td>{{ item.effectiveDate || '-' }}</td>
             <td>{{ item.expiryDate || '-' }}</td>
             <td class="actions">
-              <button class="edit-btn" @click="openModal(item)">Edit</button>
-              <button class="delete-btn" @click="deleteProduct(item.id)">Delete</button>
+              <button class="edit-btn" @click="openModal(item)">编辑</button>
+              <button class="delete-btn" @click="deleteProduct(item.id)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -45,13 +45,13 @@
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ form.id ? 'Edit Product' : 'Create Product' }}</h2>
+          <h2>{{ form.id ? '编辑产品' : '创建产品' }}</h2>
           <button class="close-btn" @click="showModal = false">&times;</button>
         </div>
         <div class="modal-body">
           <form class="admin-form">
             <div class="form-item">
-              <label class="required">Product Name</label>
+              <label class="required">产品名称</label>
               <input v-model="form.productName" required>
             </div>
             <div class="form-group-row">
@@ -63,7 +63,7 @@
                 </select>
               </div>
               <div class="form-item">
-                <label>Unit</label>
+                <label>单位</label>
                 <input v-model="form.unit" placeholder="e.g. Pcs, Hour">
               </div>
             </div>
@@ -84,8 +84,8 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">Cancel</button>
-          <button class="save-btn" @click="saveProduct">Save Changes</button>
+          <button class="cancel-btn" @click="showModal = false">取消</button>
+          <button class="save-btn" @click="saveProduct">保存更改</button>
         </div>
       </div>
     </div>

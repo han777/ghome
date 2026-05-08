@@ -2,21 +2,21 @@
   <div class="admin-page">
     <div class="page-header">
       <div class="search-bar">
-        <input type="text" placeholder="Search accounts...">
+        <input type="text" placeholder="搜索账号...">
       </div>
-      <button class="add-btn" @click="openModal()">+ Add Account</button>
+      <button class="add-btn" @click="openModal()">+ 添加账号</button>
     </div>
     <div class="table-card">
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Username</th>
-            <th>Real Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Roles</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th>用户名</th>
+            <th>真实姓名</th>
+            <th>邮箱</th>
+            <th>电话</th>
+            <th>角色</th>
+            <th>状态</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -39,9 +39,9 @@
               </span>
             </td>
             <td class="actions">
-              <button class="edit-btn" @click="openModal(user)">Edit</button>
-              <button class="edit-btn" style="background-color: #f59e0b; color: white; border-color: #f59e0b;" @click="promptChangePassword(user)">Password</button>
-              <button class="delete-btn" @click="deleteUser(user.id)">Delete</button>
+              <button class="edit-btn" @click="openModal(user)">编辑</button>
+              <button class="edit-btn" style="background-color: #f59e0b; color: white; border-color: #f59e0b;" @click="promptChangePassword(user)">密码</button>
+              <button class="delete-btn" @click="deleteUser(user.id)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -52,36 +52,36 @@
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ form.id ? 'Edit User' : 'Add User' }}</h2>
+          <h2>{{ form.id ? '编辑用户' : '添加用户' }}</h2>
           <button class="close-btn" @click="showModal = false">&times;</button>
         </div>
         <div class="modal-body">
           <form class="admin-form" @submit.prevent="saveUser">
             <div class="form-item">
-              <label>Username</label>
+              <label>用户名</label>
               <input v-model="form.username" required>
             </div>
             <div class="form-item">
-              <label>Real Name</label>
+              <label>真实姓名</label>
               <input v-model="form.realName">
             </div>
             <div class="form-item">
-              <label>Email</label>
+              <label>邮箱</label>
               <input v-model="form.email" type="email">
             </div>
             <div class="form-item">
-              <label>Phone</label>
+              <label>电话</label>
               <input v-model="form.phone">
             </div>
             <div class="form-item">
-              <label>Status</label>
+              <label>状态</label>
               <select v-model="form.status">
-                <option :value="1">Active</option>
-                <option :value="0">Disabled</option>
+                <option :value="1">启用</option>
+                <option :value="0">禁用</option>
               </select>
             </div>
             <div class="form-item">
-              <label>Roles</label>
+              <label>角色</label>
               <div class="roles-selection">
                 <label v-for="role in allRoles" :key="role.id" class="role-checkbox">
                   <input type="checkbox" :value="role.id" v-model="selectedRoleIds">
@@ -92,8 +92,8 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">Cancel</button>
-          <button class="save-btn" @click="saveUser">Save Changes</button>
+          <button class="cancel-btn" @click="showModal = false">取消</button>
+          <button class="save-btn" @click="saveUser">保存更改</button>
         </div>
       </div>
     </div>
@@ -172,7 +172,7 @@ const saveUser = async () => {
 };
 
 const deleteUser = async (id: number) => {
-  if (!confirm('Are you sure you want to delete this user?')) return;
+  if (!confirm('确定要删除此用户吗？')) return;
   try {
     await api.delete(`/sys/users/${id}`);
     fetchUsers();

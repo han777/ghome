@@ -13,7 +13,7 @@
           <tr>
             <th>Department Name</th>
             <th>Sort Order</th>
-            <th>Actions</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -23,8 +23,8 @@
             </td>
             <td>{{ dept.sortOrder }}</td>
             <td class="actions">
-              <button class="edit-btn" @click="openModal(dept)">Edit</button>
-              <button class="delete-btn" @click="deleteDept(dept.id)">Delete</button>
+              <button class="edit-btn" @click="openModal(dept)">编辑</button>
+              <button class="delete-btn" @click="deleteDept(dept.id)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -60,8 +60,8 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">Cancel</button>
-          <button class="save-btn" @click="saveDept">Save Changes</button>
+          <button class="cancel-btn" @click="showModal = false">取消</button>
+          <button class="save-btn" @click="saveDept">保存更改</button>
         </div>
       </div>
     </div>

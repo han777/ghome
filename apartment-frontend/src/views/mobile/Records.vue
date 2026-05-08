@@ -1,7 +1,7 @@
 <template>
   <div class="records-page">
     <header class="mobile-header">
-      <div class="mobile-header-title">预订记录</div>
+      <div class="mobile-header-title">{{ $t('records.title2') }}</div>
     </header>
     <div class="content">
       <div v-if="records.length > 0">
@@ -11,30 +11,34 @@
             <span class="status-tag" :class="record.statusClass">{{ record.statusText }}</span>
           </div>
           <div class="record-body">
-            <p>单号：{{ record.orderNo }}</p>
-            <p>入住：{{ formatDate(record.startDate) }}</p>
-            <p>退房：{{ formatDate(record.endDate) }}</p>
-            <p>房号：{{ record.roomNo }}</p>
+            <p>{{ $t('records.orderNo') }}{{ record.orderNo }}</p>
+            <p>{{ $t('records.checkIn') }}{{ formatDate(record.startDate) }}</p>
+            <p>{{ $t('records.checkOut') }}{{ formatDate(record.endDate) }}</p>
+            <p>{{ $t('records.roomNo') }}{{ record.roomNo }}</p>
           </div>
           <div class="record-footer">
             <span class="total-price">¥ {{ (record.totalAmount || 0).toFixed(2) }}</span>
-            <button class="mobile-btn-outline small" @click="goToDetail(record)">查看详情</button>
+            <button class="mobile-btn-outline small" @click="goToDetail(record)">{{ $t('records.viewDetail') }}</button>
           </div>
         </div>
       </div>
       <div v-else class="empty-state">
-        <p>暂无预订记录</p>
+        <p>{{ $t('records.noRecords2') }}</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../../utils/api';
 
 const router = useRouter();
+const { t } = useI18n();
+
 const records = ref<any[]>([]);
 
 const fetchRecords = async () => {
@@ -42,7 +46,7 @@ const fetchRecords = async () => {
     const res = await api.get('/orders/mine') as any[];
     records.value = res.map(o => ({
       ...o,
-      roomTypeName: o.roomOccupies?.[0]?.room?.roomType?.typeCode || '未知',
+      roomTypeName: o.roomOccupies?.[0]?.room?.roomType?.typeCode || t('records.unknown'),
       roomNo: o.roomOccupies?.[0]?.room?.roomNo || '-',
       statusText: getStatusText(o.status),
       statusClass: getStatusClass(o.status)
@@ -54,13 +58,13 @@ const fetchRecords = async () => {
 
 const getStatusText = (status: number) => {
   const map: any = {
-    0: '待确认',
-    1: '预订中',
-    2: '已入住',
-    3: '已退房',
-    4: '已取消'
+    0: t('records.status0'),
+    1: t('records.status1'),
+    2: t('records.status2'),
+    3: t('records.status3'),
+    4: t('records.status4')
   };
-  return map[status] || '未知';
+  return map[status] || t('records.unknown');
 };
 
 const getStatusClass = (status: number) => {

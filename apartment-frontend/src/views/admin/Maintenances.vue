@@ -10,7 +10,7 @@
           </option>
         </select>
       </div>
-      <button class="add-btn" @click="openModal()">+ Add Maintenance</button>
+      <button class="add-btn" @click="openModal()">+ 添加维护</button>
     </div>
 
     <div class="table-card">
@@ -18,11 +18,11 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Room No.</th>
+            <th>房间号</th>
             <th>Start Time</th>
             <th>End Time</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th>状态</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -37,8 +37,8 @@
               </span>
             </td>
             <td class="actions">
-              <button class="edit-btn" v-if="m.status === 0" @click="openModal(m)">Edit</button>
-              <button class="delete-btn" v-if="m.status === 2" @click="deleteMaintenance(m.id)">Delete</button>
+              <button class="edit-btn" v-if="m.status === 0" @click="openModal(m)">编辑</button>
+              <button class="delete-btn" v-if="m.status === 2" @click="deleteMaintenance(m.id)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -49,7 +49,7 @@
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ form.id ? 'Edit Maintenance' : 'Add Maintenance' }}</h2>
+          <h2>{{ form.id ? '编辑维护' : '添加维护' }}</h2>
           <button class="close-btn" @click="showModal = false">&times;</button>
         </div>
         <div class="modal-body">
@@ -71,17 +71,17 @@
               <input v-model="form.endTime" type="datetime-local">
             </div>
             <div class="form-item">
-              <label>Status</label>
+              <label>状态</label>
               <select v-model="form.status" :disabled="form.status === 1 || form.status === 2">
                 <option :value="0">In Progress</option>
-                <option :value="1">Completed</option>
-                <option :value="2">Cancelled</option>
+                <option :value="1">已完成</option>
+                <option :value="2">已取消</option>
               </select>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">Cancel</button>
+          <button class="cancel-btn" @click="showModal = false">取消</button>
           <button class="save-btn" @click="saveMaintenance">Save</button>
         </div>
       </div>

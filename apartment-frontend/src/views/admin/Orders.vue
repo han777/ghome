@@ -44,8 +44,8 @@
             <th>Room List</th>
             <th>Business Type</th>
             <th>Stay Period</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th>状态</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -85,8 +85,8 @@
             </td>
             <td class="actions">
               <button class="edit-btn" @click="sendCode(order.id)" v-if="order.status === 1 || order.status === 2">Send Code</button>
-              <button class="edit-btn" @click="openModal(order)">Detail</button>
-              <button class="delete-btn" @click="cancelOrder(order.id)" v-if="order.status < 3">Cancel</button>
+              <button class="edit-btn" @click="openModal(order)">详情</button>
+              <button class="delete-btn" @click="cancelOrder(order.id)" v-if="order.status < 3">取消</button>
             </td>
           </tr>
         </tbody>
@@ -98,7 +98,7 @@
       <div class="modal-content" :class="{ 'modal-maximized': isMaximized }">
         <div class="modal-header">
           <div class="header-left">
-            <h2>{{ form.id ? 'Edit Order' : 'Create Order' }}</h2>
+            <h2>{{ form.id ? '编辑订单' : '创建订单' }}</h2>
             <div class="modal-nav">
               <a href="#section-basic" @click.prevent="scrollTo('section-basic')">🏠 Basic Info</a>
               <a href="#section-rooms" @click.prevent="scrollTo('section-rooms')">🛏️ Rooms</a>
@@ -169,12 +169,12 @@
               </div>
 
               <div class="form-item span-2">
-                <label>Remarks</label>
+                <label>备注</label>
                 <input v-model="form.remarks" placeholder="General remarks...">
               </div>
 
               <div class="form-item">
-                <label>Created At</label>
+                <label>创建时间</label>
                 <input type="datetime-local" v-model="form.createdAt" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
               </div>
               <div class="form-item">
@@ -192,7 +192,7 @@
                 <span class="room-count-badge" v-if="form.roomOccupies?.length">
                   {{ form.roomOccupies.length }} ROOMS
                 </span>
-                <button class="add-btn small" @click="addRoomRow">+ Add Room</button>
+                <button class="add-btn small" @click="addRoomRow">+ 添加房间</button>
               </div>
             </div>
             <div class="room-cards-container">
@@ -248,7 +248,7 @@
                     <input type="number" v-model="occupy.occupantCount" min="1">
                   </div>
                   <div class="card-item">
-                    <label>Status</label>
+                    <label>状态</label>
                     <select v-model="occupy.status">
                       <option :value="0">Current (当前)</option>
                       <option :value="1">Finish (完成)</option>
@@ -270,7 +270,7 @@
           <section id="section-products" class="form-section">
             <div class="section-header">
               <h3 class="section-title">Services & Products</h3>
-              <button class="add-btn small" @click="addProductDetail">+ Add Row</button>
+              <button class="add-btn small" @click="addProductDetail">+ 添加行</button>
             </div>
             <div class="table-wrapper">
               <table class="detail-table">
@@ -278,12 +278,12 @@
                   <tr>
                     <th>Date</th>
                     <th>Product/Service</th>
-                    <th>Unit</th>
+                    <th>单位</th>
                     <th>Std. Price</th>
                     <th>Act. Price</th>
                     <th>Qty</th>
                     <th>Total</th>
-                    <th>Remarks</th>
+                    <th>备注</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -347,8 +347,8 @@
             Total: <span class="price-highlight">¥{{ form.totalAmount }}</span>
           </div>
           <div class="footer-btns">
-            <button class="cancel-btn" @click="showModal = false">Cancel</button>
-            <button class="save-btn" @click="saveOrder">Save Changes</button>
+            <button class="cancel-btn" @click="showModal = false">取消</button>
+            <button class="save-btn" @click="saveOrder">保存更改</button>
           </div>
         </div>
       </div>
@@ -399,7 +399,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showChangeRoomModal = false">Cancel</button>
+          <button class="cancel-btn" @click="showChangeRoomModal = false">取消</button>
           <button class="save-btn" :disabled="!changeRoomNewRoomId" @click="confirmChangeRoom">Confirm Change</button>
         </div>
       </div>
@@ -426,7 +426,7 @@
               <input type="date" v-model="roomPickerFilters.endDate" @change="fetchPickerAvailableRooms">
             </div>
             <div class="filter-group">
-              <label>Room Type</label>
+              <label>房型</label>
               <select v-model="roomPickerFilters.roomTypeId">
                 <option :value="null">-- All Types --</option>
                 <option v-for="t in roomTypes" :key="t.id" :value="t.id">
@@ -717,7 +717,7 @@ const onBookerChange = () => {
   }
 };
 
-const openRoomPicker = (occupy: any, index: number) => {
+const openRoomPicker = (occupy: any, index: any) => {
   pickingOccupyIndex.value = index;
   roomPickerFilters.startDate = occupy.checkInTime ? occupy.checkInTime.split('T')[0] : form.startDate;
   roomPickerFilters.endDate = occupy.checkOutTime ? occupy.checkOutTime.split('T')[0] : form.endDate;
@@ -788,7 +788,7 @@ const addProductDetail = () => {
   });
 };
 
-const removeProductDetail = (index: number) => {
+const removeProductDetail = (index: any) => {
   form.productDetails.splice(index, 1);
 };
 
@@ -873,7 +873,7 @@ const sendCode = async (id: number) => {
 };
 
 const cancelOrder = async (id: number) => {
-  if (!confirm('Cancel this order?')) return;
+  if (!confirm('确定取消此订单？')) return;
   try {
     await api.post(`/orders/${id}/cancel`, {});
     fetchData();

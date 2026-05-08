@@ -33,14 +33,14 @@
     <div class="main-content">
       <div class="page-header">
         <div class="search-bar">
-          <input v-model="searchQuery" type="text" placeholder="Search rooms...">
+          <input v-model="searchQuery" type="text" placeholder="搜索房间...">
         </div>
         <div class="header-actions">
           <div class="view-toggle">
-            <button :class="{ active: viewMode === 'card' }" @click="viewMode = 'card'">🎴 Card</button>
-            <button :class="{ active: viewMode === 'table' }" @click="viewMode = 'table'">📋 Table</button>
+            <button :class="{ active: viewMode === 'card' }" @click="viewMode = 'card'">🎴 卡片</button>
+            <button :class="{ active: viewMode === 'table' }" @click="viewMode = 'table'">📋 表格</button>
           </div>
-          <button class="add-btn" @click="openModal()">+ Add Room</button>
+          <button class="add-btn" @click="openModal()">+ 添加房间</button>
         </div>
       </div>
       
@@ -49,14 +49,14 @@
         <table class="admin-table">
           <thead>
             <tr>
-              <th>Room No.</th>
-              <th>Type</th>
-              <th>Location</th>
-              <th>Direction</th>
-              <th>Area (㎡)</th>
-              <th>Status</th>
-              <th>Maintenance</th>
-              <th>Actions</th>
+              <th>房间号</th>
+              <th>类型</th>
+              <th>位置</th>
+              <th>朝向</th>
+              <th>面积 (㎡)</th>
+              <th>状态</th>
+              <th>维护中</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -81,8 +81,8 @@
                 </span>
               </td>
               <td class="actions">
-                <button class="edit-btn" @click="openModal(room)">Edit</button>
-                <button class="delete-btn" @click="deleteRoom(room.id)">Delete</button>
+                <button class="edit-btn" @click="openModal(room)">编辑</button>
+                <button class="delete-btn" @click="deleteRoom(room.id)">删除</button>
               </td>
             </tr>
           </tbody>
@@ -129,7 +129,7 @@
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header" style="position: relative;">
-          <h2>{{ form.id ? 'Edit Room' : 'Add Room' }}</h2>
+          <h2>{{ form.id ? '编辑房间' : '添加房间' }}</h2>
           <div style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 8px;">
             <button v-if="form.id" class="save-btn" @click.prevent="openMaintenanceList" style="padding: 4px 12px; font-size: 13px;">维修统计</button>
             <button v-if="form.id" class="edit-btn" @click.prevent="quickMaintenance" style="padding: 4px 12px; font-size: 13px;">维修</button>
@@ -139,11 +139,11 @@
         <div class="modal-body">
           <form class="admin-form">
             <div class="form-item">
-              <label>Room Number</label>
+              <label>房间号</label>
               <input v-model="form.roomNo" required>
             </div>
             <div class="form-item">
-              <label>Location (Floor)</label>
+              <label>位置 (楼层)</label>
               <select v-model="form.floorId">
                 <option :value="null">-- Select Floor --</option>
                 <optgroup v-for="b in buildings" :key="b.id" :label="b.name">
@@ -154,7 +154,7 @@
               </select>
             </div>
             <div class="form-item">
-              <label>Room Type</label>
+              <label>房型</label>
               <select v-model="form.roomTypeId">
                 <option :value="null">-- Select Room Type --</option>
                 <option v-for="t in roomTypes" :key="t.id" :value="t.id">
@@ -163,7 +163,7 @@
               </select>
             </div>
             <div class="form-item">
-              <label>Direction</label>
+              <label>朝向</label>
               <select v-model="form.direction">
                 <option value="SOUTH">South</option>
                 <option value="NORTH">North</option>
@@ -172,11 +172,11 @@
               </select>
             </div>
             <div class="form-item">
-              <label>Area (㎡)</label>
+              <label>面积 (㎡)</label>
               <input v-model.number="form.area" type="number" step="0.1">
             </div>
             <div class="form-item">
-              <label>Status</label>
+              <label>状态</label>
               <select v-model="form.status">
                 <option v-for="opt in getDictOptions('ROOM_STATUS')" :key="opt.value" :value="parseInt(opt.value)">
                   {{ opt.label }}
@@ -186,8 +186,8 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">Cancel</button>
-          <button class="save-btn" @click="saveRoom">Save Changes</button>
+          <button class="cancel-btn" @click="showModal = false">取消</button>
+          <button class="save-btn" @click="saveRoom">保存更改</button>
         </div>
       </div>
     </div>
@@ -325,7 +325,7 @@ const saveRoom = async () => {
 };
 
 const deleteRoom = async (id: number) => {
-  if (!confirm('Delete this room?')) return;
+  if (!confirm('确定删除此房间？')) return;
   try {
     await api.delete(`/rooms/${id}`);
     fetchData();

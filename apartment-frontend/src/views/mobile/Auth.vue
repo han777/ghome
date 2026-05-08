@@ -4,7 +4,7 @@
       <div class="header-left" @click="router.back()">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
       </div>
-      <div class="mobile-header-title">身份认证</div>
+      <div class="mobile-header-title">{{ $t('auth.identity') }}</div>
       <div class="header-right">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z" /></svg>
       </div>
@@ -12,38 +12,38 @@
 
     <div class="auth-content">
       <div class="welcome-section">
-        <h1 class="welcome-title">您好，欢迎登录<br/>健适公寓预定系统</h1>
-        <div class="lang-switch">简体中文 🌐</div>
+        <h1 class="welcome-title" v-html="$t('auth.welcome')"></h1>
+        <div class="lang-switch" @click="$i18n.locale = $i18n.locale === 'zh' ? 'en' : 'zh'">{{ $i18n.locale === 'zh' ? 'English 🌐' : '简体中文 🌐' }}</div>
       </div>
 
       <div class="auth-form">
         <div class="input-group">
-          <label>手机号<span class="required">*</span></label>
-          <input type="tel" v-model="phone" placeholder="请输入手机号" />
+          <label>{{ $t('auth.phone') }}<span class="required">*</span></label>
+          <input type="tel" v-model="phone" :placeholder="$t('auth.phonePlaceholder')" />
         </div>
         <div class="input-group">
-          <label>验证码<span class="required">*</span></label>
+          <label>{{ $t('auth.code') }}<span class="required">*</span></label>
           <div class="code-input-wrap">
-            <input type="text" v-model="code" placeholder="请输入验证码" />
+            <input type="text" v-model="code" :placeholder="$t('auth.codePlaceholder')" />
             <span class="code-btn" @click="countdown === 0 && sendCode()">
-              {{ countdown > 0 ? `已发送 (${countdown}s)` : '获取验证码' }}
+              {{ countdown > 0 ? $t('auth.sent', { time: countdown }) : $t('auth.getCode') }}
             </span>
           </div>
         </div>
 
         <button class="mobile-btn-primary login-btn" :disabled="loading" @click="handleLogin">
-          {{ loading ? '登录中...' : '登录' }}
+          {{ loading ? $t('auth.logining') : $t('auth.login') }}
         </button>
 
         <div class="agreement-row">
           <input type="checkbox" id="agree" checked />
           <label for="agree">
-            我已阅读并同意<a href="javascript:void(0)" @click="showPrivacyModal = true">个人信息保护政策</a>
+            {{ $t('auth.agreePrefix') }}<a href="javascript:void(0)" @click="showPrivacyModal = true">{{ $t('auth.policy') }}</a>
           </label>
         </div>
 
         <div class="other-login">
-          <a href="javascript:void(0)" @click="router.push('/login')">账号密码登录</a>
+          <a href="javascript:void(0)" @click="router.push('/login')">{{ $t('auth.pwdLogin') }}</a>
         </div>
       </div>
 
@@ -51,33 +51,33 @@
       <div v-if="showPrivacyModal" class="privacy-modal-overlay">
         <div class="privacy-modal-content">
           <div class="privacy-modal-header">
-            个人信息保护及隐私政策提示
+            {{ $t('auth.privacyTitle') }}
           </div>
           <div class="privacy-modal-body">
-            <p class="highlight">欢迎使用 [G-HOME订房程序]！</p>
-            <p>在您开始使用前，请您务必仔细阅读并理解《隐私政策》与《用户服务协议》。</p>
-            <p>我们非常重视您的隐私保护，为了向您提供基础服务及优化体验，我们需要通过此弹窗告知您：</p>
+            <p class="highlight">{{ $t('auth.privacyP1') }}</p>
+            <p>{{ $t('auth.privacyP2') }}</p>
+            <p>{{ $t('auth.privacyP3') }}</p>
             
             <div class="policy-item">
-              <strong>核心信息收集：</strong>
-              <span>我们仅在您注册/登录、使用核心功能时，收集必要的信息（如手机号、设备标识符等）。</span>
+              <strong>{{ $t('auth.privacyH1') }}</strong>
+              <span>{{ $t('auth.privacyC1') }}</span>
             </div>
             
             <div class="policy-item">
-              <strong>权限说明：</strong>
-              <span>为实现特定功能，我们可能会申请相机、地理位置或存储权限，您可以随时在系统设置中关闭。</span>
+              <strong>{{ $t('auth.privacyH2') }}</strong>
+              <span>{{ $t('auth.privacyC2') }}</span>
             </div>
             
             <div class="policy-item">
-              <strong>第三方共享：</strong>
-              <span>未经您的同意，我们不会向第三方分享您的个人信息，除非法律法规另有规定。</span>
+              <strong>{{ $t('auth.privacyH3') }}</strong>
+              <span>{{ $t('auth.privacyC3') }}</span>
             </div>
             
-            <p class="footer-note">您可以点击下方按钮开始使用。如果您不同意上述协议，将无法使用本 App 的相关服务。</p>
+            <p class="footer-note">{{ $t('auth.privacyP4') }}</p>
           </div>
           <div class="privacy-modal-footer">
-            <button class="modal-btn logout" @click="showPrivacyModal = false">退出</button>
-            <button class="modal-btn accept" @click="showPrivacyModal = false">同意并进入</button>
+            <button class="modal-btn logout" @click="showPrivacyModal = false">{{ $t('auth.exit') }}</button>
+            <button class="modal-btn accept" @click="showPrivacyModal = false">{{ $t('auth.agreeAndEnter') }}</button>
           </div>
         </div>
       </div>
@@ -96,10 +96,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import api from '../../utils/api';
 
 const router = useRouter();
 const route = useRoute();
+const { t } = useI18n();
 
 const phone = ref('');
 const code = ref('');
@@ -119,20 +121,20 @@ const startCountdown = () => {
 
 const sendCode = async () => {
   if (!phone.value || !/^1[3-9]\d{9}$/.test(phone.value)) {
-    alert('请输入正确的手机号');
+    alert(t('auth.invalidPhone'));
     return;
   }
   try {
     await api.post('/auth/send-code', { phone: phone.value });
     startCountdown();
   } catch (error: any) {
-    alert(error.response?.data?.message || '发送失败');
+    alert(error.response?.data?.message || t('auth.sendFailed'));
   }
 };
 
 const handleLogin = async () => {
   if (!phone.value || !code.value) {
-    alert('请输入手机号和验证码');
+    alert(t('auth.requirePhoneCode'));
     return;
   }
   loading.value = true;
@@ -171,7 +173,7 @@ const handleLogin = async () => {
       router.push('/m/booking'); // Fallback
     }
   } catch (error: any) {
-    alert(error.response?.data?.message || '登录失败');
+    alert(error.response?.data?.message || t('auth.loginFailed'));
   } finally {
     loading.value = false;
   }

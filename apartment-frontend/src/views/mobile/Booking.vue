@@ -4,34 +4,34 @@
       <div class="header-left">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
       </div>
-      <div class="mobile-header-title">G-HOME公寓</div>
+      <div class="mobile-header-title">{{ $t('booking.ghome') }}</div>
       <div class="header-right">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z" /></svg>
       </div>
     </header>
 
     <div class="content">
-      <h2 class="page-title">公寓预订</h2>
+      <h2 class="page-title">{{ $t('booking.title2') }}</h2>
 
       <!-- Date Selection Card -->
       <div class="mobile-card date-card">
         <div class="date-item">
-          <span class="date-label">入住日期</span>
+          <span class="date-label">{{ $t('booking.checkInDate') }}</span>
           <input type="date" v-model="startDate" class="date-input" :min="minDate" @change="validateDates">
           <span class="date-day">{{ getDayOfWeek(startDate) }}</span>
         </div>
         <div class="date-duration">
-          <span class="duration-badge">共{{ stayDays }}晚</span>
+          <span class="duration-badge">{{ $t('booking.nights', { n: stayDays }) }}</span>
           <div class="duration-line"></div>
         </div>
         <div class="date-item">
-          <span class="date-label">退房日期</span>
+          <span class="date-label">{{ $t('booking.checkOutDate') }}</span>
           <input type="date" v-model="endDate" class="date-input" :min="startDate" @change="validateDates">
           <span class="date-day">{{ getDayOfWeek(endDate) }}</span>
         </div>
       </div>
 
-      <h3 class="section-title">房型选择</h3>
+      <h3 class="section-title">{{ $t('booking.selectRoomTypeTitle') }}</h3>
 
       <!-- Room Type List -->
       <div class="room-list">
@@ -48,16 +48,16 @@
             @click.stop="openGallery(type)"
           >
             <div v-if="type.images?.length > 1" class="img-count-tag">
-              {{ type.images.length }}张
+              {{ $t('booking.pics', { n: type.images.length }) }}
             </div>
           </div>
           <div class="room-info">
-            <div class="room-name">{{ type.nameIntl?.zh || type.typeCode }}</div>
+            <div class="room-name">{{ translateField(type.nameIntlJson, $i18n.locale) || type.typeCode }}</div>
             <div class="room-desc">{{ type.remarks }}</div>
             <div class="room-price-row">
               <span class="price-symbol">¥</span>
               <span class="price-value">{{ type.priceShortRent }}</span>
-              <span class="price-unit">/晚</span>
+              <span class="price-unit">{{ $t('booking.perNight') }}</span>
             </div>
           </div>
         </div>
@@ -65,7 +65,7 @@
 
       <!-- Notice Row -->
       <div class="mobile-card notice-row">
-        <span>入住须知</span>
+        <span>{{ $t('booking.stayNotice') }}</span>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="#ccc"><path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>
       </div>
 
@@ -75,7 +75,7 @@
           :disabled="!selectedTypeId || stayDays <= 0"
           @click="goToRoomSelect"
         >
-          立即预订
+          {{ $t('booking.bookNow') }}
         </button>
       </div>
     </div>
@@ -102,11 +102,15 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+import { translateField } from '../../utils/lang';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../../utils/api';
 
 const router = useRouter();
+const { t } = useI18n();
+
 
 const minDate = new Date().toISOString().split('T')[0];
 const startDate = ref(new Date().toISOString().split('T')[0]);
@@ -130,7 +134,7 @@ const stayDays = computed(() => {
 
 const getDayOfWeek = (dateStr: string) => {
   if (!dateStr) return '';
-  const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+  const days = [t('booking.sun'), t('booking.mon'), t('booking.tue'), t('booking.wed'), t('booking.thu'), t('booking.fri'), t('booking.sat')];
   return days[new Date(dateStr).getDay()];
 };
 

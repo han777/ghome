@@ -2,21 +2,21 @@
   <div class="admin-page">
     <div class="page-header">
       <div class="search-bar">
-        <input v-model="searchQuery" type="text" placeholder="Search room types...">
+        <input v-model="searchQuery" type="text" placeholder="搜索房型...">
       </div>
-      <button class="add-btn" @click="openModal()">+ Add Type</button>
+      <button class="add-btn" @click="openModal()">+ 添加房型</button>
     </div>
     
     <div class="table-card">
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Code</th>
-            <th>Name (Multi-lang)</th>
-            <th>Short Rent</th>
-            <th>Long Rent</th>
-            <th>Remarks</th>
-            <th>Actions</th>
+            <th>代码</th>
+            <th>名称 (多语言)</th>
+            <th>短租</th>
+            <th>长租</th>
+            <th>备注</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -31,8 +31,8 @@
             <td>¥{{ type.priceLongRent }}</td>
             <td>{{ type.remarks || '-' }}</td>
             <td class="actions">
-              <button class="edit-btn" @click="openModal(type)">Edit</button>
-              <button class="delete-btn" @click="deleteType(type.id)">Delete</button>
+              <button class="edit-btn" @click="openModal(type)">编辑</button>
+              <button class="delete-btn" @click="deleteType(type.id)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -43,31 +43,31 @@
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ form.id ? 'Edit Room Type' : 'Add Room Type' }}</h2>
+          <h2>{{ form.id ? '编辑房型' : '添加房型' }}</h2>
           <button class="close-btn" @click="showModal = false">&times;</button>
         </div>
         <div class="modal-body">
           <form class="admin-form">
             <div class="form-item">
-              <label>Type Code</label>
-              <input v-model="form.typeCode" placeholder="e.g. KING, SUITE" required>
+              <label>类型代码</label>
+              <input v-model="form.typeCode" placeholder="如 KING, SUITE" required>
             </div>
             <div class="form-item">
-              <label>Names (JSON Map)</label>
+              <label>名称 (多语言JSON)</label>
               <textarea v-model="nameIntlJson" placeholder='{"zh": "大床房", "en": "King Room"}'></textarea>
             </div>
             <div class="form-group-row">
               <div class="form-item">
-                <label>Short Rent Price</label>
+                <label>短租价格</label>
                 <input type="number" v-model="form.priceShortRent">
               </div>
               <div class="form-item">
-                <label>Long Rent Price</label>
+                <label>长租价格</label>
                 <input type="number" v-model="form.priceLongRent">
               </div>
             </div>
             <div class="form-item span-2">
-              <label>Images (9-grid display)</label>
+              <label>图片 (九宫格展示)</label>
               <div class="image-uploader">
                 <div v-for="(img, idx) in form.images" :key="idx" class="image-preview-item">
                   <img :src="img.url" @click="previewImage = img.url">
@@ -80,14 +80,14 @@
               </div>
             </div>
             <div class="form-item span-2">
-              <label>Remarks</label>
+              <label>备注</label>
               <textarea v-model="form.remarks"></textarea>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">Cancel</button>
-          <button class="save-btn" @click="saveType">Save Changes</button>
+          <button class="cancel-btn" @click="showModal = false">取消</button>
+          <button class="save-btn" @click="saveType">保存更改</button>
         </div>
       </div>
     </div>
@@ -192,7 +192,7 @@ const saveType = async () => {
 };
 
 const deleteType = async (id: number) => {
-  if (!confirm('Delete this type?')) return;
+  if (!confirm('确定删除此房型？')) return;
   try {
     await api.delete(`/room-types/${id}`);
     fetchData();

@@ -4,7 +4,7 @@
       <div class="header-left" @click="router.back()">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
       </div>
-      <div class="mobile-header-title">预订确认</div>
+      <div class="mobile-header-title">{{ $t('confirm.title2') }}</div>
       <div class="header-right">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
       </div>
@@ -14,10 +14,10 @@
       <div class="alert-icon">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z" /></svg>
       </div>
-      <div class="alert-text">请于 {{ deadlineStr }} 前提交订单，超时则自动取消预定。剩余时间：{{ countdownStr }}</div>
+      <div class="alert-text">{{ $t('confirm.timeoutMsg', { deadlineStr, countdownStr }) }}</div>
     </div>
     <div class="alert-banner expired" v-else>
-      <div class="alert-text">订单已失效，请重新预订。</div>
+      <div class="alert-text">{{ $t('confirm.expiredMsg') }}</div>
     </div>
 
     <div class="content">
@@ -25,22 +25,22 @@
       <div class="mobile-card stay-card">
         <div class="stay-row">
           <div class="stay-item">
-            <div class="stay-label">入住日期</div>
+            <div class="stay-label">{{ $t('confirm.stayDate') }}</div>
             <div class="stay-val">{{ formatDate(order.startDate) }}</div>
           </div>
           <div class="stay-item align-right">
-            <div class="stay-label">退房日期</div>
+            <div class="stay-label">{{ $t('confirm.leaveDate') }}</div>
             <div class="stay-val">{{ formatDate(order.endDate) }}</div>
           </div>
         </div>
         <div class="divider"></div>
         <div class="stay-row">
           <div class="stay-item">
-            <div class="stay-label">房型</div>
+            <div class="stay-label">{{ $t('booking.roomType') }}</div>
             <div class="stay-val-mid">{{ roomTypeName }}</div>
           </div>
           <div class="stay-item align-right">
-            <div class="stay-label">房间号</div>
+            <div class="stay-label">{{ $t('confirm.roomNo') }}</div>
             <div class="stay-val-mid primary-text">{{ roomNo }}</div>
           </div>
         </div>
@@ -49,47 +49,47 @@
       <!-- Price Card -->
       <div class="mobile-card price-card">
         <div class="price-row">
-          <span class="price-label">汇总金额</span>
+          <span class="price-label">{{ $t('confirm.totalAmount') }}</span>
           <div class="price-val-group">
             <span class="price-total">¥ {{ order.totalAmount?.toFixed(2) }}</span>
-            <span class="price-detail">( ¥ {{ roomPrice }}/晚×{{ stayDays }} )</span>
+            <span class="price-detail">{{ $t('confirm.perNightMath2', { price: roomPrice, days: stayDays }) }}</span>
           </div>
         </div>
       </div>
 
-      <p class="billing-note">财务统一结算，无需个人垫付、报销</p>
+      <p class="billing-note">{{ $t('confirm.billingNote') }}</p>
 
       <!-- Occupant Card -->
       <div class="mobile-card occupant-card">
         <div class="card-header">
-          <span class="card-title">入住人</span>
-          <span class="add-btn" @click="showCompanionInput = true">+ 新增同住人</span>
+          <span class="card-title">{{ $t('confirm.occupant') }}</span>
+          <span class="add-btn" @click="showCompanionInput = true">{{ $t('confirm.addCompanion') }}</span>
         </div>
         
         <div class="occupant-list">
           <div class="occupant-row">
-            <span class="occ-name">{{ order.user?.realName || order.user?.username || '当前用户' }}</span>
-            <span class="occ-tag">本人</span>
+            <span class="occ-name">{{ order.user?.realName || order.user?.username || t('confirm.currentUser') }}</span>
+            <span class="occ-tag">{{ $t('confirm.myself') }}</span>
           </div>
           
           <!-- Existing Companions -->
           <div v-for="(name, index) in companions" :key="index" class="occupant-row secondary">
             <span class="occ-name">{{ name }}</span>
-            <span class="remove-btn" @click="removeCompanion(index)">移除</span>
+            <span class="remove-btn" @click="removeCompanion(index)">{{ $t('confirm.remove') }}</span>
           </div>
 
           <!-- New Companion Input -->
           <div v-if="showCompanionInput" class="companion-input-row">
-            <input v-model="newCompanionName" placeholder="输入同住人姓名" class="occ-input" ref="nameInput">
-            <button class="confirm-occ-btn" @click="addCompanion">确认</button>
-            <button class="cancel-occ-btn" @click="showCompanionInput = false">取消</button>
+            <input v-model="newCompanionName" :placeholder="$t('confirm.companionName')" class="occ-input" ref="nameInput">
+            <button class="confirm-occ-btn" @click="addCompanion">{{ $t('confirm.confirmBtn') }}</button>
+            <button class="cancel-occ-btn" @click="showCompanionInput = false">{{ $t('confirm.cancelBtn') }}</button>
           </div>
         </div>
       </div>
 
       <!-- Notice Row -->
       <div class="mobile-card notice-row">
-        <span>入住须知</span>
+        <span>{{ $t('confirm.notice') }}</span>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="#ccc"><path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>
       </div>
     </div>
@@ -97,24 +97,28 @@
     <!-- Sticky Bottom -->
     <div class="bottom-bar">
       <div class="bar-total">
-        <div class="total-label">合计</div>
+        <div class="total-label">{{ $t('confirm.totalLabel') }}</div>
         <div class="total-price">¥ {{ (order.totalAmount || 0).toFixed(2) }}</div>
       </div>
-      <button class="bar-btn cancel" @click="cancelOrder">取消订单</button>
-      <button class="bar-btn submit" :disabled="isExpired" @click="submitOrder">提交订单</button>
+      <button class="bar-btn cancel" @click="cancelOrder">{{ $t('confirm.cancelOrder') }}</button>
+      <button class="bar-btn submit" :disabled="isExpired" @click="submitOrder">{{ $t('confirm.submit') }}</button>
     </div>
   </div>
   <div v-else class="loading-state">
-    加载中...
+    {{ $t('booking.loading') }}
   </div>
 </template>
 
 <script setup lang="ts">
+
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '../../utils/api';
 
 const router = useRouter();
+const { t } = useI18n();
+
 const route = useRoute();
 const orderId = route.query.orderId;
 
@@ -191,7 +195,7 @@ const startTimer = () => {
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '';
   const d = new Date(dateStr);
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 };
 
 const addCompanion = () => {
@@ -207,7 +211,7 @@ const removeCompanion = (index: number) => {
 };
 
 const cancelOrder = async () => {
-  if (confirm('确定要取消预订吗？')) {
+  if (confirm(t('confirm.cancelConfirm'))) {
     try {
       await api.post(`/orders/${orderId}/cancel`);
       router.push('/m/booking');
@@ -229,10 +233,10 @@ const submitOrder = async () => {
     
     await api.post('/orders', updatedOrder);
     
-    alert('预订成功！');
+    alert(t('confirm.bookSuccess'));
     router.push('/m/records');
   } catch (e: any) {
-    alert('提交失败: ' + (e.response?.data?.message || e.message));
+    alert(t('confirm.submitFail') + (e.response?.data?.message || e.message));
   }
 };
 

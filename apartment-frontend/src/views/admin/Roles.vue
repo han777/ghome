@@ -2,18 +2,18 @@
   <div class="admin-page">
     <div class="page-header">
       <div class="search-bar">
-        <input type="text" placeholder="Search roles...">
+        <input type="text" placeholder="搜索角色...">
       </div>
-      <button class="add-btn" @click="openModal()">+ Add Role</button>
+      <button class="add-btn" @click="openModal()">+ 添加角色</button>
     </div>
     <div class="table-card">
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Role Code</th>
-            <th>Role Name</th>
-            <th>Description</th>
-            <th>Actions</th>
+            <th>角色代码</th>
+            <th>角色名</th>
+            <th>描述</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -22,8 +22,8 @@
             <td class="name">{{ role.roleName }}</td>
             <td>{{ role.description || '-' }}</td>
             <td class="actions">
-              <button class="edit-btn" @click="openModal(role)">Edit</button>
-              <button class="delete-btn" @click="deleteRole(role.id)">Delete</button>
+              <button class="edit-btn" @click="openModal(role)">编辑</button>
+              <button class="delete-btn" @click="deleteRole(role.id)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -34,28 +34,28 @@
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ form.id ? 'Edit Role' : 'Add Role' }}</h2>
+          <h2>{{ form.id ? '编辑角色' : '添加角色' }}</h2>
           <button class="close-btn" @click="showModal = false">&times;</button>
         </div>
         <div class="modal-body">
           <form class="admin-form">
             <div class="form-item">
-              <label>Role Code</label>
+              <label>角色代码</label>
               <input v-model="form.roleCode" required>
             </div>
             <div class="form-item">
-              <label>Role Name</label>
+              <label>角色名</label>
               <input v-model="form.roleName" required>
             </div>
             <div class="form-item">
-              <label>Description</label>
+              <label>描述</label>
               <textarea v-model="form.description"></textarea>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">Cancel</button>
-          <button class="save-btn" @click="saveRole">Save Changes</button>
+          <button class="cancel-btn" @click="showModal = false">取消</button>
+          <button class="save-btn" @click="saveRole">保存更改</button>
         </div>
       </div>
     </div>
@@ -104,7 +104,7 @@ const saveRole = async () => {
 };
 
 const deleteRole = async (id: number) => {
-  if (!confirm('Delete this role?')) return;
+  if (!confirm('确定删除此角色？')) return;
   try {
     await api.delete(`/sys/roles/${id}`);
     fetchRoles();
