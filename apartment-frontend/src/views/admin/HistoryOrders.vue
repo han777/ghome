@@ -97,7 +97,7 @@
                 📞 {{ order.bookPhone || order.booker?.phone || '-' }}
               </div>
             </td>
-            <td class="name">{{ order.user?.realName || order.user?.username || 'System' }}</td>
+            <td class="name">{{ order.createUser?.realName || order.createUser?.username || 'System' }}</td>
             <td><span class="room-count-badge">{{ order.roomOccupies?.length || 0 }}</span></td>
             <td>
               <div class="room-tags">
@@ -202,7 +202,7 @@
               </div>
               <div class="form-item">
                 <label>创建人</label>
-                <div class="value">{{ form.user?.realName || form.user?.username || 'System' }}</div>
+                <div class="value">{{ form.createUser?.realName || form.createUser?.username || 'System' }}</div>
               </div>
               <div class="form-item span-2">
                 <label>备注</label>
@@ -394,8 +394,8 @@ const filteredOrders = computed(() => {
 
     // 5. Creator
     if (filters.creatorName) {
-      const creator = (o.user?.realName || o.user?.username || '').toLowerCase();
-      if (!creator.includes(filters.creatorName.toLowerCase())) return false;
+      const creatorName = o.createUser?.realName?.toLowerCase() || o.createUser?.username?.toLowerCase() || '';
+      if (!creatorName.includes(filters.creatorName.toLowerCase())) return false;
     }
 
     // 6. Status

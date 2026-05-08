@@ -287,7 +287,7 @@ public class RoomOrderService {
         occupy.setOrder(order);
         occupy.setRoom(room);
         occupy.setCheckInTime(LocalDateTime.now());
-        occupy.setOccupantUser(order.getUser());
+        occupy.setOccupantUser(order.getBooker());
         occupy.setStatus(0);
         
         room.setStatus(1);

@@ -196,7 +196,22 @@
     "checkoutConfirmMsg": "Are you sure you want to checkout early?",
     "checkoutSuccess": "Early checkout processed",
     "checkoutFail": "Checkout failed: ",
-    "submitSuccess": "Order submitted successfully"
+    "submitSuccess": "Order submitted successfully",
+    "roomsSection": "Room(s)",
+    "servicesSection": "Services",
+    "totalAmount": "Total Amount",
+    "roomNoLabel": "Room No.",
+    "roomTypeLabel": "Room Type",
+    "checkInTime": "Check-in",
+    "checkOutTime": "Check-out",
+    "occupantCount": "Guests",
+    "coOccupants": "Co-occupants",
+    "serviceName": "Service",
+    "qty": "Qty",
+    "unitPrice": "Unit Price",
+    "subTotal": "Subtotal",
+    "noServices": "No services",
+    "person": " pax"
   },
   "mine": {
     "title": "My Center",

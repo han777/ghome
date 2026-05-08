@@ -16,8 +16,12 @@ public class RoomOrder {
     private String orderNo;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private SysUser user;
+    @JoinColumn(name = "book_user_id")
+    private SysUser booker;
+
+    @ManyToOne
+    @JoinColumn(name = "last_update_user_id")
+    private SysUser lastUpdateUser;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties("order")
@@ -32,10 +36,6 @@ public class RoomOrder {
     private BigDecimal totalAmount = BigDecimal.ZERO;
     private BigDecimal roomFee = BigDecimal.ZERO;
     private BigDecimal serviceFee = BigDecimal.ZERO;
-    @ManyToOne
-    @JoinColumn(name = "book_user_id")
-    private SysUser booker;
-
     private String bookPhone;
     
     private String remarks;
@@ -44,6 +44,11 @@ public class RoomOrder {
     private String costCenter;
     private LocalDateTime createdAt;
     private LocalDateTime expiresAt;
+
+    /** 创建人：新建订单时赋值为当前登录用户 */
+    @ManyToOne
+    @JoinColumn(name = "create_user_id")
+    private SysUser createUser;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<OrderProductDetail> productDetails;

@@ -32,12 +32,13 @@
 <script setup lang="ts">
 
 import { useI18n } from 'vue-i18n';
+import { translateField } from '../../utils/lang';
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../../utils/api';
 
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const records = ref<any[]>([]);
 
@@ -46,7 +47,10 @@ const fetchRecords = async () => {
     const res = await api.get('/orders/mine') as any[];
     records.value = res.map(o => ({
       ...o,
-      roomTypeName: o.roomOccupies?.[0]?.room?.roomType?.typeCode || t('records.unknown'),
+      roomTypeName: translateField(
+        o.roomOccupies?.[0]?.room?.roomType?.nameIntlJson,
+        locale.value
+      ) || o.roomOccupies?.[0]?.room?.roomType?.typeCode || t('records.unknown'),
       roomNo: o.roomOccupies?.[0]?.room?.roomNo || '-',
       statusText: getStatusText(o.status),
       statusClass: getStatusClass(o.status)

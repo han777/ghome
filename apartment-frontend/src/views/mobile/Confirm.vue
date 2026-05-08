@@ -49,11 +49,16 @@
       <!-- Price Card -->
       <div class="mobile-card price-card">
         <div class="price-row">
-          <span class="price-label">{{ $t('confirm.totalAmount') }}</span>
+          <span class="price-label">{{ $t('confirm.roomCharge') }}</span>
           <div class="price-val-group">
-            <span class="price-total">¥ {{ order.totalAmount?.toFixed(2) }}</span>
+            <span class="price-total">¥ {{ (roomPrice * stayDays).toFixed(2) }}</span>
             <span class="price-detail">{{ $t('confirm.perNightMath2', { price: roomPrice, days: stayDays }) }}</span>
           </div>
+        </div>
+        <div class="divider"></div>
+        <div class="price-row total-amount-row">
+          <span class="price-label">{{ $t('confirm.totalAmount') }}</span>
+          <span class="price-total large">¥ {{ (roomPrice * stayDays).toFixed(2) }}</span>
         </div>
       </div>
 
@@ -68,7 +73,7 @@
         
         <div class="occupant-list">
           <div class="occupant-row">
-            <span class="occ-name">{{ order.user?.realName || order.user?.username || t('confirm.currentUser') }}</span>
+            <span class="occ-name">{{ order.booker?.realName || order.booker?.username || t('confirm.currentUser') }}</span>
             <span class="occ-tag">{{ $t('confirm.myself') }}</span>
           </div>
           
@@ -98,7 +103,7 @@
     <div class="bottom-bar">
       <div class="bar-total">
         <div class="total-label">{{ $t('confirm.totalLabel') }}</div>
-        <div class="total-price">¥ {{ (order.totalAmount || 0).toFixed(2) }}</div>
+        <div class="total-price">¥ {{ (roomPrice * stayDays).toFixed(2) }}</div>
       </div>
       <button class="bar-btn cancel" @click="cancelOrder">{{ $t('confirm.cancelOrder') }}</button>
       <button class="bar-btn submit" :disabled="isExpired" @click="submitOrder">{{ $t('confirm.submit') }}</button>
@@ -351,6 +356,15 @@ onUnmounted(() => {
 .price-total {
   font-size: 16px;
   font-weight: bold;
+}
+
+.price-total.large {
+  font-size: 20px;
+  color: var(--mobile-primary);
+}
+
+.total-amount-row {
+  margin-top: 12px;
 }
 
 .price-detail {

@@ -196,7 +196,22 @@
     "checkoutConfirmMsg": "确定要提前退房吗？",
     "checkoutSuccess": "已办理提前退房",
     "checkoutFail": "退房失败: ",
-    "submitSuccess": "订单提交成功"
+    "submitSuccess": "订单提交成功",
+    "roomsSection": "入住房间",
+    "servicesSection": "产品服务",
+    "totalAmount": "订单总金额",
+    "roomNoLabel": "房间号",
+    "roomTypeLabel": "房型",
+    "checkInTime": "入住时间",
+    "checkOutTime": "离开时间",
+    "occupantCount": "入住人数",
+    "coOccupants": "同住人",
+    "serviceName": "服务名称",
+    "qty": "数量",
+    "unitPrice": "单价",
+    "subTotal": "小计",
+    "noServices": "暂无产品服务",
+    "person": "人"
   },
   "mine": {
     "title": "个人中心",

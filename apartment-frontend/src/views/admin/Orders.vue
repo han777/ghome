@@ -57,7 +57,7 @@
                 📞 {{ order.bookPhone || order.booker?.phone || '-' }}
               </div>
             </td>
-            <td class="name">{{ order.user?.realName || order.user?.username || 'System' }}</td>
+            <td class="name">{{ order.createUser?.realName || order.createUser?.username || '-' }}</td>
             <td><span class="room-count-badge">{{ order.roomOccupies?.length || 0 }}</span></td>
             <td>
               <div class="room-tags">
@@ -178,8 +178,8 @@
                 <input type="datetime-local" v-model="form.createdAt" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
               </div>
               <div class="form-item">
-                <label>Creator</label>
-                <input :value="form.user?.realName || form.user?.username || 'System'" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
+                <label>创建人</label>
+                <input :value="form.createUser?.realName || form.createUser?.username || '-'" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
               </div>
             </div>
           </section>
@@ -430,7 +430,7 @@
               <select v-model="roomPickerFilters.roomTypeId">
                 <option :value="null">-- All Types --</option>
                 <option v-for="t in roomTypes" :key="t.id" :value="t.id">
-                  {{ t.typeCode }} ({{ t.nameIntl?.zh || t.nameIntl?.en }})
+                  {{ t.typeCode }} ({{ parseNameIntl(t.nameIntlJson, 'zh') || parseNameIntl(t.nameIntlJson, 'en') }})
                 </option>
               </select>
             </div>
@@ -513,6 +513,16 @@ const form = reactive<any>({
   productDetails: []
 });
 
+const parseNameIntl = (json: string, lang: string): string => {
+  if (!json) return '';
+  try {
+    const obj = typeof json === 'string' ? JSON.parse(json) : json;
+    return obj[lang] || obj['zh'] || '';
+  } catch {
+    return '';
+  }
+};
+
 const fetchData = async () => {
   try {
     const [orderRes, dictRes, userRes, roomRes, productRes, typeRes] = await Promise.all([
@@ -571,7 +581,7 @@ const filteredOrders = computed(() => {
     // Search filter
     const q = searchQuery.value.toLowerCase();
     const bookerName = o.booker?.realName?.toLowerCase() || '';
-    const creatorName = o.user?.realName?.toLowerCase() || o.user?.username?.toLowerCase() || '';
+    const creatorName = o.createUser?.realName?.toLowerCase() || o.createUser?.username?.toLowerCase() || '';
     const occupants = o.roomOccupies?.map((ro: any) => 
       (ro.occupantUser?.realName || ro.coOccupants || '').toLowerCase()
     ).join(' ') || '';

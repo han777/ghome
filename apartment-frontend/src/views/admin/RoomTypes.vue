@@ -23,8 +23,11 @@
           <tr v-for="type in filteredTypes" :key="type.id">
             <td class="code">{{ type.typeCode }}</td>
             <td>
-              <div v-for="(val, lang) in type.nameIntl" :key="lang">
-                <span class="tag">{{ lang }}</span> {{ val }}
+              <div class="name-intl-cell">
+                <span class="tag">中</span> {{ parseName(type.nameIntlJson, 'zh') }}
+              </div>
+              <div class="name-intl-cell">
+                <span class="tag">EN</span> {{ parseName(type.nameIntlJson, 'en') }}
               </div>
             </td>
             <td>¥{{ type.priceShortRent }}</td>
@@ -53,8 +56,12 @@
               <input v-model="form.typeCode" placeholder="如 KING, SUITE" required>
             </div>
             <div class="form-item">
-              <label>名称 (多语言JSON)</label>
-              <textarea v-model="nameIntlJson" placeholder='{"zh": "大床房", "en": "King Room"}'></textarea>
+              <label>中文名称</label>
+              <input v-model="nameZh" placeholder="如 大床房">
+            </div>
+            <div class="form-item">
+              <label>英文名称 (English)</label>
+              <input v-model="nameEn" placeholder="e.g. King Room">
             </div>
             <div class="form-group-row">
               <div class="form-item">
@@ -107,13 +114,14 @@ import api from '../../utils/api';
 const types = ref<any[]>([]);
 const showModal = ref(false);
 const searchQuery = ref('');
-const nameIntlJson = ref('');
+const nameZh = ref('');
+const nameEn = ref('');
 const previewImage = ref<string | null>(null);
 
 const form = reactive<any>({
   id: null,
   typeCode: '',
-  nameIntl: {},
+  nameIntlJson: '',
   priceShortRent: 0,
   priceLongRent: 0,
   images: [],
@@ -138,7 +146,7 @@ const openModal = (type?: any) => {
   // Reset form
   form.id = null;
   form.typeCode = '';
-  form.nameIntl = {};
+  form.nameIntlJson = '';
   form.priceShortRent = 0;
   form.priceLongRent = 0;
   form.images = [];
@@ -148,14 +156,23 @@ const openModal = (type?: any) => {
     const cloned = JSON.parse(JSON.stringify(type));
     form.id = cloned.id;
     form.typeCode = cloned.typeCode;
-    form.nameIntl = cloned.nameIntl || {};
+    form.nameIntlJson = cloned.nameIntlJson || '{}';
     form.priceShortRent = cloned.priceShortRent;
     form.priceLongRent = cloned.priceLongRent;
     form.images = cloned.images || [];
     form.remarks = cloned.remarks;
-    nameIntlJson.value = JSON.stringify(cloned.nameIntl || {}, null, 2);
+    // Parse existing JSON into separate inputs
+    try {
+      const parsed = JSON.parse(cloned.nameIntlJson || '{}');
+      nameZh.value = parsed.zh || '';
+      nameEn.value = parsed.en || '';
+    } catch {
+      nameZh.value = '';
+      nameEn.value = '';
+    }
   } else {
-    nameIntlJson.value = '{"zh": "", "en": ""}';
+    nameZh.value = '';
+    nameEn.value = '';
   }
   showModal.value = true;
 };
@@ -182,12 +199,24 @@ const handleFileUpload = async (event: any) => {
 
 const saveType = async () => {
   try {
-    form.nameIntl = JSON.parse(nameIntlJson.value);
+    // Build nameIntlJson from the two input fields
+    form.nameIntlJson = JSON.stringify({ zh: nameZh.value, en: nameEn.value });
     await api.post('/room-types', form);
     showModal.value = false;
     fetchData();
   } catch (e) {
-    alert('Invalid JSON in Names or failed to save');
+    alert('保存失败，请检查表单内容');
+  }
+};
+
+// Helper: parse nameIntlJson and return specified lang
+const parseName = (json: string, lang: string): string => {
+  if (!json) return '';
+  try {
+    const obj = typeof json === 'string' ? JSON.parse(json) : json;
+    return obj[lang] || obj['zh'] || '';
+  } catch {
+    return '';
   }
 };
 

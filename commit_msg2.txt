@@ -1,0 +1,26 @@
+feat: 房型名称国际化改造 — 使用 JSONB 单字段存储多语言
+
+## 变更说明
+
+### 后端 (apartment-backend)
+- `RoomType.java`: 移除 `@ElementCollection nameIntl`（关联子表 `room_type_name_intl`），
+  新增 `nameIntlJson` 字段，类型为 `@Column(columnDefinition = "jsonb")`，
+  以 JSON 字符串 `{"zh": "大床房", "en": "King Room"}` 存储多语言名称
+
+### 前端管理端 (apartment-frontend)
+- `RoomTypes.vue`:
+  - 列表显示：从解析 `nameIntl` Map 改为解析 `nameIntlJson` JSON 字符串，中/EN 分行展示
+  - 编辑表单：将 raw JSON textarea 改为两个独立输入框（中文名称 / 英文名称），
+    提交时自动组装为 JSON 字符串
+  - 新增 `parseName` 工具函数用于安全解析 nameIntlJson
+- `Orders.vue`:
+  - 房型选择下拉框显示从 `t.nameIntl?.zh` 改为 `parseNameIntl(t.nameIntlJson, 'zh')`
+  - 新增 `parseNameIntl` 工具函数
+
+### 前端移动端
+- `Booking.vue` / `RoomSelect.vue`: 已使用 `translateField(type.nameIntlJson, locale)`，
+  与新字段名完全对齐，无需改动
+
+### 数据库
+- 迁移脚本: `migrate_room_type_intl.sql`
+  需在重启后端后手动执行，将旧子表数据迁移到新 JSONB 列
