@@ -303,7 +303,7 @@ const submitOrder = async () => {
     alert(t('orderDetail.submitSuccess'));
     fetchOrder();
   } catch (e: any) {
-    alert('提交失败: ' + (e.response?.data?.message || e.message));
+    alert(t('confirm.submitFailed') + ': ' + (e.response?.data?.message || e.message));
   }
 };
 

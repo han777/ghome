@@ -17,7 +17,7 @@
     <div class="legend">
       <div class="legend-item"><span class="dot selected"></span> {{ $t('roomSelect.selected') }}</div>
       <div class="legend-item"><span class="dot available"></span> {{ $t('roomSelect.available') }}</div>
-      <div class="legend-item"><span class="dot unavailable"></span> 不{{ $t('roomSelect.available') }}</div>
+      <div class="legend-item"><span class="dot unavailable"></span> {{ $t('roomSelect.unavailable') }}</div>
     </div>
 
     <div class="content">
@@ -37,7 +37,7 @@
         </div>
       </div>
       <div v-if="floors.length === 0" class="empty-rooms">
-        所选时段暂无可用{{ $t('orderDetail.roomNo') }}
+        {{ $t('roomSelect.noRooms') }}
       </div>
     </div>
 
@@ -258,5 +258,11 @@ const confirmSelection = async () => {
 
 .footer-actions button {
   flex: 1;
+}
+
+.empty-rooms {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
 }
 </style>

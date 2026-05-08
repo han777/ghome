@@ -29,6 +29,9 @@
               <div class="name-intl-cell">
                 <span class="tag">EN</span> {{ parseName(type.nameIntlJson, 'en') }}
               </div>
+              <div class="name-intl-cell">
+                <span class="tag">JA</span> {{ parseName(type.nameIntlJson, 'ja') }}
+              </div>
             </td>
             <td>¥{{ type.priceShortRent }}</td>
             <td>¥{{ type.priceLongRent }}</td>
@@ -62,6 +65,10 @@
             <div class="form-item">
               <label>英文名称 (English)</label>
               <input v-model="nameEn" placeholder="e.g. King Room">
+            </div>
+            <div class="form-item">
+              <label>日语名称 (日本語)</label>
+              <input v-model="nameJa" placeholder="例：キングルーム">
             </div>
             <div class="form-group-row">
               <div class="form-item">
@@ -116,6 +123,7 @@ const showModal = ref(false);
 const searchQuery = ref('');
 const nameZh = ref('');
 const nameEn = ref('');
+const nameJa = ref('');
 const previewImage = ref<string | null>(null);
 
 const form = reactive<any>({
@@ -166,13 +174,16 @@ const openModal = (type?: any) => {
       const parsed = JSON.parse(cloned.nameIntlJson || '{}');
       nameZh.value = parsed.zh || '';
       nameEn.value = parsed.en || '';
+      nameJa.value = parsed.ja || '';
     } catch {
       nameZh.value = '';
       nameEn.value = '';
+      nameJa.value = '';
     }
   } else {
     nameZh.value = '';
     nameEn.value = '';
+    nameJa.value = '';
   }
   showModal.value = true;
 };
@@ -199,8 +210,12 @@ const handleFileUpload = async (event: any) => {
 
 const saveType = async () => {
   try {
-    // Build nameIntlJson from the two input fields
-    form.nameIntlJson = JSON.stringify({ zh: nameZh.value, en: nameEn.value });
+    // Build nameIntlJson from the input fields
+    form.nameIntlJson = JSON.stringify({ 
+      zh: nameZh.value, 
+      en: nameEn.value, 
+      ja: nameJa.value 
+    });
     await api.post('/room-types', form);
     showModal.value = false;
     fetchData();

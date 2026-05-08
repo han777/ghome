@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 @Entity
 @Table(name = "room_type")
 @Data
@@ -18,6 +21,7 @@ public class RoomType {
     /**
      * 多语言名称，以 JSONB 存储，格式: {"zh": "大床房", "en": "King Room"}
      */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "name_intl_json", columnDefinition = "jsonb")
     private String nameIntlJson;
 

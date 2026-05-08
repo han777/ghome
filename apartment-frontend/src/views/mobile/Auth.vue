@@ -13,7 +13,7 @@
     <div class="auth-content">
       <div class="welcome-section">
         <h1 class="welcome-title" v-html="$t('auth.welcome')"></h1>
-        <div class="lang-switch" @click="$i18n.locale = $i18n.locale === 'zh' ? 'en' : 'zh'">{{ $i18n.locale === 'zh' ? 'English 🌐' : '简体中文 🌐' }}</div>
+        <div class="lang-switch" @click="toggleLang">{{ nextLangLabel }} 🌐</div>
       </div>
 
       <div class="auth-form">
@@ -101,7 +101,21 @@ import api from '../../utils/api';
 
 const router = useRouter();
 const route = useRoute();
-const { t } = useI18n();
+const { t, locale } = useI18n();
+import { computed } from 'vue';
+
+const nextLangLabel = computed(() => {
+  if (locale.value === 'zh') return 'English';
+  if (locale.value === 'en') return '日本語';
+  return '简体中文';
+});
+
+const toggleLang = () => {
+  if (locale.value === 'zh') locale.value = 'en';
+  else if (locale.value === 'en') locale.value = 'ja';
+  else locale.value = 'zh';
+  localStorage.setItem('locale', locale.value);
+};
 
 const phone = ref('');
 const code = ref('');

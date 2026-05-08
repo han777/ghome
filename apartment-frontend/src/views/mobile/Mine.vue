@@ -64,6 +64,7 @@
           <div class="lang-toggle">
             <span class="lang-pill" :class="{ 'lang-active': locale === 'zh' }">中</span>
             <span class="lang-pill" :class="{ 'lang-active': locale === 'en' }">EN</span>
+            <span class="lang-pill" :class="{ 'lang-active': locale === 'ja' }">日</span>
           </div>
         </div>
       </div>
@@ -76,8 +77,6 @@
 </template>
 
 <script setup lang="ts">
-
-
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
@@ -86,9 +85,14 @@ import api from '../../utils/api';
 const router = useRouter();
 const { locale } = useI18n();
 
-
 const toggleLanguage = () => {
-  locale.value = locale.value === 'zh' ? 'en' : 'zh';
+  if (locale.value === 'zh') {
+    locale.value = 'en';
+  } else if (locale.value === 'en') {
+    locale.value = 'ja';
+  } else {
+    locale.value = 'zh';
+  }
   localStorage.setItem('locale', locale.value);
 };
 
