@@ -11,8 +11,8 @@
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Department Name</th>
-            <th>Sort Order</th>
+            <th>部门名称</th>
+            <th>排序</th>
             <th>操作</th>
           </tr>
         </thead>

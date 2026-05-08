@@ -4,8 +4,8 @@
       <div class="search-bar">
         <input v-model="searchQuery" type="text" placeholder="搜索订房人、创建人、入住人...">
       </div>
-      <button class="refresh-btn" @click="fetchData" title="Refresh">🔄 Refresh</button>
-      <button class="add-btn" @click="openModal()">+ New Order</button>
+      <button class="refresh-btn" @click="fetchData" title="刷新">🔄 刷新</button>
+      <button class="add-btn" @click="openModal()">+ 新建订单</button>
     </div>
 
     <div class="filter-row">
@@ -15,14 +15,14 @@
           :class="{ active: filterTodayArrival }"
           @click="filterTodayArrival = !filterTodayArrival"
         >
-          🛬 Today Arrival
+          🛬 今日入住
         </button>
         <button 
           class="filter-chip" 
           :class="{ active: filterTodayDeparture }"
           @click="filterTodayDeparture = !filterTodayDeparture"
         >
-          🛫 Today Departure
+          🛫 今日退房
         </button>
       </div>
       <div class="status-filters">
@@ -37,13 +37,13 @@
       <table class="admin-table">
         <thead>
           <tr>
-            <th>Order No.</th>
-            <th>Booker</th>
-            <th>Creator</th>
-            <th>Rooms</th>
-            <th>Room List</th>
-            <th>Business Type</th>
-            <th>Stay Period</th>
+            <th>订单号</th>
+            <th>预订人</th>
+            <th>创建人</th>
+            <th>房数</th>
+            <th>房间列表</th>
+            <th>业务类型</th>
+            <th>入住周期</th>
             <th>状态</th>
             <th>操作</th>
           </tr>
@@ -84,7 +84,7 @@
               </span>
             </td>
             <td class="actions">
-              <button class="edit-btn" @click="sendCode(order.id)" v-if="order.status === 1 || order.status === 2">Send Code</button>
+              <button class="edit-btn" @click="sendCode(order.id)" v-if="order.status === 1 || order.status === 2">发送验证码</button>
               <button class="edit-btn" @click="openModal(order)">详情</button>
               <button class="delete-btn" @click="cancelOrder(order.id)" v-if="order.status < 3">取消</button>
             </td>
@@ -100,14 +100,14 @@
           <div class="header-left">
             <h2>{{ form.id ? '编辑订单' : '创建订单' }}</h2>
             <div class="modal-nav">
-              <a href="#section-basic" @click.prevent="scrollTo('section-basic')">🏠 Basic Info</a>
-              <a href="#section-rooms" @click.prevent="scrollTo('section-rooms')">🛏️ Rooms</a>
-              <a href="#section-products" @click.prevent="scrollTo('section-products')">📦 Services & Products</a>
-              <a href="#section-accounting" @click.prevent="scrollTo('section-accounting')">💰 Accounting</a>
+              <a href="#section-basic" @click.prevent="scrollTo('section-basic')">🏠 基础信息</a>
+              <a href="#section-rooms" @click.prevent="scrollTo('section-rooms')">🛏️ 客房</a>
+              <a href="#section-products" @click.prevent="scrollTo('section-products')">📦 服务与商品</a>
+              <a href="#section-accounting" @click.prevent="scrollTo('section-accounting')">💰 财务结算</a>
             </div>
           </div>
           <div class="header-actions">
-            <button v-if="form.id && form.status < 3" class="checkout-btn" @click="handleCheckout">🔔 退房 (Checkout)</button>
+            <button v-if="form.id && form.status < 3" class="checkout-btn" @click="handleCheckout">🔔 退房</button>
             <button class="maximize-btn" @click="isMaximized = !isMaximized">
               {{ isMaximized ? '🗗' : '🗖' }}
             </button>
@@ -117,33 +117,33 @@
         <div class="modal-body scrollable">
           <!-- Basic Info Section -->
            <section id="section-basic" class="form-section">
-            <h3 class="section-title">Basic Information</h3>
+            <h3 class="section-title">基础信息</h3>
             <div class="form-grid-4">
               <div class="form-item">
-                <label class="required">Book User</label>
+                <label class="required">预订人</label>
                 <select v-model="form.bookerId" required @change="onBookerChange">
-                  <option :value="null">-- Select Booker --</option>
+                  <option :value="null">-- 选择预订人 --</option>
                   <option v-for="u in users" :key="u.id" :value="u.id">
                     {{ u.realName }} ({{ u.username }})
                   </option>
                 </select>
               </div>
               <div class="form-item">
-                <label>Book Phone</label>
-                <input v-model="form.bookPhone" placeholder="Booking phone">
+                <label>联系电话</label>
+                <input v-model="form.bookPhone" placeholder="预订电话">
               </div>
 
               <div class="form-item">
-                <label class="required">Stay Start Date</label>
+                <label class="required">入住日期</label>
                 <input type="datetime-local" v-model="form.startDate" required>
               </div>
               <div class="form-item">
-                <label>Stay End Date</label>
+                <label>退房日期</label>
                 <input type="datetime-local" v-model="form.endDate" required>
               </div>
 
               <div class="form-item">
-                <label>Business Type</label>
+                <label>业务类型</label>
                 <select v-model="form.bizType">
                   <option v-for="opt in getDictOptions('BIZ_TYPE')" :key="opt.value" :value="parseInt(opt.value)">
                     {{ opt.label }}
@@ -152,15 +152,15 @@
               </div>
 
               <div class="form-item">
-                <label>Customer Type</label>
+                <label>客户类型</label>
                 <select v-model="form.customerType">
-                  <option :value="1">Individual (个人)</option>
-                  <option :value="2">Group (团体)</option>
+                  <option :value="1">个人</option>
+                  <option :value="2">团体</option>
                 </select>
               </div>
               
               <div class="form-item">
-                <label>Order Status</label>
+                <label>订单状态</label>
                 <select v-model="form.status">
                   <option v-for="opt in getDictOptions('ORDER_STATUS')" :key="opt.value" :value="parseInt(opt.value)">
                     {{ opt.label }}
@@ -187,10 +187,10 @@
           <!-- Room Occupancy Section -->
           <section id="section-rooms" class="form-section">
             <div class="section-header">
-              <h3 class="section-title">Room Occupancy</h3>
+              <h3 class="section-title">客房入住</h3>
               <div class="header-actions">
                 <span class="room-count-badge" v-if="form.roomOccupies?.length">
-                  {{ form.roomOccupies.length }} ROOMS
+                  {{ form.roomOccupies.length }} 间
                 </span>
                 <button class="add-btn small" @click="addRoomRow">+ 添加房间</button>
               </div>
@@ -199,7 +199,7 @@
               <div v-for="(occupy, index) in form.roomOccupies" :key="index" class="room-card">
                 <div class="card-header">
                   <div class="card-title">
-                    <span class="room-no">Room {{ getRoomNo(Number(occupy.roomId)) || 'NEW' }}</span>
+                    <span class="room-no">房间 {{ getRoomNo(Number(occupy.roomId)) || '未设置' }}</span>
                     <span class="room-type">{{ getRoomTypeLabel(Number(occupy.roomId)) }}</span>
                   </div>
                   <div class="card-actions">
@@ -209,59 +209,59 @@
                 </div>
                 <div class="card-grid">
                   <div class="card-item">
-                    <label>Actual Check-in</label>
+                    <label>实际入住</label>
                     <input type="datetime-local" v-model="occupy.checkInTime">
                   </div>
                   <div class="card-item">
-                    <label>Actual Check-out</label>
+                    <label>实际退房</label>
                     <input type="datetime-local" v-model="occupy.checkOutTime">
                   </div>
                     <div class="card-item">
-                      <label>Room</label>
+                      <label>房间</label>
                       <div class="room-selector-btn" @click="openRoomPicker(occupy, index)">
                         <span v-if="occupy.roomId" class="selected-room-info">
                           <strong>{{ getRoomNo(Number(occupy.roomId)) }}</strong> 
                           <small>({{ getRoomTypeLabel(Number(occupy.roomId)) }})</small>
                         </span>
-                        <span v-else class="placeholder">Select Room...</span>
+                        <span v-else class="placeholder">选择房间...</span>
                       </div>
                     </div>
                   <div class="card-item">
-                    <label>Occupant User</label>
+                    <label>入住人</label>
                     <select v-model="occupy.occupantUserId">
-                      <option :value="null">-- Select Occupant --</option>
+                      <option :value="null">-- 选择入住人 --</option>
                       <option v-for="u in users" :key="u.id" :value="u.id">
                         {{ u.realName }} ({{ u.username }})
                       </option>
                     </select>
                   </div>
                   <div class="card-item">
-                    <label>Room Card No.</label>
+                    <label>房卡号</label>
                     <input v-model="occupy.roomCardNo">
                   </div>
                   <div class="card-item">
-                    <label>Door Code (Key)</label>
+                    <label>门锁密码</label>
                     <input v-model="occupy.doorCode">
                   </div>
                   <div class="card-item">
-                    <label>Occupants</label>
+                    <label>入住人数</label>
                     <input type="number" v-model="occupy.occupantCount" min="1">
                   </div>
                   <div class="card-item">
                     <label>状态</label>
                     <select v-model="occupy.status">
-                      <option :value="0">Current (当前)</option>
-                      <option :value="1">Finish (完成)</option>
+                      <option :value="0">当前</option>
+                      <option :value="1">完成</option>
                     </select>
                   </div>
                   <div class="card-item span-4">
-                    <label>Co-Occupants</label>
-                    <input v-model="occupy.coOccupants" placeholder="Names of other guests">
+                    <label>同住人</label>
+                    <input v-model="occupy.coOccupants" placeholder="其他房客姓名">
                   </div>
                 </div>
               </div>
               <div v-if="!form.roomOccupies || form.roomOccupies.length === 0" class="empty-rooms">
-                No rooms assigned to this order yet.
+                此订单尚未分配客房。
               </div>
             </div>
           </section>
@@ -269,22 +269,22 @@
           <!-- Products & Services Section -->
           <section id="section-products" class="form-section">
             <div class="section-header">
-              <h3 class="section-title">Services & Products</h3>
+              <h3 class="section-title">服务与商品</h3>
               <button class="add-btn small" @click="addProductDetail">+ 添加行</button>
             </div>
             <div class="table-wrapper">
               <table class="detail-table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Product/Service</th>
+                    <th>日期</th>
+                    <th>产品/服务</th>
                     <th>单位</th>
-                    <th>Std. Price</th>
-                    <th>Act. Price</th>
-                    <th>Qty</th>
-                    <th>Total</th>
+                    <th>标准价</th>
+                    <th>实际价</th>
+                    <th>数量</th>
+                    <th>总计</th>
                     <th>备注</th>
-                    <th>Action</th>
+                    <th>操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -292,9 +292,9 @@
                     <td><input type="date" v-model="detail.consumeDate" class="table-input" style="width: 120px;"></td>
                     <td>
                       <select v-model="detail.productId" @change="onProductChange(detail)" class="table-input">
-                        <option :value="null">-- Select --</option>
+                        <option :value="null">-- 选择 --</option>
                         <option v-for="p in productPrices" :key="p.id" :value="p.id">
-                          {{ p.productName }} ({{ p.category === 1 ? 'Sale' : 'Damage' }})
+                          {{ p.productName }} ({{ p.category === 1 ? '出售' : '损坏' }})
                         </option>
                       </select>
                     </td>
@@ -307,7 +307,7 @@
                     <td><button class="delete-btn" @click="removeProductDetail(index)">×</button></td>
                   </tr>
                   <tr v-if="form.productDetails?.length === 0">
-                    <td colspan="9" class="empty-row">No services or products added</td>
+                    <td colspan="9" class="empty-row">未添加服务或产品</td>
                   </tr>
                 </tbody>
               </table>
@@ -316,24 +316,24 @@
 
           <!-- Accounting Section -->
           <section id="section-accounting" class="form-section">
-            <h3 class="section-title">Accounting</h3>
+            <h3 class="section-title">财务结算</h3>
             <div class="form-grid-4">
               <div class="form-item">
-                <label>Room Fee</label>
+                <label>房费</label>
                 <div class="amount-display">
                   <span class="currency">¥</span>
                   <input type="number" v-model="form.roomFee" step="0.01" disabled>
                 </div>
               </div>
               <div class="form-item">
-                <label>Service Fee</label>
+                <label>服务费</label>
                 <div class="amount-display">
                   <span class="currency">¥</span>
                   <input type="number" v-model="form.serviceFee" step="0.01" disabled>
                 </div>
               </div>
               <div class="form-item span-2">
-                <label>Total Amount (Auto)</label>
+                <label>总金额 (自动)</label>
                 <div class="amount-display highlight">
                   <span class="currency">¥</span>
                   <input type="number" v-model="form.totalAmount" step="0.01">
@@ -344,7 +344,7 @@
         </div>
         <div class="modal-footer">
           <div class="footer-summary">
-            Total: <span class="price-highlight">¥{{ form.totalAmount }}</span>
+            总计: <span class="price-highlight">¥{{ form.totalAmount }}</span>
           </div>
           <div class="footer-btns">
             <button class="cancel-btn" @click="showModal = false">取消</button>
@@ -358,49 +358,49 @@
     <div v-if="showChangeRoomModal" class="modal-overlay" style="z-index: 2000;">
       <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header">
-          <h3>换房流程 (Change Room)</h3>
+          <h3>换房流程</h3>
           <button class="close-btn" @click="showChangeRoomModal = false">&times;</button>
         </div>
         <div class="modal-body">
           <div class="room-card" style="box-shadow: none; border-color: #38bdf8;">
             <div class="card-header">
               <div class="card-title">
-                <span class="room-no">New Room Details</span>
-                <span class="room-type">FIELDS COPIED FROM CURRENT ROOM</span>
+                <span class="room-no">新房间详情</span>
+                <span class="room-type">信息将从原房间复制</span>
               </div>
             </div>
             <div class="card-grid">
               <div class="card-item span-4">
-                <label class="required">Select New Room</label>
+                <label class="required">选择新房间</label>
                 <select v-model="changeRoomNewRoomId" required>
-                  <option :value="null">-- Choose Available Room --</option>
+                  <option :value="null">-- 选择可用房间 --</option>
                   <option v-for="r in rooms" :key="r.id" :value="r.id" :disabled="r.status !== 0">
                     {{ r.roomNo }} ({{ r.roomType?.typeCode }}) - ¥{{ form.bizType === 1 ? r.roomType?.priceShortRent : r.roomType?.priceLongRent }}
                   </option>
                 </select>
               </div>
               <div class="card-item span-2">
-                <label>Occupant User</label>
+                <label>入住人</label>
                 <input :value="users.find(u => u.id === changingOccupy?.occupantUserId)?.realName" disabled>
               </div>
               <div class="card-item span-2">
-                <label>Room Card No.</label>
+                <label>房卡号</label>
                 <input :value="changingOccupy?.roomCardNo" disabled>
               </div>
               <div class="card-item span-4" v-if="changeRoomPriceDiff !== 0">
                 <div class="amount-display highlight">
-                  <span style="font-size: 13px; color: #64748b;">Price Difference:</span>
+                  <span style="font-size: 13px; color: #64748b;">价格差：</span>
                   <span class="currency">¥</span>
                   <span style="font-weight: 800; color: #ef4444;">{{ changeRoomPriceDiff.toFixed(2) }}</span>
                 </div>
-                <p style="font-size: 11px; color: #94a3b8; margin-top: 5px;">* Calculated for remaining days until {{ form.endDate }}</p>
+                <p style="font-size: 11px; color: #94a3b8; margin-top: 5px;">* 计算剩余天数至 {{ form.endDate }}</p>
               </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
           <button class="cancel-btn" @click="showChangeRoomModal = false">取消</button>
-          <button class="save-btn" :disabled="!changeRoomNewRoomId" @click="confirmChangeRoom">Confirm Change</button>
+          <button class="save-btn" :disabled="!changeRoomNewRoomId" @click="confirmChangeRoom">确认换房</button>
         </div>
       </div>
     </div>
@@ -410,25 +410,25 @@
       <div class="modal-content room-picker-modal">
         <div class="modal-header">
           <div class="header-left">
-            <h2>Select Available Room</h2>
-            <p class="subtitle">Showing rooms with no locks, no maintenance, and no overlapping bookings.</p>
+            <h2>选择可用房间</h2>
+            <p class="subtitle">显示无锁定、无维修且无重叠预订的房间。</p>
           </div>
           <button class="close-btn" @click="showRoomPicker = false">&times;</button>
         </div>
         <div class="modal-body">
           <div class="picker-filter-bar">
             <div class="filter-group">
-              <label>Check-in</label>
+              <label>入住</label>
               <input type="date" v-model="roomPickerFilters.startDate" @change="fetchPickerAvailableRooms">
             </div>
             <div class="filter-group">
-              <label>Check-out</label>
+              <label>退房</label>
               <input type="date" v-model="roomPickerFilters.endDate" @change="fetchPickerAvailableRooms">
             </div>
             <div class="filter-group">
               <label>房型</label>
               <select v-model="roomPickerFilters.roomTypeId">
-                <option :value="null">-- All Types --</option>
+                <option :value="null">-- 全部房型 --</option>
                 <option v-for="t in roomTypes" :key="t.id" :value="t.id">
                   {{ t.typeCode }} ({{ parseNameIntl(t.nameIntlJson, 'zh') || parseNameIntl(t.nameIntlJson, 'en') }})
                 </option>
@@ -443,7 +443,7 @@
               class="room-pick-card"
               @click="selectRoomFromPicker(r)"
             >
-              <div class="room-badge">Room</div>
+              <div class="room-badge">房间</div>
               <div class="room-no">{{ r.roomNo }}</div>
               <div class="room-meta">
                 <span class="type-tag">{{ r.roomType?.typeCode }}</span>
@@ -452,8 +452,8 @@
             </div>
             <div v-if="filteredPickerRooms.length === 0" class="empty-picker">
               <div class="empty-icon">📭</div>
-              <p>No available rooms found for the selected period and type.</p>
-              <small>Try different dates or clear the room type filter.</small>
+              <p>在所选时段和房型下未找到可用房间。</p>
+              <small>请尝试不同的日期或清除房型筛选。</small>
             </div>
           </div>
         </div>
@@ -867,7 +867,7 @@ const scrollTo = (id: string) => {
 };
 
 const handleCheckout = async () => {
-  if (!confirm('Confirm checkout? This will set order status to OUT.')) return;
+  if (!confirm('确定退房？这将把订单状态设置为已退房。')) return;
   form.status = 3; // OUT
   await saveOrder();
 };
@@ -876,9 +876,9 @@ const sendCode = async (id: number) => {
   try {
     await api.post(`/orders/${id}/send-code`, {});
     fetchData();
-    alert('Code sent successfully');
+    alert('验证码发送成功');
   } catch (e) {
-    alert('Failed to send code');
+    alert('验证码发送失败');
   }
 };
 
@@ -895,19 +895,19 @@ const cancelOrder = async (id: number) => {
 const saveOrder = async () => {
   try {
     if (!form.bookerId) {
-      alert('⚠️ Please select a BOOKER');
+      alert('⚠️ 请选择预订人');
       return;
     }
     if (!form.roomOccupies || form.roomOccupies.length === 0) {
-      alert('⚠️ Please add at least one ROOM');
+      alert('⚠️ 请添加至少一个房间');
       return;
     }
     if (!form.startDate || !form.endDate) {
-      alert('⚠️ Please select CHECK-IN and CHECK-OUT dates');
+      alert('⚠️ 请选择入住和退房日期');
       return;
     }
     if (new Date(form.endDate) < new Date(form.startDate)) {
-      alert('⚠️ Check-out date cannot be earlier than check-in date');
+      alert('⚠️ 退房日期不能早于入住日期');
       return;
     }
 

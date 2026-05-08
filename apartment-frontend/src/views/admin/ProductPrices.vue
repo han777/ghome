@@ -4,7 +4,7 @@
       <div class="search-bar">
         <input v-model="searchQuery" type="text" placeholder="搜索产品名称...">
       </div>
-      <button class="add-btn" @click="openModal()">+ New Product/Price</button>
+      <button class="add-btn" @click="openModal()">+ 新建产品/价格</button>
     </div>
     
     <div class="table-card">
@@ -12,11 +12,11 @@
         <thead>
           <tr>
             <th>产品名称</th>
-            <th>Category</th>
+            <th>类别</th>
             <th>单位</th>
             <th>价格</th>
-            <th>Effective Date</th>
-            <th>Expiry Date</th>
+            <th>生效日期</th>
+            <th>失效日期</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -25,7 +25,7 @@
             <td>{{ item.productName }}</td>
             <td>
               <span class="tag" :class="item.category === 2 ? 'damage' : 'sale'">
-                {{ item.category === 1 ? 'Sale' : 'Damage' }}
+                {{ item.category === 1 ? '出售' : '损坏' }}
               </span>
             </td>
             <td>{{ item.unit }}</td>
@@ -56,28 +56,28 @@
             </div>
             <div class="form-group-row">
               <div class="form-item">
-                <label>Category</label>
+                <label>类别</label>
                 <select v-model="form.category">
-                  <option :value="1">Sale (出售)</option>
-                  <option :value="2">Damage (损坏)</option>
+                  <option :value="1">出售</option>
+                  <option :value="2">损坏</option>
                 </select>
               </div>
               <div class="form-item">
                 <label>单位</label>
-                <input v-model="form.unit" placeholder="e.g. Pcs, Hour">
+                <input v-model="form.unit" placeholder="例如：个，小时">
               </div>
             </div>
             <div class="form-item">
-              <label class="required">Standard Price</label>
+              <label class="required">标准价格</label>
               <input type="number" v-model="form.price" required>
             </div>
             <div class="form-group-row">
               <div class="form-item">
-                <label>Effective Date</label>
+                <label>生效日期</label>
                 <input type="date" v-model="form.effectiveDate">
               </div>
               <div class="form-item">
-                <label>Expiry Date</label>
+                <label>失效日期</label>
                 <input type="date" v-model="form.expiryDate">
               </div>
             </div>
@@ -153,7 +153,7 @@ const saveProduct = async () => {
 };
 
 const deleteProduct = async (id: number) => {
-  if (!confirm('Are you sure?')) return;
+  if (!confirm('确定要删除吗？')) return;
   try {
     await api.delete(`/product-prices/${id}`);
     fetchData();

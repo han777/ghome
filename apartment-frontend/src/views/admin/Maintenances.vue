@@ -2,9 +2,9 @@
   <div class="admin-page">
     <div class="page-header">
       <div class="search-bar">
-        <label>Room Filter:</label>
+        <label>房间筛选：</label>
         <select v-model="roomIdFilter" @change="fetchData">
-          <option value="">All Rooms</option>
+          <option value="">所有房间</option>
           <option v-for="room in rooms" :key="room.id" :value="room.id">
             {{ room.roomNo }}
           </option>
@@ -19,8 +19,8 @@
           <tr>
             <th>ID</th>
             <th>房间号</th>
-            <th>Start Time</th>
-            <th>End Time</th>
+            <th>开始时间</th>
+            <th>结束时间</th>
             <th>状态</th>
             <th>操作</th>
           </tr>
@@ -55,7 +55,7 @@
         <div class="modal-body">
           <form class="admin-form">
             <div class="form-item">
-              <label>Room</label>
+              <label>房间</label>
               <select v-model="form.roomId" :disabled="!!form.id">
                 <option v-for="room in rooms" :key="room.id" :value="room.id">
                   {{ room.roomNo }}
@@ -63,17 +63,17 @@
               </select>
             </div>
             <div class="form-item">
-              <label>Start Time</label>
+              <label>开始时间</label>
               <input v-model="form.startTime" type="datetime-local">
             </div>
             <div class="form-item">
-              <label>End Time</label>
+              <label>结束时间</label>
               <input v-model="form.endTime" type="datetime-local">
             </div>
             <div class="form-item">
               <label>状态</label>
               <select v-model="form.status" :disabled="form.status === 1 || form.status === 2">
-                <option :value="0">In Progress</option>
+                <option :value="0">维修中</option>
                 <option :value="1">已完成</option>
                 <option :value="2">已取消</option>
               </select>
@@ -82,7 +82,7 @@
         </div>
         <div class="modal-footer">
           <button class="cancel-btn" @click="showModal = false">取消</button>
-          <button class="save-btn" @click="saveMaintenance">Save</button>
+          <button class="save-btn" @click="saveMaintenance">保存</button>
         </div>
       </div>
     </div>
@@ -196,7 +196,7 @@ const saveMaintenance = async () => {
 };
 
 const deleteMaintenance = async (id: number) => {
-  if (!confirm('Delete this record?')) return;
+  if (!confirm('确定要删除此记录吗？')) return;
   try {
     await api.delete(`/maintenances/${id}`);
     fetchData();

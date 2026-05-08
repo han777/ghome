@@ -2,9 +2,9 @@
   <div class="admin-page">
     <div class="page-header">
       <div class="search-bar">
-        <input type="text" placeholder="Search buildings...">
+        <input type="text" placeholder="搜索楼栋...">
       </div>
-      <button class="add-btn" @click="openModal()">+ Add Building</button>
+      <button class="add-btn" @click="openModal()">+ 添加楼栋</button>
     </div>
     
     <div class="table-card">
@@ -13,7 +13,7 @@
           <tr>
             <th>楼栋名称</th>
             <th>描述</th>
-            <th>Floors</th>
+            <th>楼层</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -42,7 +42,7 @@
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ form.id ? 'Edit Building' : 'Add Building' }}</h2>
+          <h2>{{ form.id ? '编辑楼栋' : '添加楼栋' }}</h2>
           <button class="close-btn" @click="showModal = false">&times;</button>
         </div>
         <div class="modal-body">
@@ -56,12 +56,12 @@
               <textarea v-model="form.description"></textarea>
             </div>
             <div class="form-item" v-if="form.id">
-              <label>Floors</label>
+              <label>楼层</label>
               <div v-for="(f, index) in form.floors" :key="index" style="display:flex; gap:8px; margin-bottom:8px;">
-                <input v-model="f.name" placeholder="Floor Name" style="flex:1">
+                <input v-model="f.name" placeholder="楼层名称" style="flex:1">
                 <button type="button" @click="form.floors.splice(index, 1)" class="delete-btn">×</button>
               </div>
-              <button type="button" @click="form.floors.push({name:''})" class="add-btn" style="padding:4px 8px; font-size:12px;">+ Add Floor</button>
+              <button type="button" @click="form.floors.push({name:''})" class="add-btn" style="padding:4px 8px; font-size:12px;">+ 添加楼层</button>
             </div>
           </form>
         </div>
@@ -116,7 +116,7 @@ const saveBuilding = async () => {
 };
 
 const deleteBuilding = async (id: number) => {
-  if (!confirm('Delete this building? All associated floors will be removed.')) return;
+  if (!confirm('确定要删除此楼栋吗？所有关联楼层也将被移除。')) return;
   try {
     await api.delete(`/buildings/${id}`);
     fetchBuildings();
@@ -126,7 +126,7 @@ const deleteBuilding = async (id: number) => {
 };
 
 const addFloor = (b: any) => {
-  const name = prompt('Enter Floor Name:');
+  const name = prompt('请输入楼层名称：');
   if (name) {
     api.post(`/buildings/${b.id}/floors`, { name }).then(() => fetchBuildings());
   }

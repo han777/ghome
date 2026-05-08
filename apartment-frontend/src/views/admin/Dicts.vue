@@ -14,7 +14,7 @@
             <th>字典编码</th>
             <th>字典名称</th>
             <th>描述</th>
-            <th>Items</th>
+            <th>字典项</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -61,7 +61,7 @@
               <textarea v-model="form.description"></textarea>
             </div>
             <div class="form-item">
-              <label>Items (Label:Value)</label>
+              <label>字典项 (Label:Value)</label>
               <div v-for="(item, index) in form.items" :key="index" style="display:flex; gap:8px; margin-bottom:8px;">
                 <input v-model="item.itemLabel" placeholder="Label" style="flex:1">
                 <input v-model="item.itemValue" placeholder="Value" style="flex:1">

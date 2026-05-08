@@ -85,7 +85,6 @@ const menuGroups = [
       { name: '用户管理', path: '/admin/accounts', icon: '👤' },
       { name: '角色管理', path: '/admin/roles', icon: '🛡️' },
       { name: '字典管理', path: '/admin/dicts', icon: '📖' },
-      { name: '菜单管理', path: '/admin/menus', icon: '📜' },
       { name: '部门管理', path: '/admin/depts', icon: '🏢' },
     ]
   }
@@ -108,7 +107,6 @@ const titles: Record<string, string> = {
   'Dashboard': '房态仪表盘',
   'Accounts': '用户管理',
   'Roles': '角色管理',
-  'Menus': '菜单管理',
   'Dicts': '字典管理',
   'Depts': '部门管理',
   'Rooms': '房间管理',
