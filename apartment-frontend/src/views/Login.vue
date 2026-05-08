@@ -19,6 +19,9 @@
           <span v-if="loading">Logging in...</span>
           <span v-else>Login</span>
         </button>
+        <div class="other-login">
+          <a href="javascript:void(0)" @click="router.push('/m/auth')">手机号验证码登录</a>
+        </div>
       </form>
     </div>
   </div>
@@ -48,8 +51,34 @@ const handleLogin = async () => {
     
     if (res.token) {
       localStorage.setItem('token', res.token);
-      const redirect = route.query.redirect as string;
-      router.push(redirect || '/admin');
+      
+      // Fetch profile to check roles
+      try {
+        const user: any = await api.get('/sys/profile');
+        const roles = (user.roles || []).map((r: any) => r.roleCode);
+        
+        const isAdmin = roles.includes('ROLE_ADMIN');
+        const isUser = roles.includes('ROLE_USER');
+        
+        const redirect = route.query.redirect as string;
+        if (redirect && redirect !== '/admin') {
+           router.push(redirect);
+           return;
+        }
+
+        if (isAdmin && isUser) {
+          router.push('/role-selection');
+        } else if (isAdmin) {
+          router.push('/admin');
+        } else if (isUser) {
+          router.push('/m');
+        } else {
+          router.push('/admin'); // Fallback
+        }
+      } catch (profileErr) {
+        console.error('Failed to fetch profile', profileErr);
+        router.push('/admin'); // Fallback
+      }
     }
   } catch (e: any) {
     error.value = e.response?.data?.message || 'Invalid username or password';
@@ -158,5 +187,26 @@ const handleLogin = async () => {
 .login-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.other-login {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.other-login a {
+  color: #94a3b8;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.3s;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.other-login a:hover {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.2);
 }
 </style>

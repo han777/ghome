@@ -12,7 +12,7 @@
 
     <div class="auth-content">
       <div class="welcome-section">
-        <h1 class="welcome-title">您好，<br/>欢迎登录健适公寓预定系统</h1>
+        <h1 class="welcome-title">您好，欢迎登录<br/>健适公寓预定系统</h1>
         <div class="lang-switch">简体中文 🌐</div>
       </div>
 
@@ -38,15 +38,50 @@
         <div class="agreement-row">
           <input type="checkbox" id="agree" checked />
           <label for="agree">
-            我已阅读并同意 <a href="#">薪福通服务协议</a> 和 <a href="#">个人信息保护政策</a>
+            我已阅读并同意<a href="javascript:void(0)" @click="showPrivacyModal = true">个人信息保护政策</a>
           </label>
         </div>
 
-        <div class="footer-links">
-          <span>没有账号？<a href="#" class="primary-link">立即注册</a></span>
-          <a href="#" class="secondary-link">从掌上薪福通登录</a>
+        <div class="other-login">
+          <a href="javascript:void(0)" @click="router.push('/login')">账号密码登录</a>
         </div>
       </div>
+
+      <!-- Privacy Policy Modal -->
+      <div v-if="showPrivacyModal" class="privacy-modal-overlay">
+        <div class="privacy-modal-content">
+          <div class="privacy-modal-header">
+            个人信息保护及隐私政策提示
+          </div>
+          <div class="privacy-modal-body">
+            <p class="highlight">欢迎使用 [G-HOME订房程序]！</p>
+            <p>在您开始使用前，请您务必仔细阅读并理解《隐私政策》与《用户服务协议》。</p>
+            <p>我们非常重视您的隐私保护，为了向您提供基础服务及优化体验，我们需要通过此弹窗告知您：</p>
+            
+            <div class="policy-item">
+              <strong>核心信息收集：</strong>
+              <span>我们仅在您注册/登录、使用核心功能时，收集必要的信息（如手机号、设备标识符等）。</span>
+            </div>
+            
+            <div class="policy-item">
+              <strong>权限说明：</strong>
+              <span>为实现特定功能，我们可能会申请相机、地理位置或存储权限，您可以随时在系统设置中关闭。</span>
+            </div>
+            
+            <div class="policy-item">
+              <strong>第三方共享：</strong>
+              <span>未经您的同意，我们不会向第三方分享您的个人信息，除非法律法规另有规定。</span>
+            </div>
+            
+            <p class="footer-note">您可以点击下方按钮开始使用。如果您不同意上述协议，将无法使用本 App 的相关服务。</p>
+          </div>
+          <div class="privacy-modal-footer">
+            <button class="modal-btn logout" @click="showPrivacyModal = false">退出</button>
+            <button class="modal-btn accept" @click="showPrivacyModal = false">同意并进入</button>
+          </div>
+        </div>
+      </div>
+
 
       <div class="brand-footer">
         <div class="brand-text">
@@ -70,6 +105,7 @@ const phone = ref('');
 const code = ref('');
 const countdown = ref(0);
 const loading = ref(false);
+const showPrivacyModal = ref(false);
 
 const startCountdown = () => {
   countdown.value = 60;
@@ -106,8 +142,34 @@ const handleLogin = async () => {
       code: code.value 
     });
     localStorage.setItem('token', res.token);
-    const redirect = route.query.redirect as string;
-    router.push(redirect || '/m/booking');
+    
+    // Fetch profile to check roles
+    try {
+      const user: any = await api.get('/sys/profile');
+      const roles = (user.roles || []).map((r: any) => r.roleCode);
+      
+      const isAdmin = roles.includes('ROLE_ADMIN');
+      const isUser = roles.includes('ROLE_USER');
+      
+      const redirect = route.query.redirect as string;
+      if (redirect && redirect !== '/m/booking') {
+         router.push(redirect);
+         return;
+      }
+
+      if (isAdmin && isUser) {
+        router.push('/role-selection');
+      } else if (isAdmin) {
+        router.push('/admin');
+      } else if (isUser) {
+        router.push('/m');
+      } else {
+        router.push('/m'); // Fallback for mobile
+      }
+    } catch (profileErr) {
+      console.error('Failed to fetch profile', profileErr);
+      router.push('/m/booking'); // Fallback
+    }
   } catch (error: any) {
     alert(error.response?.data?.message || '登录失败');
   } finally {
@@ -136,6 +198,7 @@ const handleLogin = async () => {
 .welcome-section {
   margin-top: 40px;
   position: relative;
+  text-align: center;
 }
 
 .welcome-title {
@@ -196,6 +259,8 @@ const handleLogin = async () => {
   margin-top: 40px;
   height: 48px;
   border-radius: 6px;
+  width: 100%;
+  display: block;
 }
 
 .agreement-row {
@@ -237,5 +302,128 @@ const handleLogin = async () => {
 .logo-icon {
   font-size: 24px;
   color: #2b579a;
+}
+
+/* Privacy Modal Styles */
+.privacy-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 32px;
+}
+
+.privacy-modal-content {
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  animation: modalScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalScale {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.privacy-modal-header {
+  padding: 24px 20px 16px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.privacy-modal-body {
+  padding: 0 24px 24px;
+  font-size: 14px;
+  color: #4a4a4a;
+  line-height: 1.6;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.highlight {
+  color: var(--mobile-primary);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.policy-item {
+  margin: 16px 0;
+}
+
+.policy-item strong {
+  display: block;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.footer-note {
+  margin-top: 20px;
+  font-size: 13px;
+  color: #888;
+}
+
+.privacy-modal-footer {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  border-top: 1px solid #f0f0f0;
+}
+
+.modal-btn {
+  padding: 16px;
+  border: none;
+  background: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-btn.logout {
+  color: #999;
+  border-right: 1px solid #f0f0f0;
+}
+
+.modal-btn.accept {
+  color: var(--mobile-primary);
+}
+
+.modal-btn:active {
+  background: #f8f8f8;
+}
+
+.other-login {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.other-login a {
+  color: #666;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px solid #eee;
+  border-radius: 20px;
+  transition: all 0.3s;
+}
+
+.other-login a:hover {
+  color: var(--mobile-primary);
+  border-color: var(--mobile-primary);
+  background: rgba(var(--mobile-primary-rgb), 0.05);
 }
 </style>

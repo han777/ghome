@@ -13,6 +13,12 @@ const router = createRouter({
             component: () => import('../views/Login.vue')
         },
         {
+            path: '/role-selection',
+            name: 'RoleSelection',
+            component: () => import('../views/RoleSelection.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
             path: '/admin',
             name: 'Admin',
             component: () => import('../views/admin/Layout.vue'),

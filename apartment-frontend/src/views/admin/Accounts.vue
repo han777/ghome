@@ -14,6 +14,7 @@
             <th>Real Name</th>
             <th>Email</th>
             <th>Phone</th>
+            <th>Roles</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -24,6 +25,14 @@
             <td>{{ user.realName }}</td>
             <td>{{ user.email || '-' }}</td>
             <td>{{ user.phone || '-' }}</td>
+            <td>
+              <div class="role-tags">
+                <span v-for="role in user.roles" :key="role.id" class="role-tag">
+                  {{ role.roleName }}
+                </span>
+                <span v-if="!user.roles || user.roles.length === 0">-</span>
+              </div>
+            </td>
             <td>
               <span class="status-badge" :class="{ active: user.status === 1 }">
                 {{ user.status === 1 ? 'Active' : 'Disabled' }}
@@ -71,6 +80,15 @@
                 <option :value="0">Disabled</option>
               </select>
             </div>
+            <div class="form-item">
+              <label>Roles</label>
+              <div class="roles-selection">
+                <label v-for="role in allRoles" :key="role.id" class="role-checkbox">
+                  <input type="checkbox" :value="role.id" v-model="selectedRoleIds">
+                  {{ role.roleName }}
+                </label>
+              </div>
+            </div>
           </form>
         </div>
         <div class="modal-footer">
@@ -94,8 +112,11 @@ const form = reactive<any>({
   realName: '',
   email: '',
   phone: '',
-  status: 1
+  status: 1,
+  roles: []
 });
+const allRoles = ref<any[]>([]);
+const selectedRoleIds = ref<number[]>([]);
 
 const promptChangePassword = async (user: any) => {
   const newPass = prompt(`Enter new password for ${user.username}:`, 'password123');
@@ -106,6 +127,15 @@ const promptChangePassword = async (user: any) => {
     } catch (e) {
       alert('Failed to update password');
     }
+  }
+};
+
+const fetchRoles = async () => {
+  try {
+    const res: any = await api.get('/sys/roles');
+    allRoles.value = res;
+  } catch (e) {
+    console.error('Failed to fetch roles', e);
   }
 };
 
@@ -121,14 +151,18 @@ const fetchUsers = async () => {
 const openModal = (user?: any) => {
   if (user) {
     Object.assign(form, user);
+    selectedRoleIds.value = user.roles ? user.roles.map((r: any) => r.id) : [];
   } else {
-    Object.assign(form, { id: null, username: '', realName: '', email: '', phone: '', status: 1 });
+    Object.assign(form, { id: null, username: '', realName: '', email: '', phone: '', status: 1, roles: [] });
+    selectedRoleIds.value = [];
   }
   showModal.value = true;
 };
 
 const saveUser = async () => {
   try {
+    // Map selected IDs back to role objects for the backend
+    form.roles = selectedRoleIds.value.map(id => ({ id }));
     await api.post('/sys/users', form);
     showModal.value = false;
     fetchUsers();
@@ -147,9 +181,50 @@ const deleteUser = async (id: number) => {
   }
 };
 
-onMounted(fetchUsers);
+onMounted(() => {
+  fetchUsers();
+  fetchRoles();
+});
 </script>
 
 <style scoped>
 @import "../../assets/admin.css";
+
+.role-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.role-tag {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.roles-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.role-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.role-checkbox input {
+  width: auto;
+  margin: 0;
+}
 </style>

@@ -56,13 +56,15 @@
               <label>Names (JSON Map)</label>
               <textarea v-model="nameIntlJson" placeholder='{"zh": "大床房", "en": "King Room"}'></textarea>
             </div>
-            <div class="form-item">
-              <label>Short Rent Price</label>
-              <input type="number" v-model="form.priceShortRent">
-            </div>
-            <div class="form-item">
-              <label>Long Rent Price</label>
-              <input type="number" v-model="form.priceLongRent">
+            <div class="form-group-row">
+              <div class="form-item">
+                <label>Short Rent Price</label>
+                <input type="number" v-model="form.priceShortRent">
+              </div>
+              <div class="form-item">
+                <label>Long Rent Price</label>
+                <input type="number" v-model="form.priceLongRent">
+              </div>
             </div>
             <div class="form-item span-2">
               <label>Images (9-grid display)</label>
