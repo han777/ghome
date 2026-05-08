@@ -16,6 +16,10 @@ public class AuthController {
     private AuthenticationManager authenticationManager;
     @Autowired
     private JwtUtils jwtUtils;
+    @Autowired
+    private com.apartment.service.SmsService smsService;
+    @Autowired
+    private com.apartment.repository.SysUserRepository userRepository;
 
     @PostMapping("/login")
     public Map<String, String> login(@RequestBody Map<String, String> loginRequest) {
@@ -23,5 +27,26 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(loginRequest.get("username"), loginRequest.get("password")));
         String jwt = jwtUtils.generateToken(authentication.getName());
         return Map.of("token", jwt);
+    }
+
+    @PostMapping("/send-code")
+    public Map<String, String> sendCode(@RequestBody Map<String, String> request) {
+        String phone = request.get("phone");
+        smsService.sendCode(phone);
+        return Map.of("message", "验证码已发送");
+    }
+
+    @PostMapping("/mobile-login")
+    public Map<String, String> mobileLogin(@RequestBody Map<String, String> request) {
+        String phone = request.get("phone");
+        String code = request.get("code");
+        
+        if (smsService.verifyCode(phone, code)) {
+            return userRepository.findByPhone(phone)
+                    .map(user -> Map.of("token", jwtUtils.generateToken(user.getUsername())))
+                    .orElseThrow(() -> new RuntimeException("手机号未注册"));
+        } else {
+            throw new RuntimeException("验证码错误");
+        }
     }
 }

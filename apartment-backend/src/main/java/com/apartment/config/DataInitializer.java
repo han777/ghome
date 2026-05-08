@@ -38,6 +38,7 @@ public class DataInitializer {
                 admin.setUsername("admin");
                 admin.setPassword(passwordEncoder.encode("admin"));
                 admin.setRealName("System Admin");
+                admin.setPhone("18888888888");
                 admin.setStatus(1);
                 
                 SysRole adminRole = roleRepository.findAll().stream()
@@ -50,7 +51,29 @@ public class DataInitializer {
                     admin.setRoles(roles);
                 }
                 userRepository.save(admin);
-                System.out.println("Default Admin account created: admin / admin");
+                System.out.println("Default Admin account created: admin / admin (Phone: 18888888888)");
+            }
+
+            // Add a test user for mobile login
+            if (userRepository.findByPhone("13800138000").isEmpty()) {
+                SysUser testUser = new SysUser();
+                testUser.setUsername("testuser");
+                testUser.setPassword(passwordEncoder.encode("password"));
+                testUser.setRealName("Test Mobile User");
+                testUser.setPhone("13800138000");
+                testUser.setStatus(1);
+                
+                SysRole userRole = roleRepository.findAll().stream()
+                        .filter(r -> r.getRoleCode().equals("ROLE_USER"))
+                        .findFirst().orElse(null);
+                
+                if (userRole != null) {
+                    java.util.Set<SysRole> roles = new java.util.HashSet<>();
+                    roles.add(userRole);
+                    testUser.setRoles(roles);
+                }
+                userRepository.save(testUser);
+                System.out.println("Test Mobile User created: 13800138000");
             }
 
             // 3. Initialize Dictionaries from Enums

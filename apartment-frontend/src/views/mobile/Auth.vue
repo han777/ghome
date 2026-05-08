@@ -19,17 +19,21 @@
       <div class="auth-form">
         <div class="input-group">
           <label>手机号<span class="required">*</span></label>
-          <input type="tel" placeholder="请输入手机号" />
+          <input type="tel" v-model="phone" placeholder="请输入手机号" />
         </div>
         <div class="input-group">
           <label>验证码<span class="required">*</span></label>
           <div class="code-input-wrap">
-            <input type="text" placeholder="请输入验证码" />
-            <span class="code-btn">已发送 (36s)</span>
+            <input type="text" v-model="code" placeholder="请输入验证码" />
+            <span class="code-btn" @click="countdown === 0 && sendCode()">
+              {{ countdown > 0 ? `已发送 (${countdown}s)` : '获取验证码' }}
+            </span>
           </div>
         </div>
 
-        <button class="mobile-btn-primary login-btn" @click="handleLogin">登录</button>
+        <button class="mobile-btn-primary login-btn" :disabled="loading" @click="handleLogin">
+          {{ loading ? '登录中...' : '登录' }}
+        </button>
 
         <div class="agreement-row">
           <input type="checkbox" id="agree" checked />
@@ -55,15 +59,60 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import api from '../../utils/api';
+
 const router = useRouter();
 const route = useRoute();
 
-const handleLogin = () => {
-  // In a real app, you'd verify the phone/code here
-  localStorage.setItem('token', 'mock-token');
-  const redirect = route.query.redirect as string;
-  router.push(redirect || '/m/booking');
+const phone = ref('');
+const code = ref('');
+const countdown = ref(0);
+const loading = ref(false);
+
+const startCountdown = () => {
+  countdown.value = 60;
+  const timer = setInterval(() => {
+    countdown.value--;
+    if (countdown.value <= 0) {
+      clearInterval(timer);
+    }
+  }, 1000);
+};
+
+const sendCode = async () => {
+  if (!phone.value || !/^1[3-9]\d{9}$/.test(phone.value)) {
+    alert('请输入正确的手机号');
+    return;
+  }
+  try {
+    await api.post('/auth/send-code', { phone: phone.value });
+    startCountdown();
+  } catch (error: any) {
+    alert(error.response?.data?.message || '发送失败');
+  }
+};
+
+const handleLogin = async () => {
+  if (!phone.value || !code.value) {
+    alert('请输入手机号和验证码');
+    return;
+  }
+  loading.value = true;
+  try {
+    const res: any = await api.post('/auth/mobile-login', { 
+      phone: phone.value, 
+      code: code.value 
+    });
+    localStorage.setItem('token', res.token);
+    const redirect = route.query.redirect as string;
+    router.push(redirect || '/m/booking');
+  } catch (error: any) {
+    alert(error.response?.data?.message || '登录失败');
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 
