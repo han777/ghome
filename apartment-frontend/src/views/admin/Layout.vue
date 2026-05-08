@@ -27,13 +27,13 @@
           </transition>
         </div>
       </div>
-      <div class="user-info">
-        <div class="avatar">A</div>
+      <div class="user-info" v-if="currentUser">
+        <div class="avatar">{{ currentUser.realName?.charAt(0) || currentUser.username?.charAt(0) }}</div>
         <div class="details">
-          <p class="name">Admin User</p>
-          <p class="role">Administrator</p>
+          <p class="name">{{ currentUser.realName || currentUser.username }}</p>
+          <p class="role">{{ currentUser.roles?.map((r: any) => r.roleName).join(', ') }}</p>
         </div>
-        <button @click="logout" class="logout-btn">🚪</button>
+        <button @click="logout" class="logout-btn" title="Logout">🚪</button>
       </div>
     </aside>
     <main class="content-area">
@@ -48,8 +48,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import api from '../../utils/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -122,6 +123,17 @@ const titles: Record<string, string> = {
 };
 
 const currentTitle = computed(() => titles[route.name as string] || 'Dashboard');
+
+const currentUser = ref<any>(null);
+
+onMounted(async () => {
+  try {
+    currentUser.value = await api.get('/sys/profile');
+  } catch (e) {
+    console.error('Failed to fetch profile', e);
+    // If unauthorized, redirect to login might be handled by api interceptor
+  }
+});
 
 const logout = () => {
   localStorage.removeItem('token');

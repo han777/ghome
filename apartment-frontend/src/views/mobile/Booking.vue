@@ -42,7 +42,15 @@
           :class="{ selected: selectedTypeId === type.id }"
           @click="selectedTypeId = type.id"
         >
-          <div class="room-img" :style="{ backgroundImage: `url(${type.imageUrl || defaultRoomImage})` }"></div>
+          <div 
+            class="room-img" 
+            :style="{ backgroundImage: `url(${type.images?.[0]?.url || defaultRoomImage})` }"
+            @click.stop="openGallery(type)"
+          >
+            <div v-if="type.images?.length > 1" class="img-count-tag">
+              {{ type.images.length }}张
+            </div>
+          </div>
           <div class="room-info">
             <div class="room-name">{{ type.nameIntl?.zh || type.typeCode }}</div>
             <div class="room-desc">{{ type.remarks }}</div>
@@ -71,6 +79,25 @@
         </button>
       </div>
     </div>
+
+    <!-- Mobile Gallery Modal -->
+    <div v-if="showGallery" class="mobile-gallery-overlay" @click="showGallery = false">
+      <div class="gallery-container" @click.stop>
+        <div class="gallery-header">
+          <span class="gallery-count">{{ currentGalleryIndex + 1 }} / {{ currentGalleryImages.length }}</span>
+          <button class="gallery-close" @click="showGallery = false">&times;</button>
+        </div>
+        <div class="gallery-main">
+          <button class="nav-btn prev" @click="prevImage" v-if="currentGalleryImages.length > 1">
+            <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" fill="white"/></svg>
+          </button>
+          <img :src="currentGalleryImages[currentGalleryIndex].url" class="gallery-img">
+          <button class="nav-btn next" @click="nextImage" v-if="currentGalleryImages.length > 1">
+            <svg viewBox="0 0 24 24" width="24" height="24"><path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" fill="white"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -87,6 +114,10 @@ const endDate = ref(new Date(Date.now() + 86400000).toISOString().split('T')[0])
 const roomTypes = ref<any[]>([]);
 const selectedTypeId = ref<number | null>(null);
 const defaultRoomImage = 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&q=80&w=400';
+
+const showGallery = ref(false);
+const currentGalleryImages = ref<any[]>([]);
+const currentGalleryIndex = ref(0);
 
 const stayDays = computed(() => {
   if (!startDate.value || !endDate.value) return 0;
@@ -120,6 +151,22 @@ const fetchRoomTypes = async () => {
   } catch (e) {
     console.error('Failed to fetch room types', e);
   }
+};
+
+const openGallery = (type: any) => {
+  if (type.images && type.images.length > 0) {
+    currentGalleryImages.value = type.images;
+    currentGalleryIndex.value = 0;
+    showGallery.value = true;
+  }
+};
+
+const nextImage = () => {
+  currentGalleryIndex.value = (currentGalleryIndex.value + 1) % currentGalleryImages.value.length;
+};
+
+const prevImage = () => {
+  currentGalleryIndex.value = (currentGalleryIndex.value - 1 + currentGalleryImages.value.length) % currentGalleryImages.value.length;
 };
 
 onMounted(fetchRoomTypes);
@@ -241,6 +288,18 @@ const goToRoomSelect = () => {
   height: 100%;
   background-size: cover;
   background-position: center;
+  position: relative;
+}
+
+.img-count-tag {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
 .room-info {
@@ -298,4 +357,74 @@ const goToRoomSelect = () => {
   background: rgba(245, 245, 245, 0.9);
   backdrop-filter: blur(10px);
 }
+
+/* Mobile Gallery */
+.mobile-gallery-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+}
+
+.gallery-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.gallery-header {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+}
+
+.gallery-count {
+  font-size: 14px;
+}
+
+.gallery-close {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.gallery-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.gallery-img {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.1);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-btn.prev { left: 10px; }
+.nav-btn.next { right: 10px; }
 </style>

@@ -153,7 +153,7 @@ const countdownStr = computed(() => {
 
 const fetchOrder = async () => {
   try {
-    const res = await api.get(`/orders/all`) as any[];
+    const res = await api.get(`/orders/mine`) as any[];
     const found = res.find(o => o.id.toString() === orderId);
     if (found) {
       order.value = found;

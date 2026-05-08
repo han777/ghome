@@ -20,6 +20,9 @@ public class RoomTypeController {
     @PostMapping
     public RoomType save(@RequestBody RoomType roomType) {
         if (roomType == null) throw new IllegalArgumentException("RoomType cannot be null");
+        if (roomType.getImages() != null) {
+            roomType.getImages().forEach(img -> img.setRoomType(roomType));
+        }
         return roomTypeRepository.save(roomType);
     }
 

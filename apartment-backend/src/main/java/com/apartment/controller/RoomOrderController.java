@@ -22,6 +22,14 @@ public class RoomOrderController {
     public List<RoomOrder> getAllOrders() {
         return orderRepository.findAll();
     }
+    
+    @GetMapping("/mine")
+    public List<RoomOrder> getMyOrders() {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username)
+                .map(u -> orderRepository.findByUserIdOrderByCreatedAtDesc(u.getId()))
+                .orElse(new java.util.ArrayList<>());
+    }
 
     @PostMapping
     public RoomOrder saveOrder(@RequestBody RoomOrder order) {

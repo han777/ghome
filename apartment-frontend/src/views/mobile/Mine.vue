@@ -87,9 +87,7 @@ const fetchProfile = async () => {
 
 const fetchStats = async () => {
   try {
-    const orders = await api.get('/orders/all') as any[];
-    // Filter by current user
-    const myOrders = orders.filter(o => o.user?.username === user.value?.username);
+    const myOrders = await api.get('/orders/mine') as any[];
     
     stats.value = {
       total: myOrders.length,

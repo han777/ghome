@@ -39,10 +39,8 @@ const records = ref<any[]>([]);
 
 const fetchRecords = async () => {
   try {
-    const res = await api.get('/orders/all') as any[];
-    // Filter by current user (backend returns all for now, we should ideally have a /my-orders)
-    // For now, we'll just sort them
-    records.value = res.sort((a, b) => b.id - a.id).map(o => ({
+    const res = await api.get('/orders/mine') as any[];
+    records.value = res.map(o => ({
       ...o,
       roomTypeName: o.roomOccupies?.[0]?.room?.roomType?.typeCode || '未知',
       roomNo: o.roomOccupies?.[0]?.room?.roomNo || '-',

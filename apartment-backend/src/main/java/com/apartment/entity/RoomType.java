@@ -24,6 +24,9 @@ public class RoomType {
 
     private BigDecimal priceShortRent;
     private BigDecimal priceLongRent;
-    private String imageUrl;
+    
+    @OneToMany(mappedBy = "roomType", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private java.util.List<RoomTypeImage> images;
+
     private String remarks;
 }

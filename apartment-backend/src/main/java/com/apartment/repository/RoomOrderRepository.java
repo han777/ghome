@@ -34,4 +34,6 @@ public interface RoomOrderRepository extends JpaRepository<RoomOrder, Long> {
     Long getNextOrderSeq();
 
     java.util.List<RoomOrder> findByUserIdAndStatus(Long userId, Integer status);
+    
+    java.util.List<RoomOrder> findByUserIdOrderByCreatedAtDesc(Long userId);
 }
