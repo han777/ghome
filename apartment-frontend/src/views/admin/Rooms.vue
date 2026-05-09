@@ -101,19 +101,19 @@
           </div>
           <div class="card-body">
             <div class="info-row">
-              <span class="label">Location:</span>
+              <span class="label">楼层:</span>
               <span class="value">{{ room.floor?.name }}</span>
             </div>
             <div class="info-row">
-              <span class="label">Type:</span>
+              <span class="label">房型:</span>
               <span class="value">{{ room.roomType?.typeCode || '-' }}</span>
             </div>
             <div class="info-row">
-              <span class="label">Area:</span>
+              <span class="label">面积:</span>
               <span class="value">{{ room.area }}㎡</span>
             </div>
             <div class="info-row">
-              <span class="label">Dir:</span>
+              <span class="label">朝向:</span>
               <span class="value">{{ room.direction }}</span>
             </div>
           </div>

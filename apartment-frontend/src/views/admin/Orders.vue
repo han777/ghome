@@ -86,7 +86,7 @@
             <td class="actions">
               <button class="edit-btn" @click="sendRoomCard(order.id)" v-if="order.status === 1 || order.status === 2">发送房卡</button>
               <button class="edit-btn" @click="openModal(order)">详情</button>
-              <button class="delete-btn" @click="cancelOrder(order.id)" v-if="order.status < 3">取消</button>
+              <button class="delete-btn" @click="cancelOrder(order.id)" v-if="order.status < 3">取消订单</button>
               <button class="delete-btn" @click="deleteOrder(order.id)" v-if="order.status === 4" style="background: #94a3b8;">删除</button>
             </td>
           </tr>
