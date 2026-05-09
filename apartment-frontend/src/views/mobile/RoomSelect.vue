@@ -33,6 +33,7 @@
           >
             <div class="room-num">{{ room.roomNo }}</div>
             <div class="room-dir">{{ room.roomType?.typeCode }}</div>
+            <div class="room-direction">{{ getDirectionLabel(room.direction) }}</div>
           </div>
         </div>
       </div>
@@ -66,6 +67,15 @@ const typeId = route.query.typeId as string;
 const selectedRoomId = ref<number | null>(null);
 const roomTypeName = ref(t('booking.loading'));
 const floors = ref<any[]>([]);
+
+const getDirectionLabel = (direction: string): string => {
+  if (!direction) return '';
+  // 使用国际化翻译，从 dict.DIRECTION 中获取
+  const directionKey = `dict.DIRECTION.${direction}`;
+  const translated = t(directionKey);
+  // 如果翻译key不存在，i18n会返回key本身，此时返回原始值
+  return translated === directionKey ? direction : translated;
+};
 
 const fetchRooms = async () => {
   try {
@@ -242,6 +252,12 @@ const confirmSelection = async () => {
 .room-dir {
   font-size: 11px;
   margin-top: 2px;
+}
+
+.room-direction {
+  font-size: 10px;
+  margin-top: 2px;
+  opacity: 0.8;
 }
 
 .footer-actions {

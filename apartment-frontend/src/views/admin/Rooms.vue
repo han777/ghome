@@ -68,7 +68,7 @@
               <td>
                 {{ room.floor?.building?.name }} / {{ room.floor?.name }}
               </td>
-              <td>{{ room.direction }}</td>
+              <td>{{ getDirectionLabel(room.direction) }}</td>
               <td>{{ room.area || '-' }}</td>
               <td>
                 <span class="status-badge" :class="getStatusClass(room.status)">
@@ -114,7 +114,7 @@
             </div>
             <div class="info-row">
               <span class="label">朝向:</span>
-              <span class="value">{{ room.direction }}</span>
+              <span class="value">{{ getDirectionLabel(room.direction) }}</span>
             </div>
           </div>
           <div class="card-footer">
@@ -165,10 +165,9 @@
             <div class="form-item">
               <label>朝向</label>
               <select v-model="form.direction">
-                <option value="SOUTH">South</option>
-                <option value="NORTH">North</option>
-                <option value="EAST">East</option>
-                <option value="WEST">West</option>
+                <option v-for="opt in getDirectionOptions()" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
               </select>
             </div>
             <div class="form-item">
@@ -290,7 +289,16 @@ const filteredRooms = computed(() => {
 const dictLabelZh: Record<string, Record<string, string>> = {
   ROOM_STATUS: { 'Available': '可用', 'Locked': '锁定' },
   ORDER_STATUS: { 'Cooling-off': '冷静期', 'Pending': '待确认', 'In': '已入住', 'Out': '已退房', 'Canceled': '已取消' },
-  BIZ_TYPE: { 'Short Rent': '短租', 'Long Rent': '长租' }
+  BIZ_TYPE: { 'Short Rent': '短租', 'Long Rent': '长租' },
+  DIRECTION: { 'SOUTH': '朝南', 'NORTH': '朝北', 'EAST': '朝东', 'WEST': '朝西' }
+};
+
+const getDirectionLabel = (direction: string): string => {
+  return dictLabelZh['DIRECTION']?.[direction] || direction || '-';
+};
+
+const getDirectionOptions = () => {
+  return Object.entries(dictLabelZh['DIRECTION']).map(([value, label]) => ({ value, label }));
 };
 
 const parseNameIntl = (json: string, lang: string): string => {
