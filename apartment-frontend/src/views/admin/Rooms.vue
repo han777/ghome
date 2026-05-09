@@ -131,8 +131,8 @@
         <div class="modal-header" style="position: relative;">
           <h2>{{ form.id ? '编辑房间' : '添加房间' }}</h2>
           <div style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 8px;">
-            <button v-if="form.id" class="save-btn" @click.prevent="openMaintenanceList" style="padding: 4px 12px; font-size: 13px;">维修统计</button>
-            <button v-if="form.id" class="edit-btn" @click.prevent="quickMaintenance" style="padding: 4px 12px; font-size: 13px;">维修</button>
+            <button v-if="form.id" class="save-btn" @click.prevent="openMaintenanceList" style="padding: 4px 12px; font-size: 13px;">维修统计 ({{ maintenanceCount }})</button>
+            <button v-if="form.id" class="edit-btn" @click.prevent="openQuickMaintenance" style="padding: 4px 12px; font-size: 13px;">生成维修单</button>
           </div>
           <button class="close-btn" @click="showModal = false">&times;</button>
         </div>
@@ -186,8 +186,38 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">取消</button>
+          <button class="cancel-btn" @click="showModal = false">不保存关闭</button>
           <button class="save-btn" @click="saveRoom">保存更改</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Maintenance Modal -->
+    <div v-if="showMaintenanceModal" class="modal-overlay" style="z-index: 2000;">
+      <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+          <h3>生成维修单 - {{ form.roomNo }}</h3>
+          <button class="close-btn" @click="showMaintenanceModal = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form class="admin-form">
+            <div class="form-item">
+              <label>开始时间</label>
+              <input v-model="maintenanceForm.startTime" type="datetime-local">
+            </div>
+            <div class="form-item">
+              <label>结束时间</label>
+              <input v-model="maintenanceForm.endTime" type="datetime-local">
+            </div>
+            <div class="form-item">
+              <label>维修内容</label>
+              <textarea v-model="maintenanceForm.content" placeholder="请输入维修详情..."></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="cancel-btn" @click="showMaintenanceModal = false">不保存关闭</button>
+          <button class="save-btn" @click="saveMaintenance">确认生成</button>
         </div>
       </div>
     </div>
@@ -205,10 +235,16 @@ const rooms = ref<any[]>([]);
 const dicts = ref<any[]>([]);
 const buildings = ref<any[]>([]);
 const roomTypes = ref<any[]>([]);
-const showModal = ref(false);
 const searchQuery = ref('');
 const selectedFloorId = ref<number | null>(null);
 const viewMode = ref<'card' | 'table'>('card');
+const maintenanceCount = ref(0);
+const showMaintenanceModal = ref(false);
+const maintenanceForm = reactive({
+  startTime: '',
+  endTime: '',
+  content: ''
+});
 
 const form = reactive<any>({
   id: null,
@@ -219,6 +255,8 @@ const form = reactive<any>({
   roomTypeId: null,
   area: null
 });
+
+const showModal = ref(false);
 
 const fetchData = async () => {
   try {
@@ -266,14 +304,22 @@ const getStatusClass = (status: number) => {
   return '';
 };
 
-const openModal = (room?: any) => {
+const openModal = async (room?: any) => {
   if (room) {
     Object.assign(form, room);
     form.floorId = room.floor?.id;
     form.roomTypeId = room.roomType?.id;
     form.area = room.area;
+    // Fetch effective maintenance count
+    try {
+      const res = await api.get(`/maintenances/room/${room.id}`) as any[];
+      maintenanceCount.value = res.filter(m => m.status !== 2).length;
+    } catch (e) {
+      maintenanceCount.value = 0;
+    }
   } else {
     Object.assign(form, { id: null, roomNo: '', direction: 'SOUTH', status: 0, floorId: null, roomTypeId: null, area: null });
+    maintenanceCount.value = 0;
   }
   showModal.value = true;
 };
@@ -284,23 +330,32 @@ const openMaintenanceList = () => {
   }
 };
 
-const quickMaintenance = async () => {
+const openQuickMaintenance = () => {
   if (!form.id) return;
+  const now = new Date();
+  maintenanceForm.startTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  const end = new Date(now.getTime());
+  end.setFullYear(end.getFullYear() + 3);
+  maintenanceForm.endTime = new Date(end.getTime() - end.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  maintenanceForm.content = '';
+  showMaintenanceModal.value = true;
+};
+
+const saveMaintenance = async () => {
   try {
-    const now = new Date();
-    const startStr = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    const end = new Date(now.getTime());
-    end.setFullYear(end.getFullYear() + 3);
-    const endStr = new Date(end.getTime() - end.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    
     await api.post('/maintenances', {
       room: { id: form.id },
-      startTime: startStr,
-      endTime: endStr,
+      startTime: maintenanceForm.startTime,
+      endTime: maintenanceForm.endTime,
+      content: maintenanceForm.content,
       status: 0
     });
     alert('维修记录已创建');
-    fetchData(); // This will refresh the isMaintenance status
+    showMaintenanceModal.value = false;
+    // Refresh count
+    const res = await api.get(`/maintenances/room/${form.id}`) as any[];
+    maintenanceCount.value = res.filter(m => m.status !== 2).length;
+    fetchData(); // Refresh isMaintenance status in background
   } catch (e: any) {
     alert(e.response?.data || 'Failed to create maintenance record');
   }

@@ -15,5 +15,5 @@ Write-Host "Starting Frontend (Vite/Vue)..." -ForegroundColor Green
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd apartment-frontend; npm install; npm run dev" -WindowStyle Normal
 
 Write-Host "Both services are starting in separate windows." -ForegroundColor Cyan
-Write-Host "   - Backend: http://localhost:8081"
-Write-Host "   - Frontend: http://localhost:3000"
+Write-Host "   - Backend: http://localhost:10080"
+Write-Host "   - Frontend: http://localhost:3003"

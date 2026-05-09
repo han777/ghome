@@ -33,6 +33,9 @@ public class RoomOccupy {
     private String coOccupants; // 同住人
     
     private Integer status = 0; // 0: Current (当前), 1: Finish (完成)
+    
+    private java.math.BigDecimal actualPrice; // 实际单价
+    private Integer quantity; // 数量（天数/次数）
 
     @Transient
     private String roomNo;

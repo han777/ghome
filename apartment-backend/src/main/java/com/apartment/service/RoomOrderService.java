@@ -113,8 +113,8 @@ public class RoomOrderService {
 
     public void calculatePrices(RoomOrder order) {
         BigDecimal totalRoomFee = BigDecimal.ZERO;
-        long days = java.time.temporal.ChronoUnit.DAYS.between(order.getStartDate(), order.getEndDate());
-        if (days <= 0) days = 1;
+        long totalDays = java.time.temporal.ChronoUnit.DAYS.between(order.getStartDate().toLocalDate(), order.getEndDate().toLocalDate());
+        if (totalDays <= 0) totalDays = 1;
 
         if (order.getRoomOccupies() != null) {
             for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
@@ -122,19 +122,59 @@ public class RoomOrderService {
                 if (room != null && (room.getRoomType() == null)) {
                     room = roomRepository.findById(room.getId()).orElse(room);
                 }
-                if (room != null && room.getRoomType() != null) {
+                
+                // Initialize default values if not set
+                if (occupy.getActualPrice() == null && room != null && room.getRoomType() != null) {
                     BigDecimal price = (order.getBizType() != null && order.getBizType() == 2) ? 
                         room.getRoomType().getPriceLongRent() : 
                         room.getRoomType().getPriceShortRent();
-                    if (price != null) {
-                        totalRoomFee = totalRoomFee.add(price.multiply(new BigDecimal(days)));
-                    }
+                    occupy.setActualPrice(price);
+                }
+                if (occupy.getQuantity() == null) {
+                    occupy.setQuantity((int)totalDays);
+                }
+
+                if (occupy.getActualPrice() != null && occupy.getQuantity() != null) {
+                    totalRoomFee = totalRoomFee.add(occupy.getActualPrice().multiply(new BigDecimal(occupy.getQuantity())));
                 }
             }
         }
         order.setRoomFee(totalRoomFee);
         if (order.getServiceFee() == null) order.setServiceFee(BigDecimal.ZERO);
         order.setTotalAmount(totalRoomFee.add(order.getServiceFee()));
+    }
+
+    @Transactional
+    public RoomOrder sendRoomCard(Long orderId) {
+        if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
+        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+        
+        if (order.getRoomOccupies() == null || order.getRoomOccupies().isEmpty()) {
+            throw new RuntimeException("该订单没有房间记录");
+        }
+
+        for (RoomOccupy ro : order.getRoomOccupies()) {
+            // Status 0 is Current
+            if (ro.getStatus() != null && ro.getStatus() == 0) {
+                if (ro.getRoomCardNo() == null || ro.getRoomCardNo().isBlank()) {
+                    throw new RuntimeException("房间 " + ro.getRoom().getRoomNo() + " 的房卡号不能为空");
+                }
+                if (ro.getDoorCode() == null || ro.getDoorCode().isBlank()) {
+                    throw new RuntimeException("房间 " + ro.getRoom().getRoomNo() + " 的门锁密码不能为空");
+                }
+            }
+        }
+
+        order.setStatus(2); // Set to In (已入住)
+        // Set actual check-in time if not set
+        LocalDateTime now = LocalDateTime.now();
+        for (RoomOccupy ro : order.getRoomOccupies()) {
+            if (ro.getStatus() != null && ro.getStatus() == 0 && ro.getCheckInTime() == null) {
+                ro.setCheckInTime(now);
+            }
+        }
+        
+        return orderRepository.save(order);
     }
 
     @Transactional
@@ -215,8 +255,10 @@ public class RoomOrderService {
     }
 
     @Transactional
-    public RoomOrder changeRoom(Long occupyId, Long newRoomId) {
+    public RoomOrder changeRoom(Long occupyId, Long newRoomId, LocalDateTime switchDate) {
         if (occupyId == null || newRoomId == null) throw new IllegalArgumentException("IDs cannot be null");
+        
+        if (switchDate == null) switchDate = LocalDateTime.now();
         
         RoomOccupy oldOccupy = occupyRepository.findById(occupyId)
             .orElseThrow(() -> new RuntimeException("Occupy record not found"));
@@ -225,11 +267,9 @@ public class RoomOrderService {
         Room newRoom = roomRepository.findById(newRoomId)
             .orElseThrow(() -> new RuntimeException("Room not found"));
 
-        LocalDateTime now = LocalDateTime.now();
-
         // 1. Finish Old Occupation
         oldOccupy.setStatus(1); // Finish
-        oldOccupy.setCheckOutTime(now);
+        oldOccupy.setCheckOutTime(switchDate);
         if (oldRoom != null) {
             oldRoom.setStatus(0); // Available
             roomRepository.save(oldRoom);
@@ -244,36 +284,46 @@ public class RoomOrderService {
         newOccupy.setCoOccupants(oldOccupy.getCoOccupants());
         newOccupy.setRoomCardNo(oldOccupy.getRoomCardNo());
         newOccupy.setDoorCode(oldOccupy.getDoorCode());
-        newOccupy.setCheckInTime(now);
+        newOccupy.setCheckInTime(switchDate);
         newOccupy.setCheckOutTime(null); // Will follow order's end date in display
         newOccupy.setStatus(0); // Current
         
         newRoom.setStatus(1); // Occupied
         roomRepository.save(newRoom);
+        // 3. Update Occupations' price and quantity
+        long daysStayed = java.time.temporal.ChronoUnit.DAYS.between(order.getStartDate().toLocalDate(), switchDate.toLocalDate());
+        if (daysStayed < 0) daysStayed = 0;
+        long remainingDays = java.time.temporal.ChronoUnit.DAYS.between(switchDate.toLocalDate(), order.getEndDate().toLocalDate());
+        if (remainingDays < 0) remainingDays = 0;
+
+        // Old occupation gets the actual price and the number of days stayed
+        if (oldOccupy.getActualPrice() == null && oldRoom != null && oldRoom.getRoomType() != null) {
+            BigDecimal oldPrice = order.getBizType() == 1 ? oldRoom.getRoomType().getPriceShortRent() : oldRoom.getRoomType().getPriceLongRent();
+            oldOccupy.setActualPrice(oldPrice);
+        }
+        oldOccupy.setQuantity((int)daysStayed);
+
+        // New occupation gets the actual price and the number of days remaining
+        BigDecimal newPrice = BigDecimal.ZERO;
+        if (newRoom.getRoomType() != null) {
+            newPrice = order.getBizType() == 1 ? newRoom.getRoomType().getPriceShortRent() : newRoom.getRoomType().getPriceLongRent();
+        }
+        newOccupy.setActualPrice(newPrice);
+        newOccupy.setQuantity((int)remainingDays);
+        
         occupyRepository.save(newOccupy);
         occupyRepository.save(oldOccupy);
 
-        // 3. Update Order Total Amount (Price Difference for remaining days)
-        // Calculate remaining days (at least 1 if today is the check-out day)
-        long remainingDays = java.time.temporal.ChronoUnit.DAYS.between(now, order.getEndDate());
-        if (remainingDays <= 0) remainingDays = 1;
-
-        BigDecimal diff = BigDecimal.ZERO;
-        if (oldRoom != null && oldRoom.getRoomType() != null) {
-            BigDecimal oldPrice = order.getBizType() == 1 ? oldRoom.getRoomType().getPriceShortRent() : oldRoom.getRoomType().getPriceLongRent();
-            BigDecimal newPrice = order.getBizType() == 1 ? newRoom.getRoomType().getPriceShortRent() : newRoom.getRoomType().getPriceLongRent();
-            diff = (newPrice.subtract(oldPrice)).multiply(new BigDecimal(remainingDays));
-
-            order.setRoomFee(order.getRoomFee().add(diff));
-            order.setTotalAmount(order.getTotalAmount().add(diff));
-        }
-        
-        String log = String.format("\n[Log %s] 换房: %s -> %s, 差价: %s", 
-            now.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
+        // 4. Record Log and Recalculate
+        String log = String.format("\n[Log %s] 换房: %s -> %s, 生效日期: %s, 剩余天数: %d", 
+            LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
             oldRoom != null ? oldRoom.getRoomNo() : "Unknown", 
-            newRoom.getRoomNo(), diff.toString());
+            newRoom.getRoomNo(), 
+            switchDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+            remainingDays);
         order.setRemarks((order.getRemarks() == null ? "" : order.getRemarks()) + log);
 
+        calculatePrices(order);
         return orderRepository.save(order);
     }
 
@@ -317,5 +367,65 @@ public class RoomOrderService {
                 throw new RuntimeException("Failed to generate order number using sequence", e2);
             }
         }
+    }
+
+    @Transactional
+    public RoomOrder adjustOccupyTime(Long occupyId, LocalDateTime newStart, LocalDateTime newEnd) {
+        RoomOccupy occupy = occupyRepository.findById(occupyId)
+            .orElseThrow(() -> new RuntimeException("入住记录未找到"));
+        RoomOrder order = occupy.getOrder();
+        
+        if (newStart.isAfter(newEnd) || newStart.isEqual(newEnd)) {
+            throw new RuntimeException("结束时间必须晚于开始时间");
+        }
+
+        // Validate conflicts
+        java.util.List<Integer> activeStatuses = java.util.Arrays.asList(1, 2);
+        
+        // 1. Room Conflict (Both Individual and Group)
+        List<RoomOrder> roomOrders = orderRepository.findByRoomIdAndStatusIn(occupy.getRoom().getId(), activeStatuses);
+        for (RoomOrder existing : roomOrders) {
+            if (order.getId().equals(existing.getId())) {
+                continue;
+            }
+            if (newStart.isBefore(existing.getEndDate()) && newEnd.isAfter(existing.getStartDate())) {
+                throw new RuntimeException("该时段与房间已有的订单冲突");
+            }
+        }
+
+        // 2. Room Maintenance Conflict
+        long maintenanceCount = maintenanceRepository.countOverlappingMaintenances(occupy.getRoom().getId(), newStart, newEnd);
+        if (maintenanceCount > 0) {
+            throw new RuntimeException("该时段房间处于维修状态");
+        }
+
+        // 3. Occupant User Conflict (Only for Individual Booking)
+        if (order.getCustomerType() != null && order.getCustomerType() == 1) { // 1: Individual
+            if (occupy.getOccupantUser() != null) {
+                List<RoomOrder> occupantOrders = orderRepository.findByOccupantUserIdAndStatusIn(occupy.getOccupantUser().getId(), activeStatuses);
+                for (RoomOrder existing : occupantOrders) {
+                    if (order.getId().equals(existing.getId())) continue;
+                    if (newStart.isBefore(existing.getEndDate()) && newEnd.isAfter(existing.getStartDate())) {
+                        throw new RuntimeException("该入住人在所选时段已有其他预约，存在冲突");
+                    }
+                }
+            }
+        }
+
+        // Update times
+        occupy.setCheckInTime(newStart);
+        occupy.setCheckOutTime(newEnd);
+        
+        // Sync order level times if needed
+        if (newStart.isBefore(order.getStartDate())) {
+            order.setStartDate(newStart);
+        }
+        if (newEnd.isAfter(order.getEndDate())) {
+            order.setEndDate(newEnd);
+        }
+        
+        occupyRepository.save(occupy);
+        calculatePrices(order);
+        return orderRepository.save(order);
     }
 }

@@ -47,16 +47,28 @@ public class RoomMaintenanceController {
 
         // Only check overlap if it's not cancelled
         if (maintenance.getStatus() != 2) {
+            // 1. Check Order Overlap
             long orderCount = orderRepository.countOverlappingActiveOrders(maintenance.getRoom().getId(), maintenance.getStartTime(), maintenance.getEndTime());
             if (orderCount > 0) {
-                return ResponseEntity.badRequest().body("维修时间与执行中的订单时间重叠，不允许保存");
+                return ResponseEntity.badRequest().body("所选时间段内房间已有预订订单，冲突！");
+            }
+
+            // 2. Check Maintenance Overlap
+            java.util.List<RoomMaintenance> others = maintenanceRepository.findByRoomId(maintenance.getRoom().getId());
+            for (RoomMaintenance other : others) {
+                if (other.getStatus() == 2) continue; // Skip cancelled
+                if (maintenance.getId() != null && maintenance.getId().equals(other.getId())) continue; // Skip self
+                
+                if (maintenance.getStartTime().isBefore(other.getEndTime()) && maintenance.getEndTime().isAfter(other.getStartTime())) {
+                    return ResponseEntity.badRequest().body("所选时间段内房间已有其他维修记录，冲突！");
+                }
             }
         }
 
         if (maintenance.getId() != null) {
             RoomMaintenance existing = maintenanceRepository.findById(maintenance.getId()).orElse(null);
-            if (existing != null && existing.getStatus() == 1) {
-                return ResponseEntity.badRequest().body("已完成的维修记录不允许编辑");
+            if (existing != null && existing.getStatus() == 1 && maintenance.getStatus() != 2) {
+                return ResponseEntity.badRequest().body("已完成的维修记录不允许编辑（除作废外）");
             }
         }
 

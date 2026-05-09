@@ -59,4 +59,33 @@ public class RoomController {
     public void deleteRoom(@PathVariable Long id) {
         roomRepository.deleteById(id);
     }
+    @GetMapping("/{id}/booked-periods")
+    public List<java.util.Map<String, Object>> getRoomBookedPeriods(@PathVariable Long id) {
+        java.util.List<java.util.Map<String, Object>> periods = new java.util.ArrayList<>();
+        
+        // 1. Add maintenance periods
+        java.util.List<com.apartment.entity.RoomMaintenance> maintenances = maintenanceRepository.findByRoomId(id);
+        for (com.apartment.entity.RoomMaintenance m : maintenances) {
+            if (m.getStatus() != 2) { // Not finished/cancelled
+                java.util.Map<String, Object> period = new java.util.HashMap<>();
+                period.put("start", m.getStartTime());
+                period.put("end", m.getEndTime());
+                period.put("type", "maintenance");
+                periods.add(period);
+            }
+        }
+        
+        // 2. Add active order periods
+        java.util.List<com.apartment.entity.RoomOrder> orders = orderRepository.findByRoomIdAndStatusIn(id, java.util.Arrays.asList(1, 2));
+        for (com.apartment.entity.RoomOrder o : orders) {
+            java.util.Map<String, Object> period = new java.util.HashMap<>();
+            period.put("start", o.getStartDate());
+            period.put("end", o.getEndDate());
+            period.put("type", "order");
+            period.put("orderId", o.getId());
+            periods.add(period);
+        }
+        
+        return periods;
+    }
 }

@@ -84,9 +84,10 @@
               </span>
             </td>
             <td class="actions">
-              <button class="edit-btn" @click="sendCode(order.id)" v-if="order.status === 1 || order.status === 2">发送验证码</button>
+              <button class="edit-btn" @click="sendRoomCard(order.id)" v-if="order.status === 1 || order.status === 2">发送房卡</button>
               <button class="edit-btn" @click="openModal(order)">详情</button>
               <button class="delete-btn" @click="cancelOrder(order.id)" v-if="order.status < 3">取消</button>
+              <button class="delete-btn" @click="deleteOrder(order.id)" v-if="order.status === 4" style="background: #94a3b8;">删除</button>
             </td>
           </tr>
         </tbody>
@@ -107,7 +108,8 @@
             </div>
           </div>
           <div class="header-actions">
-            <button v-if="form.id && form.status < 3" class="checkout-btn" @click="handleCheckout">🔔 退房</button>
+            <button v-if="form.id && form.status === 1" class="send-card-btn" @click="sendRoomCard(form.id)">📇 发送房卡</button>
+            <button v-if="form.id && form.status < 3 && form.status > 1" class="checkout-btn" @click="handleCheckout">🔔 退房</button>
             <button class="maximize-btn" @click="isMaximized = !isMaximized">
               {{ isMaximized ? '🗗' : '🗖' }}
             </button>
@@ -153,7 +155,7 @@
 
               <div class="form-item">
                 <label>客户类型</label>
-                <select v-model="form.customerType">
+                <select v-model="form.customerType" :disabled="!!form.id">
                   <option :value="1">个人</option>
                   <option :value="2">团体</option>
                 </select>
@@ -161,7 +163,7 @@
               
               <div class="form-item">
                 <label>订单状态</label>
-                <select v-model="form.status">
+                <select v-model="form.status" :disabled="!!form.id">
                   <option v-for="opt in getDictOptions('ORDER_STATUS')" :key="opt.value" :value="parseInt(opt.value)">
                     {{ opt.label }}
                   </option>
@@ -170,7 +172,7 @@
 
               <div class="form-item span-2">
                 <label>备注</label>
-                <input v-model="form.remarks" placeholder="General remarks...">
+                <input v-model="form.remarks" placeholder="订单备注信息...">
               </div>
 
               <div class="form-item">
@@ -200,9 +202,10 @@
                 <div class="card-header">
                   <div class="card-title">
                     <span class="room-no">房间 {{ getRoomNo(Number(occupy.roomId)) || '未设置' }}</span>
-                    <span class="room-type">{{ getRoomTypeLabel(Number(occupy.roomId)) }}</span>
+                    <span class="room-type">{{ getRoomTypeName(Number(occupy.roomId)) }}</span>
                   </div>
                   <div class="card-actions">
+                    <button class="card-action-btn adjust" v-if="occupy.status === 0" @click="openTimeAdjustModal(occupy)">调整时间</button>
                     <button class="card-action-btn change" v-if="occupy.id" @click="startChangeRoom(occupy)">换房</button>
                     <button class="card-action-btn delete" @click="removeRoomRow(index)">×</button>
                   </div>
@@ -221,7 +224,7 @@
                       <div class="room-selector-btn" @click="openRoomPicker(occupy, index)">
                         <span v-if="occupy.roomId" class="selected-room-info">
                           <strong>{{ getRoomNo(Number(occupy.roomId)) }}</strong> 
-                          <small>({{ getRoomTypeLabel(Number(occupy.roomId)) }})</small>
+                          <small>({{ getRoomTypeName(Number(occupy.roomId)) }})</small>
                         </span>
                         <span v-else class="placeholder">选择房间...</span>
                       </div>
@@ -248,13 +251,21 @@
                     <input type="number" v-model="occupy.occupantCount" min="1">
                   </div>
                   <div class="card-item">
+                    <label>实际单价</label>
+                    <input type="number" v-model="occupy.actualPrice" step="0.01" @input="refreshTotals">
+                  </div>
+                  <div class="card-item">
+                    <label>数量 (天/次)</label>
+                    <input type="number" v-model="occupy.quantity" min="1" @input="refreshTotals">
+                  </div>
+                  <div class="card-item">
                     <label>状态</label>
                     <select v-model="occupy.status">
                       <option :value="0">当前</option>
                       <option :value="1">完成</option>
                     </select>
                   </div>
-                  <div class="card-item span-4">
+                  <div class="card-item span-3">
                     <label>同住人</label>
                     <input v-model="occupy.coOccupants" placeholder="其他房客姓名">
                   </div>
@@ -347,7 +358,7 @@
             总计: <span class="price-highlight">¥{{ form.totalAmount }}</span>
           </div>
           <div class="footer-btns">
-            <button class="cancel-btn" @click="showModal = false">取消</button>
+            <button class="cancel-btn" @click="showModal = false">不保存关闭</button>
             <button class="save-btn" @click="saveOrder">保存更改</button>
           </div>
         </div>
@@ -365,41 +376,56 @@
           <div class="room-card" style="box-shadow: none; border-color: #38bdf8;">
             <div class="card-header">
               <div class="card-title">
-                <span class="room-no">新房间详情</span>
-                <span class="room-type">信息将从原房间复制</span>
+                <span class="room-no">换房设置</span>
+                <span class="room-type">请确认生效日期及新房间</span>
               </div>
             </div>
             <div class="card-grid">
               <div class="card-item span-4">
-                <label class="required">选择新房间</label>
+                <label class="required">换房生效日期</label>
+                <input type="date" v-model="changeRoomDate" @change="fetchChangeRoomAvailableRooms" :min="new Date().toISOString().split('T')[0]">
+                <p style="font-size: 11px; color: #64748b; margin-top: 4px;">* 换房操作将从该日期起生效至 {{ form.endDate.slice(0, 10) }}</p>
+              </div>
+
+              <div class="card-item span-4">
+                <label class="required">选择新房间 (仅显示可用)</label>
                 <select v-model="changeRoomNewRoomId" required>
                   <option :value="null">-- 选择可用房间 --</option>
-                  <option v-for="r in rooms" :key="r.id" :value="r.id" :disabled="r.status !== 0">
-                    {{ r.roomNo }} ({{ r.roomType?.typeCode }}) - ¥{{ form.bizType === 1 ? r.roomType?.priceShortRent : r.roomType?.priceLongRent }}
+                  <option v-for="r in changeRoomAvailableRooms" :key="r.id" :value="r.id">
+                    {{ r.roomNo }} ({{ getRoomTypeName(r.id) }}) - ¥{{ form.bizType === 1 ? r.roomType?.priceShortRent : r.roomType?.priceLongRent }}
                   </option>
                 </select>
               </div>
+
               <div class="card-item span-2">
                 <label>入住人</label>
                 <input :value="users.find(u => u.id === changingOccupy?.occupantUserId)?.realName" disabled>
               </div>
               <div class="card-item span-2">
-                <label>房卡号</label>
+                <label>原房卡号</label>
                 <input :value="changingOccupy?.roomCardNo" disabled>
               </div>
+
               <div class="card-item span-4" v-if="changeRoomPriceDiff !== 0">
-                <div class="amount-display highlight">
-                  <span style="font-size: 13px; color: #64748b;">价格差：</span>
+                <div class="amount-display highlight" :style="{ borderColor: changeRoomPriceDiff > 0 ? '#ef4444' : '#10b981' }">
+                  <span style="font-size: 13px; color: #64748b;">补缴/退还差价：</span>
                   <span class="currency">¥</span>
-                  <span style="font-weight: 800; color: #ef4444;">{{ changeRoomPriceDiff.toFixed(2) }}</span>
+                  <span style="font-weight: 800; font-size: 18px;" :style="{ color: changeRoomPriceDiff > 0 ? '#ef4444' : '#10b981' }">
+                    {{ Math.abs(changeRoomPriceDiff).toFixed(2) }}
+                    <small style="font-size: 12px; font-weight: 400; margin-left: 4px;">
+                      ({{ changeRoomPriceDiff > 0 ? '需补缴' : '需退还' }})
+                    </small>
+                  </span>
                 </div>
-                <p style="font-size: 11px; color: #94a3b8; margin-top: 5px;">* 计算剩余天数至 {{ form.endDate }}</p>
               </div>
             </div>
           </div>
+          <div v-if="changeRoomAvailableRooms.length === 0 && changeRoomDate" style="text-align: center; color: #ef4444; font-size: 12px; margin-top: 10px;">
+            ⚠️ 所选日期范围内暂无可用房间，请调整日期。
+          </div>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showChangeRoomModal = false">取消</button>
+          <button class="cancel-btn" @click="showChangeRoomModal = false">不保存关闭</button>
           <button class="save-btn" :disabled="!changeRoomNewRoomId" @click="confirmChangeRoom">确认换房</button>
         </div>
       </div>
@@ -446,7 +472,7 @@
               <div class="room-badge">房间</div>
               <div class="room-no">{{ r.roomNo }}</div>
               <div class="room-meta">
-                <span class="type-tag">{{ r.roomType?.typeCode }}</span>
+                <span class="type-tag">{{ r.roomType ? (parseNameIntl(r.roomType.nameIntlJson, 'zh') || r.roomType.typeCode) : '-' }}</span>
                 <span class="price">¥{{ form.bizType === 1 ? r.roomType?.priceShortRent : r.roomType?.priceLongRent }}</span>
               </div>
             </div>
@@ -456,6 +482,48 @@
               <small>请尝试不同的日期或清除房型筛选。</small>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Time Adjust Modal -->
+    <div v-if="showTimeAdjustModal" class="modal-overlay" style="z-index: 2200;">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          <h3>调整入住时间</h3>
+          <button class="close-btn" @click="showTimeAdjustModal = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="info-alert">
+            <p><strong>房间:</strong> {{ getRoomNo(Number(adjustingOccupy?.roomId)) }}</p>
+            <p><strong>入住人:</strong> {{ users.find(u => u.id === adjustingOccupy?.occupantUserId)?.realName || '-' }}</p>
+          </div>
+          
+          <div class="booked-periods-view" v-if="bookedPeriods.length > 0">
+            <label>该房间已有预订/维修时段 (不可选):</label>
+            <ul class="period-list">
+              <li v-for="(p, i) in bookedPeriods" :key="i" class="period-item" :class="p.type">
+                {{ p.type === 'maintenance' ? '🔧 维修' : '📅 预订' }}: 
+                {{ p.start.slice(0, 10) }} 至 {{ p.end.slice(0, 10) }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="form-grid-2" style="margin-top: 20px;">
+            <div class="form-item">
+              <label class="required">新入住时间</label>
+              <input type="datetime-local" v-model="adjustingDates.start" required>
+            </div>
+            <div class="form-item">
+              <label class="required">新退房时间</label>
+              <input type="datetime-local" v-model="adjustingDates.end" required>
+            </div>
+          </div>
+          <p class="hint-text">* 系统将根据新时段重新计算房费。</p>
+        </div>
+        <div class="modal-footer">
+          <button class="cancel-btn" @click="showTimeAdjustModal = false">不保存关闭</button>
+          <button class="save-btn" @click="confirmTimeAdjust">确认调整</button>
         </div>
       </div>
     </div>
@@ -484,11 +552,17 @@ const changeRoomNewRoomId = ref<number | null>(null);
 const roomTypes = ref<any[]>([]);
 const showRoomPicker = ref(false);
 const pickingOccupyIndex = ref<number | null>(null);
+const changeRoomAvailableRooms = ref<any[]>([]);
+const showTimeAdjustModal = ref(false);
+const adjustingOccupy = ref<any>(null);
+const adjustingDates = reactive({ start: '', end: '' });
+const bookedPeriods = ref<any[]>([]);
 const roomPickerFilters = reactive({
   startDate: '',
   endDate: '',
   roomTypeId: null as number | null
 });
+const changeRoomDate = ref(new Date().toISOString().slice(0, 10));
 const pickerAvailableRooms = ref<any[]>([]);
 const availableRooms = ref<any[]>([]);
 
@@ -664,9 +738,10 @@ watch([() => form.roomOccupies, () => form.startDate, () => form.endDate, () => 
 }, { deep: true });
 
 const getRoomNo = (id: number) => rooms.value.find(r => r.id === id)?.roomNo;
-const getRoomTypeLabel = (id: number) => {
+const getRoomTypeName = (id: number) => {
   const room = rooms.value.find(r => r.id === id);
-  return room?.roomType?.typeCode || 'Unknown';
+  if (!room || !room.roomType) return '未知房型';
+  return parseNameIntl(room.roomType.nameIntlJson, 'zh') || room.roomType.typeCode || '未知房型';
 };
 
 
@@ -685,6 +760,7 @@ const addRoomRow = () => {
 
 const removeRoomRow = (index: any) => {
   form.roomOccupies.splice(index, 1);
+  refreshTotals();
 };
 
 const changeRoomPriceDiff = computed(() => {
@@ -696,22 +772,44 @@ const changeRoomPriceDiff = computed(() => {
   const oldPrice = form.bizType === 1 ? oldRoom?.roomType?.priceShortRent : oldRoom?.roomType?.priceLongRent;
   const newPrice = form.bizType === 1 ? newRoom.roomType?.priceShortRent : newRoom.roomType?.priceLongRent;
   
-  const days = calculateDays(new Date().toISOString().split('T')[0], form.endDate);
+  const days = calculateDays(changeRoomDate.value, form.endDate);
   return ((newPrice || 0) - (oldPrice || 0)) * days;
 });
 
 const startChangeRoom = (occupy: any) => {
   changingOccupy.value = occupy;
   changeRoomNewRoomId.value = null;
+  changeRoomDate.value = new Date().toISOString().slice(0, 10);
+  fetchChangeRoomAvailableRooms();
   showChangeRoomModal.value = true;
+};
+
+const fetchChangeRoomAvailableRooms = async () => {
+  if (!changeRoomDate.value || !form.endDate) return;
+  try {
+    const res = await api.get(`/rooms/available?startDate=${changeRoomDate.value}&endDate=${form.endDate}`) as any;
+    // Filter out maintenance/locked rooms and rooms in THIS order
+    changeRoomAvailableRooms.value = res.filter((r: any) => 
+      r.status === 0 && !r.isMaintenance && r.id !== changingOccupy.value?.roomId
+    );
+  } catch (e) {
+    console.error('Failed to fetch available rooms for change', e);
+  }
 };
 
 const confirmChangeRoom = async () => {
   if (!changeRoomNewRoomId.value || !changingOccupy.value) return;
   
+  const msg = changeRoomPriceDiff.value > 0 
+    ? `换房将产生补缴金额 ¥${changeRoomPriceDiff.value.toFixed(2)}，确定继续？`
+    : `换房将产生退还金额 ¥${Math.abs(changeRoomPriceDiff.value).toFixed(2)}，确定继续？`;
+  
+  if (!confirm(msg)) return;
+
   try {
-    await api.post(`/orders/occupy/${changingOccupy.value.id}/change-room?roomId=${changeRoomNewRoomId.value}`, {});
-    alert('换房成功 (Change Room Success)');
+    const switchDate = changeRoomDate.value + 'T' + new Date().toTimeString().slice(0, 8);
+    await api.post(`/orders/occupy/${changingOccupy.value.id}/change-room?roomId=${changeRoomNewRoomId.value}&switchDate=${switchDate}`, {});
+    alert('换房成功');
     showChangeRoomModal.value = false;
     showModal.value = false;
     fetchData();
@@ -777,8 +875,14 @@ const selectRoomFromPicker = (room: any) => {
   // Sync check-in/out times with the picker dates if they were changed
   occupy.checkInTime = `${roomPickerFilters.startDate}T14:00`;
   occupy.checkOutTime = `${roomPickerFilters.endDate}T12:00`;
+  // Set default price and quantity
+  const price = form.bizType === 2 ? room.roomType?.priceLongRent : room.roomType?.priceShortRent;
+  occupy.actualPrice = price;
+  occupy.quantity = calculateDays(roomPickerFilters.startDate, roomPickerFilters.endDate);
+  
   showRoomPicker.value = false;
   onRoomChange(occupy);
+  refreshTotals();
 };
 
 const onRoomChange = (_occupy: any) => {
@@ -800,6 +904,7 @@ const addProductDetail = () => {
 
 const removeProductDetail = (index: any) => {
   form.productDetails.splice(index, 1);
+  refreshTotals();
 };
 
 const onProductChange = (detail: any) => {
@@ -807,11 +912,17 @@ const onProductChange = (detail: any) => {
   if (p) {
     detail.actualPrice = p.price;
   }
+  refreshTotals();
 };
 
 const openModal = (order?: any, tab: string = 'basic') => {
   if (order) {
     Object.assign(form, order);
+    // Format dates for datetime-local input (YYYY-MM-DDTHH:mm)
+    if (order.createdAt) form.createdAt = order.createdAt.slice(0, 16);
+    if (order.startDate) form.startDate = order.startDate.slice(0, 16);
+    if (order.endDate) form.endDate = order.endDate.slice(0, 16);
+    
     // Handle nested roomOccupies
     if (order.roomOccupies) {
       form.roomOccupies = order.roomOccupies.map((ro: any) => ({
@@ -861,6 +972,83 @@ const openModal = (order?: any, tab: string = 'basic') => {
   showModal.value = true;
 };
 
+const openTimeAdjustModal = async (occupy: any) => {
+  adjustingOccupy.value = occupy;
+  adjustingDates.start = occupy.checkInTime ? occupy.checkInTime.slice(0, 16) : form.startDate;
+  adjustingDates.end = occupy.checkOutTime ? occupy.checkOutTime.slice(0, 16) : form.endDate;
+  
+  try {
+    const res = await api.get(`/rooms/${occupy.roomId}/booked-periods`) as any;
+    // Exclude THIS order's current periods if any
+    bookedPeriods.value = res.filter((p: any) => p.orderId !== form.id);
+    showTimeAdjustModal.value = true;
+  } catch (e) {
+    console.error('Failed to fetch booked periods', e);
+    alert('无法获取房间预订信息');
+  }
+};
+
+const confirmTimeAdjust = async () => {
+  if (!adjustingDates.start || !adjustingDates.end) {
+    alert('请选择完整的时间段');
+    return;
+  }
+  try {
+    const res = await api.post(`/orders/occupy/${adjustingOccupy.value.id}/adjust-time?startDate=${adjustingDates.start}&endDate=${adjustingDates.end}`, {}) as any;
+    alert('时间调整成功，费用已更新');
+    // Refresh modal data
+    Object.assign(form, res);
+    // Format dates again
+    if (res.createdAt) form.createdAt = res.createdAt.slice(0, 16);
+    if (res.startDate) form.startDate = res.startDate.slice(0, 16);
+    if (res.endDate) form.endDate = res.endDate.slice(0, 16);
+    if (res.roomOccupies) {
+      form.roomOccupies = res.roomOccupies.map((ro: any) => ({
+        ...ro,
+        roomId: ro.room?.id,
+        occupantUserId: ro.occupantUser?.id,
+        checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
+        checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
+      }));
+    }
+    showTimeAdjustModal.value = false;
+    fetchData(); // Refresh list background
+  } catch (e: any) {
+    const msg = e.response?.data?.message || e.response?.data || e.message;
+    alert('调整失败: ' + (typeof msg === 'string' ? msg : JSON.stringify(msg)));
+  }
+};
+
+const refreshTotals = () => {
+  let roomTotal = 0;
+  if (form.roomOccupies) {
+    form.roomOccupies.forEach((ro: any) => {
+      roomTotal += (ro.actualPrice || 0) * (ro.quantity || 0);
+    });
+  }
+  form.roomFee = roomTotal;
+  
+  let serviceTotal = 0;
+  if (form.productDetails) {
+    form.productDetails.forEach((pd: any) => {
+      serviceTotal += (pd.actualPrice || 0) * (pd.quantity || 0);
+    });
+  }
+  form.serviceFee = serviceTotal;
+  form.totalAmount = roomTotal + serviceTotal;
+};
+
+const deleteOrder = async (id: number) => {
+  if (!confirm('确定要永久删除此作废订单吗？')) return;
+  try {
+    await api.delete(`/orders/${id}`);
+    fetchData();
+    alert('删除成功');
+  } catch (e: any) {
+    alert('删除失败: ' + (e.response?.data || e.message));
+  }
+};
+
 const scrollTo = (id: string) => {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -872,13 +1060,16 @@ const handleCheckout = async () => {
   await saveOrder();
 };
 
-const sendCode = async (id: number) => {
+const sendRoomCard = async (id: number) => {
   try {
-    await api.post(`/orders/${id}/send-code`, {});
+    // If we are in the modal, we might want to save the form first if it's dirty,
+    // but the requirement says "validation in form", so we assume the backend handles it.
+    await api.post(`/orders/${id}/send-card`, {});
     fetchData();
-    alert('验证码发送成功');
-  } catch (e) {
-    alert('验证码发送失败');
+    if (showModal.value) showModal.value = false;
+    alert('房卡发送成功，订单状态已更新为已入住');
+  } catch (e: any) {
+    alert('发送失败: ' + (e.response?.data || e.message));
   }
 };
 
@@ -1140,6 +1331,12 @@ onMounted(fetchData);
 .checkout-btn { background: #fee2e2; color: #b91c1c; border-color: #fecaca; font-weight: 600; }
 .checkout-btn:hover { background: #fecaca; }
 
+.send-card-btn { 
+  background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; 
+  border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 14px; font-weight: 600;
+}
+.send-card-btn:hover { background: #dcfce7; }
+
 .form-section { padding: 20px; border-bottom: 1px solid #f1f5f9; scroll-margin-top: 20px; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .section-title { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 0; border-left: 4px solid #38bdf8; padding-left: 10px; }
@@ -1177,6 +1374,8 @@ onMounted(fetchData);
 .card-action-btn { padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .card-action-btn.change { color: #0369a1; border-color: #bae6fd; background: #f0f9ff; }
 .card-action-btn.change:hover { background: #e0f2fe; }
+.card-action-btn.adjust { color: #8b5cf6; border-color: #ddd6fe; background: #f5f3ff; }
+.card-action-btn.adjust:hover { background: #ede9fe; }
 .card-action-btn.delete { color: #94a3b8; border: none; font-size: 18px; line-height: 1; padding: 0 4px; }
 .card-action-btn.delete:hover { color: #ef4444; }
 
@@ -1190,4 +1389,14 @@ onMounted(fetchData);
 .room-tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .room-tag { background: #f1f5f9; color: #475569; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; border: 1px solid #e2e8f0; }
 .amount-display.highlight { border-color: #38bdf8; background: #f0f9ff; }
+
+.info-alert { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 12px; margin-bottom: 20px; }
+.info-alert p { margin: 4px 0; font-size: 14px; color: #0369a1; }
+.booked-periods-view label { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; display: block; }
+.period-list { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; }
+.period-item { font-size: 12px; padding: 6px 10px; border-radius: 4px; margin-bottom: 4px; border: 1px solid #e2e8f0; }
+.period-item.maintenance { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.period-item.order { background: #f0f9ff; color: #0369a1; border-color: #bae6fd; }
+.hint-text { font-size: 12px; color: #94a3b8; margin-top: 10px; font-style: italic; }
+.form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
 </style>

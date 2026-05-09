@@ -54,7 +54,7 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">取消</button>
+          <button class="cancel-btn" @click="showModal = false">不保存关闭</button>
           <button class="save-btn" @click="saveRole">保存更改</button>
         </div>
       </div>

@@ -22,6 +22,7 @@
             <th>开始时间</th>
             <th>结束时间</th>
             <th>状态</th>
+            <th>维修内容</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -36,8 +37,10 @@
                 {{ getStatusLabel(m.status) }}
               </span>
             </td>
+            <td>{{ m.content || '-' }}</td>
             <td class="actions">
-              <button class="edit-btn" v-if="m.status === 0" @click="openModal(m)">编辑</button>
+              <button class="edit-btn" v-if="m.status === 0" @click="openModal(m)">修改</button>
+              <button class="delete-btn" v-if="m.status === 0" @click="voidMaintenance(m)" style="background: #94a3b8; border-color: #94a3b8;">作废</button>
               <button class="delete-btn" v-if="m.status === 2" @click="deleteMaintenance(m.id)">删除</button>
             </td>
           </tr>
@@ -71,6 +74,10 @@
               <input v-model="form.endTime" type="datetime-local">
             </div>
             <div class="form-item">
+              <label>维修内容</label>
+              <textarea v-model="form.content" placeholder="请输入维修详情..."></textarea>
+            </div>
+            <div class="form-item">
               <label>状态</label>
               <select v-model="form.status" :disabled="form.status === 1 || form.status === 2">
                 <option :value="0">维修中</option>
@@ -81,7 +88,7 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">取消</button>
+          <button class="cancel-btn" @click="showModal = false">不保存关闭</button>
           <button class="save-btn" @click="saveMaintenance">保存</button>
         </div>
       </div>
@@ -106,7 +113,8 @@ const form = reactive<any>({
   roomId: null,
   startTime: '',
   endTime: '',
-  status: 0
+  status: 0,
+  content: ''
 });
 
 const fetchData = async () => {
@@ -164,6 +172,7 @@ const openModal = (m?: any) => {
     form.startTime = formatForInput(m.startTime);
     form.endTime = formatForInput(m.endTime);
     form.status = m.status;
+    form.content = m.content || '';
   } else {
     form.id = null;
     form.roomId = roomIdFilter.value || null;
@@ -174,6 +183,7 @@ const openModal = (m?: any) => {
     end.setFullYear(end.getFullYear() + 3);
     form.endTime = formatForInput(new Date(end.getTime() - end.getTimezoneOffset() * 60000).toISOString());
     form.status = 0;
+    form.content = '';
   }
   showModal.value = true;
 };
@@ -185,13 +195,25 @@ const saveMaintenance = async () => {
       room: { id: form.roomId },
       startTime: form.startTime,
       endTime: form.endTime,
-      status: form.status
+      status: form.status,
+      content: form.content
     };
     await api.post('/maintenances', payload);
     showModal.value = false;
     fetchData();
   } catch (e: any) {
     alert(e.response?.data || 'Failed to save');
+  }
+};
+
+const voidMaintenance = async (m: any) => {
+  if (!confirm('确定要作废此维修记录吗？')) return;
+  try {
+    const payload = { ...m, status: 2 };
+    await api.post('/maintenances', payload);
+    fetchData();
+  } catch (e: any) {
+    alert(e.response?.data || 'Failed to void');
   }
 };
 

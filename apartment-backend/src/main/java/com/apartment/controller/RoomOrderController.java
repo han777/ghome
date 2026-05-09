@@ -85,9 +85,9 @@ public class RoomOrderController {
         return orderRepository.save(order);
     }
 
-    @PostMapping("/{id}/send-code")
-    public RoomOrder sendCode(@PathVariable Long id) {
-        return orderService.sendDoorCode(id);
+    @PostMapping("/{id}/send-card")
+    public RoomOrder sendRoomCard(@PathVariable Long id) {
+        return orderService.sendRoomCard(id);
     }
 
     @PostMapping("/{id}/add-fee")
@@ -111,8 +111,9 @@ public class RoomOrderController {
     }
 
     @PostMapping("/occupy/{occupyId}/change-room")
-    public RoomOrder changeRoom(@PathVariable Long occupyId, @RequestParam Long roomId) {
-        return orderService.changeRoom(occupyId, roomId);
+    public RoomOrder changeRoom(@PathVariable Long occupyId, @RequestParam Long roomId, 
+                                @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime switchDate) {
+        return orderService.changeRoom(occupyId, roomId, switchDate);
     }
 
     @PostMapping("/{id}/add-room")
@@ -123,5 +124,14 @@ public class RoomOrderController {
     @DeleteMapping("/{id}")
     public void deleteOrder(@PathVariable Long id) {
         orderRepository.deleteById(id);
+    }
+
+    @PostMapping("/occupy/{occupyId}/adjust-time")
+    public RoomOrder adjustOccupyTime(@PathVariable Long occupyId, 
+                                     @RequestParam String startDate, 
+                                     @RequestParam String endDate) {
+        java.time.LocalDateTime start = java.time.LocalDateTime.parse(startDate);
+        java.time.LocalDateTime end = java.time.LocalDateTime.parse(endDate);
+        return orderService.adjustOccupyTime(occupyId, start, end);
     }
 }

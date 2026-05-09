@@ -12,14 +12,14 @@ export default defineConfig({
   },
   server: {
     host: '127.0.0.1',
-    port: 3000,
+    port: 3003,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8081',
+        target: 'http://127.0.0.1:10080',
         changeOrigin: true
       },
       '/uploads': {
-        target: 'http://127.0.0.1:8081',
+        target: 'http://127.0.0.1:10080',
         changeOrigin: true
       }
     }
