@@ -218,7 +218,7 @@
                 <div class="card-header">
                   <div class="card-title">
                     <span class="room-no">房间号: {{ occupy.room?.roomNo }}</span>
-                    <span class="room-type">{{ occupy.room?.roomType?.typeCode }}</span>
+                    <span class="room-type">{{ getRoomTypeNameZh(occupy.room?.roomType) }}</span>
                   </div>
                 </div>
                 <div class="card-grid">
@@ -325,6 +325,21 @@ const dictLabelZh: Record<string, Record<string, string>> = {
   ROOM_STATUS: { 'Available': '可用', 'Locked': '锁定' },
   ORDER_STATUS: { 'Cooling-off': '冷静期', 'Pending': '待确认', 'In': '已入住', 'Out': '已退房', 'Canceled': '已取消' },
   BIZ_TYPE: { 'Short Rent': '短租', 'Long Rent': '长租' }
+};
+
+const parseNameIntl = (json: string, lang: string): string => {
+  if (!json) return '';
+  try {
+    const obj = typeof json === 'string' ? JSON.parse(json) : json;
+    return obj[lang] || obj['zh'] || '';
+  } catch {
+    return '';
+  }
+};
+
+const getRoomTypeNameZh = (roomType: any): string => {
+  if (!roomType) return '-';
+  return parseNameIntl(roomType.nameIntlJson, 'zh') || roomType.typeCode || '-';
 };
 const dicts = ref<any[]>([]);
 const showModal = ref(false);

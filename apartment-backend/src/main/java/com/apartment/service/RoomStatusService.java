@@ -12,6 +12,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class RoomStatusService {
@@ -24,6 +26,21 @@ public class RoomStatusService {
 
     @Autowired
     private com.apartment.repository.RoomMaintenanceRepository maintenanceRepository;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private String getRoomTypeNameZh(com.apartment.entity.RoomType roomType) {
+        if (roomType == null) return "N/A";
+        String json = roomType.getNameIntlJson();
+        if (json == null || json.isBlank()) return roomType.getTypeCode();
+        try {
+            JsonNode node = objectMapper.readTree(json);
+            String zh = node.has("zh") ? node.get("zh").asText() : null;
+            return zh != null && !zh.isBlank() ? zh : roomType.getTypeCode();
+        } catch (Exception e) {
+            return roomType.getTypeCode();
+        }
+    }
 
     public RoomStatusDashboardDTO getDashboardData() {
         LocalDateTime now = LocalDateTime.now();
@@ -52,7 +69,7 @@ public class RoomStatusService {
             RoomStatusDashboardDTO.RoomDetailDTO detail = new RoomStatusDashboardDTO.RoomDetailDTO();
             detail.setRoomId(room.getId());
             detail.setRoomNo(room.getRoomNo());
-            detail.setRoomTypeName(room.getRoomType() != null ? room.getRoomType().getTypeCode() : "N/A");
+            detail.setRoomTypeName(getRoomTypeNameZh(room.getRoomType()));
             
             if (room.getFloor() != null) {
                 detail.setFloorId(room.getFloor().getId());

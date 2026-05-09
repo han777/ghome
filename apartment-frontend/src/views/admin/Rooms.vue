@@ -63,7 +63,7 @@
             <tr v-for="room in filteredRooms" :key="room.id">
               <td class="name">{{ room.roomNo }}</td>
               <td>
-                <span class="tag">{{ room.roomType?.typeCode || '-' }}</span>
+                <span class="tag">{{ getRoomTypeNameZh(room.roomType) }}</span>
               </td>
               <td>
                 {{ room.floor?.building?.name }} / {{ room.floor?.name }}
@@ -106,7 +106,7 @@
             </div>
             <div class="info-row">
               <span class="label">房型:</span>
-              <span class="value">{{ room.roomType?.typeCode || '-' }}</span>
+              <span class="value">{{ getRoomTypeNameZh(room.roomType) }}</span>
             </div>
             <div class="info-row">
               <span class="label">面积:</span>
@@ -158,7 +158,7 @@
               <select v-model="form.roomTypeId">
                 <option :value="null">-- Select Room Type --</option>
                 <option v-for="t in roomTypes" :key="t.id" :value="t.id">
-                  {{ t.typeCode }}
+                  {{ getRoomTypeNameZh(t) }}
                 </option>
               </select>
             </div>
@@ -291,6 +291,21 @@ const dictLabelZh: Record<string, Record<string, string>> = {
   ROOM_STATUS: { 'Available': '可用', 'Locked': '锁定' },
   ORDER_STATUS: { 'Cooling-off': '冷静期', 'Pending': '待确认', 'In': '已入住', 'Out': '已退房', 'Canceled': '已取消' },
   BIZ_TYPE: { 'Short Rent': '短租', 'Long Rent': '长租' }
+};
+
+const parseNameIntl = (json: string, lang: string): string => {
+  if (!json) return '';
+  try {
+    const obj = typeof json === 'string' ? JSON.parse(json) : json;
+    return obj[lang] || obj['zh'] || '';
+  } catch {
+    return '';
+  }
+};
+
+const getRoomTypeNameZh = (roomType: any): string => {
+  if (!roomType) return '-';
+  return parseNameIntl(roomType.nameIntlJson, 'zh') || roomType.typeCode || '-';
 };
 
 const getDictLabel = (code: string, value: any) => {
