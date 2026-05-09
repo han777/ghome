@@ -26,7 +26,7 @@
             <td>
               <div class="item-tags">
                 <span v-for="item in dict.items" :key="item.id" class="tag">
-                  {{ item.itemLabel }}: {{ item.itemValue }}
+                  {{ translateDictLabel(dict.dictCode, item.itemLabel) }}: {{ item.itemValue }}
                 </span>
               </div>
             </td>
@@ -85,6 +85,17 @@ import { ref, onMounted, reactive } from 'vue';
 import api from '../../utils/api';
 
 const dicts = ref<any[]>([]);
+
+// 后台管理固定显示中文
+const dictLabelZh: Record<string, Record<string, string>> = {
+  ROOM_STATUS: { 'Available': '可用', 'Locked': '锁定' },
+  ORDER_STATUS: { 'Cooling-off': '冷静期', 'Pending': '待确认', 'In': '已入住', 'Out': '已退房', 'Canceled': '已取消' },
+  BIZ_TYPE: { 'Short Rent': '短租', 'Long Rent': '长租' }
+};
+
+const translateDictLabel = (dictCode: string, itemLabel: string): string => {
+  return dictLabelZh[dictCode]?.[itemLabel] || itemLabel;
+};
 const showModal = ref(false);
 const form = reactive<any>({
   id: null,

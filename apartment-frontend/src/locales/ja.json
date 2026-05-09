@@ -233,6 +233,21 @@
   },
   "dict": {
     "personal": "個人",
-    "group": "団体"
+    "group": "団体",
+    "ROOM_STATUS": {
+      "Available": "利用可能",
+      "Locked": "ロック済み"
+    },
+    "ORDER_STATUS": {
+      "Cooling-off": "クーリングオフ",
+      "Pending": "確認待ち",
+      "In": "滞在中",
+      "Out": "チェックアウト済み",
+      "Canceled": "キャンセル済み"
+    },
+    "BIZ_TYPE": {
+      "Short Rent": "短期賃貸",
+      "Long Rent": "長期賃貸"
+    }
   }
 }
