@@ -248,6 +248,12 @@
     "BIZ_TYPE": {
       "Short Rent": "短期賃貸",
       "Long Rent": "長期賃貸"
+    },
+    "DIRECTION": {
+      "SOUTH": "南向き",
+      "NORTH": "北向き",
+      "EAST": "東向き",
+      "WEST": "西向き"
     }
   }
 }

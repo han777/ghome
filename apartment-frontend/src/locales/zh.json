@@ -248,6 +248,12 @@
     "BIZ_TYPE": {
       "Short Rent": "短租",
       "Long Rent": "长租"
+    },
+    "DIRECTION": {
+      "SOUTH": "朝南",
+      "NORTH": "朝北",
+      "EAST": "朝东",
+      "WEST": "朝西"
     }
   }
 }

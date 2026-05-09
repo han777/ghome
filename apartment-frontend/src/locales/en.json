@@ -248,6 +248,12 @@
     "BIZ_TYPE": {
       "Short Rent": "Short Rent",
       "Long Rent": "Long Rent"
+    },
+    "DIRECTION": {
+      "SOUTH": "South-facing",
+      "NORTH": "North-facing",
+      "EAST": "East-facing",
+      "WEST": "West-facing"
     }
   }
 }
