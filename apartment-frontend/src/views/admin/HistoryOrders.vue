@@ -125,6 +125,7 @@
             </td>
             <td class="actions">
               <button class="edit-btn" @click="openModal(order)">详情</button>
+              <button class="delete-btn" @click="deleteOrder(order.id)" v-if="order.status === 4">删除</button>
             </td>
           </tr>
           <tr v-if="paginatedOrders.length === 0">
@@ -470,6 +471,17 @@ const getOrderStatusClass = (status: number) => {
 const openModal = (order: any) => {
   form.value = { ...order };
   showModal.value = true;
+};
+
+const deleteOrder = async (id: number) => {
+  if (!confirm('确定要永久删除此作废订单吗？')) return;
+  try {
+    await api.delete(`/orders/${id}`);
+    fetchData();
+    alert('删除成功');
+  } catch (e: any) {
+    alert('删除失败: ' + (e.response?.data || e.message));
+  }
 };
 
 const scrollTo = (id: string) => {

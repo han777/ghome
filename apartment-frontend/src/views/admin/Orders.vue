@@ -84,10 +84,7 @@
               </span>
             </td>
             <td class="actions">
-              <button class="edit-btn" @click="sendRoomCard(order.id)" v-if="order.status === 1 || order.status === 2">发送房卡</button>
-              <button class="edit-btn" @click="openModal(order)">详情</button>
-              <button class="delete-btn" @click="cancelOrder(order.id)" v-if="order.status < 3">取消订单</button>
-              <button class="delete-btn" @click="deleteOrder(order.id)" v-if="order.status === 4" style="background: #94a3b8;">删除</button>
+              <button class="edit-btn" @click="openModal(order, 'basic')">详情</button>
             </td>
           </tr>
         </tbody>
@@ -105,9 +102,12 @@
               <a href="#section-rooms" @click.prevent="scrollTo('section-rooms')">🛏️ 客房</a>
               <a href="#section-products" @click.prevent="scrollTo('section-products')">📦 服务与商品</a>
               <a href="#section-accounting" @click.prevent="scrollTo('section-accounting')">💰 财务结算</a>
+              <a href="#section-logs" @click.prevent="scrollTo('section-logs')" v-if="form.id">📋 操作日志</a>
             </div>
           </div>
           <div class="header-actions">
+            <button v-if="form.id && !isEditMode" class="edit-top-btn" @click="isEditMode = true">编辑</button>
+            <button v-if="form.id && form.status <= 1" class="cancel-order-btn" @click="cancelOrderFromModal(form.id)">取消订单</button>
             <button v-if="form.id && form.status === 1" class="send-card-btn" @click="sendRoomCard(form.id)">📇 发送房卡</button>
             <button v-if="form.id && form.status < 3 && form.status > 1" class="checkout-btn" @click="handleCheckout">🔔 退房</button>
             <button class="maximize-btn" @click="isMaximized = !isMaximized">
@@ -123,7 +123,7 @@
             <div class="form-grid-4">
               <div class="form-item">
                 <label class="required">预订人</label>
-                <select v-model="form.bookerId" required @change="onBookerChange">
+                <select v-model="form.bookerId" required @change="onBookerChange" :disabled="!isEditMode">
                   <option :value="null">-- 选择预订人 --</option>
                   <option v-for="u in users" :key="u.id" :value="u.id">
                     {{ u.realName }} ({{ u.username }})
@@ -132,21 +132,21 @@
               </div>
               <div class="form-item">
                 <label>联系电话</label>
-                <input v-model="form.bookPhone" placeholder="预订电话">
+                <input v-model="form.bookPhone" placeholder="预订电话" :disabled="!isEditMode">
               </div>
 
               <div class="form-item">
                 <label class="required">入住日期</label>
-                <input type="datetime-local" v-model="form.startDate" required>
+                <input type="datetime-local" v-model="form.startDate" required :disabled="!isEditMode">
               </div>
               <div class="form-item">
                 <label>退房日期</label>
-                <input type="datetime-local" v-model="form.endDate" required>
+                <input type="datetime-local" v-model="form.endDate" required :disabled="!isEditMode">
               </div>
 
               <div class="form-item">
                 <label>业务类型</label>
-                <select v-model="form.bizType">
+                <select v-model="form.bizType" :disabled="!isEditMode">
                   <option v-for="opt in getDictOptions('BIZ_TYPE')" :key="opt.value" :value="parseInt(opt.value)">
                     {{ opt.label }}
                   </option>
@@ -155,15 +155,15 @@
 
               <div class="form-item">
                 <label>客户类型</label>
-                <select v-model="form.customerType" :disabled="!!form.id">
+                <select v-model="form.customerType" :disabled="!isEditMode || !!form.id">
                   <option :value="1">个人</option>
                   <option :value="2">团体</option>
                 </select>
               </div>
-              
+
               <div class="form-item">
                 <label>订单状态</label>
-                <select v-model="form.status" :disabled="!!form.id">
+                <select v-model="form.status" :disabled="!isEditMode || !!form.id">
                   <option v-for="opt in getDictOptions('ORDER_STATUS')" :key="opt.value" :value="parseInt(opt.value)">
                     {{ opt.label }}
                   </option>
@@ -172,7 +172,7 @@
 
               <div class="form-item span-2">
                 <label>备注</label>
-                <input v-model="form.remarks" placeholder="订单备注信息...">
+                <input v-model="form.remarks" placeholder="订单备注信息..." :disabled="!isEditMode">
               </div>
 
               <div class="form-item">
@@ -194,7 +194,7 @@
                 <span class="room-count-badge" v-if="form.roomOccupies?.length">
                   {{ form.roomOccupies.length }} 间
                 </span>
-                <button class="add-btn small" @click="addRoomRow">+ 添加房间</button>
+                <button class="add-btn small" @click="addRoomRow" v-if="isEditMode">+ 添加房间</button>
               </div>
             </div>
             <div class="room-cards-container">
@@ -207,31 +207,38 @@
                   <div class="card-actions">
                     <button class="card-action-btn adjust" v-if="occupy.status === 0" @click="openTimeAdjustModal(occupy)">调整时间</button>
                     <button class="card-action-btn change" v-if="occupy.id" @click="startChangeRoom(occupy)">换房</button>
-                    <button class="card-action-btn delete" @click="removeRoomRow(index)">×</button>
+                    <button class="card-action-btn delete" v-if="isEditMode" @click="removeRoomRow(index)">×</button>
                   </div>
                 </div>
                 <div class="card-grid">
                   <div class="card-item">
                     <label>实际入住</label>
-                    <input type="datetime-local" v-model="occupy.checkInTime">
+                    <input type="datetime-local" v-model="occupy.checkInTime" :disabled="!isEditMode">
                   </div>
                   <div class="card-item">
                     <label>实际退房</label>
-                    <input type="datetime-local" v-model="occupy.checkOutTime">
+                    <input type="datetime-local" v-model="occupy.checkOutTime" :disabled="!isEditMode">
                   </div>
                     <div class="card-item">
                       <label>房间</label>
-                      <div class="room-selector-btn" @click="openRoomPicker(occupy, index)">
+                      <div class="room-selector-btn" @click="openRoomPicker(occupy, index)" v-if="isEditMode">
                         <span v-if="occupy.roomId" class="selected-room-info">
-                          <strong>{{ getRoomNo(Number(occupy.roomId)) }}</strong> 
+                          <strong>{{ getRoomNo(Number(occupy.roomId)) }}</strong>
                           <small>({{ getRoomTypeName(Number(occupy.roomId)) }})</small>
                         </span>
                         <span v-else class="placeholder">选择房间...</span>
                       </div>
+                      <div class="room-selector-btn" v-else style="cursor: default; opacity: 0.8;">
+                        <span v-if="occupy.roomId" class="selected-room-info">
+                          <strong>{{ getRoomNo(Number(occupy.roomId)) }}</strong>
+                          <small>({{ getRoomTypeName(Number(occupy.roomId)) }})</small>
+                        </span>
+                        <span v-else class="placeholder">未选择</span>
+                      </div>
                     </div>
                   <div class="card-item">
                     <label>入住人</label>
-                    <select v-model="occupy.occupantUserId">
+                    <select v-model="occupy.occupantUserId" :disabled="!isEditMode">
                       <option :value="null">-- 选择入住人 --</option>
                       <option v-for="u in users" :key="u.id" :value="u.id">
                         {{ u.realName }} ({{ u.username }})
@@ -240,27 +247,27 @@
                   </div>
                   <div class="card-item">
                     <label>房卡号</label>
-                    <input v-model="occupy.roomCardNo">
+                    <input v-model="occupy.roomCardNo" :disabled="!isEditMode">
                   </div>
                   <div class="card-item">
                     <label>门锁密码</label>
-                    <input v-model="occupy.doorCode">
+                    <input v-model="occupy.doorCode" :disabled="!isEditMode">
                   </div>
                   <div class="card-item">
                     <label>入住人数</label>
-                    <input type="number" v-model="occupy.occupantCount" min="1">
+                    <input type="number" v-model="occupy.occupantCount" min="1" :disabled="!isEditMode">
                   </div>
                   <div class="card-item">
                     <label>实际单价</label>
-                    <input type="number" v-model="occupy.actualPrice" step="0.01" @input="refreshTotals">
+                    <input type="number" v-model="occupy.actualPrice" step="0.01" @input="refreshTotals" :disabled="!isEditMode">
                   </div>
                   <div class="card-item">
                     <label>数量 (天/次)</label>
-                    <input type="number" v-model="occupy.quantity" min="1" @input="refreshTotals">
+                    <input type="number" v-model="occupy.quantity" min="1" @input="refreshTotals" :disabled="!isEditMode">
                   </div>
                   <div class="card-item">
                     <label>状态</label>
-                    <select v-model="occupy.status">
+                    <select v-model="occupy.status" :disabled="!isEditMode">
                       <option :value="0">当前</option>
                       <option :value="1">完成</option>
                     </select>
@@ -281,7 +288,7 @@
           <section id="section-products" class="form-section">
             <div class="section-header">
               <h3 class="section-title">服务与商品</h3>
-              <button class="add-btn small" @click="addProductDetail">+ 添加行</button>
+              <button class="add-btn small" @click="addProductDetail" v-if="isEditMode">+ 添加行</button>
             </div>
             <div class="table-wrapper">
               <table class="detail-table">
@@ -300,9 +307,9 @@
                 </thead>
                 <tbody>
                   <tr v-for="(detail, index) in form.productDetails" :key="index">
-                    <td><input type="date" v-model="detail.consumeDate" class="table-input" style="width: 120px;"></td>
+                    <td><input type="date" v-model="detail.consumeDate" class="table-input" style="width: 120px;" :disabled="!isEditMode"></td>
                     <td>
-                      <select v-model="detail.productId" @change="onProductChange(detail)" class="table-input">
+                      <select v-model="detail.productId" @change="onProductChange(detail)" class="table-input" :disabled="!isEditMode">
                         <option :value="null">-- 选择 --</option>
                         <option v-for="p in productPrices" :key="p.id" :value="p.id">
                           {{ p.productName }} ({{ p.category === 1 ? '出售' : '损坏' }})
@@ -311,11 +318,11 @@
                     </td>
                     <td>{{ getProductById(Number(detail.productId))?.unit || '-' }}</td>
                     <td>¥{{ getProductById(Number(detail.productId))?.price || 0 }}</td>
-                    <td><input type="number" v-model="detail.actualPrice" class="table-input no-border" style="width: 70px;"></td>
-                    <td><input type="number" v-model="detail.quantity" min="1" class="table-input no-border" style="width: 50px;"></td>
+                    <td><input type="number" v-model="detail.actualPrice" class="table-input no-border" style="width: 70px;" :disabled="!isEditMode"></td>
+                    <td><input type="number" v-model="detail.quantity" min="1" class="table-input no-border" style="width: 50px;" :disabled="!isEditMode"></td>
                     <td>¥{{ (detail.actualPrice || 0) * (detail.quantity || 1) }}</td>
-                    <td><input v-model="detail.remarks" placeholder="..." class="table-input no-border"></td>
-                    <td><button class="delete-btn" @click="removeProductDetail(index)">×</button></td>
+                    <td><input v-model="detail.remarks" placeholder="..." class="table-input no-border" :disabled="!isEditMode"></td>
+                    <td><button class="delete-btn" @click="removeProductDetail(index)" v-if="isEditMode">×</button></td>
                   </tr>
                   <tr v-if="form.productDetails?.length === 0">
                     <td colspan="9" class="empty-row">未添加服务或产品</td>
@@ -352,14 +359,39 @@
               </div>
             </div>
           </section>
+
+          <!-- Order Logs Section -->
+          <section id="section-logs" class="form-section" v-if="form.id">
+            <h3 class="section-title">操作日志</h3>
+            <div class="log-list">
+              <div v-for="log in orderLogs" :key="log.id" class="log-item" :class="'log-' + log.operationType">
+                <div class="log-header">
+                  <span class="log-type-badge">{{ getLogTypeLabel(log.operationType) }}</span>
+                  <span class="log-time">{{ formatLogTime(log.operationTime) }}</span>
+                  <span class="log-operator">{{ log.operator?.realName || log.operator?.username || '-' }}</span>
+                </div>
+                <div class="log-content">{{ log.operationContent }}</div>
+                <div v-if="log.changedFields" class="log-changes">
+                  <div v-for="(change, ci) in parseChanges(log.changedFields)" :key="ci" class="log-change-row">
+                    <span class="log-field">{{ change.field }}:</span>
+                    <span class="log-old">{{ change.oldValue }}</span>
+                    <span class="log-arrow">→</span>
+                    <span class="log-new">{{ change.newValue }}</span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="orderLogs.length === 0" class="empty-log">暂无操作日志</div>
+            </div>
+          </section>
         </div>
         <div class="modal-footer">
-          <div class="footer-summary">
+          <div class="footer-summary" v-if="isEditMode">
             总计: <span class="price-highlight">¥{{ form.totalAmount }}</span>
           </div>
           <div class="footer-btns">
-            <button class="cancel-btn" @click="showModal = false">不保存关闭</button>
-            <button class="save-btn" @click="saveOrder">保存更改</button>
+            <button class="cancel-btn" @click="showModal = false">关闭</button>
+            <button class="cancel-edit-btn" v-if="isEditMode && form.id" @click="cancelEdit">取消编辑</button>
+            <button class="save-btn" v-if="isEditMode" @click="saveOrder">保存更改</button>
           </div>
         </div>
       </div>
@@ -542,6 +574,7 @@ const productPrices = ref<any[]>([]);
 const activeTab = ref('basic');
 const showModal = ref(false);
 const isMaximized = ref(false);
+const isEditMode = ref(false);
 const searchQuery = ref('');
 const filterTodayArrival = ref(false);
 const filterTodayDeparture = ref(false);
@@ -565,6 +598,7 @@ const roomPickerFilters = reactive({
 const changeRoomDate = ref(new Date().toISOString().slice(0, 10));
 const pickerAvailableRooms = ref<any[]>([]);
 const availableRooms = ref<any[]>([]);
+const orderLogs = ref<any[]>([]);
 
 const form = reactive<any>({
   id: null,
@@ -928,6 +962,7 @@ const onProductChange = (detail: any) => {
 };
 
 const openModal = (order?: any, tab: string = 'basic') => {
+  isEditMode.value = !order; // new order = edit mode, existing order = read-only
   if (order) {
     Object.assign(form, order);
     // Format dates for datetime-local input (YYYY-MM-DDTHH:mm)
@@ -980,6 +1015,12 @@ const openModal = (order?: any, tab: string = 'basic') => {
     });
   }
   fetchAvailableRooms();
+  // Fetch order logs for existing orders
+  if (order && order.id) {
+    fetchOrderLogs(order.id);
+  } else {
+    orderLogs.value = [];
+  }
   activeTab.value = tab;
   showModal.value = true;
 };
@@ -1061,6 +1102,40 @@ const deleteOrder = async (id: number) => {
   }
 };
 
+const fetchOrderLogs = async (orderId: number) => {
+  try {
+    const res = await api.get(`/orders/${orderId}/logs`) as any;
+    orderLogs.value = res || [];
+  } catch (e) {
+    orderLogs.value = [];
+  }
+};
+
+const getLogTypeLabel = (type: string) => {
+  const map: Record<string, string> = {
+    SAVE: '保存',
+    SEND_CARD: '发房卡',
+    CANCEL: '取消',
+    CHECKOUT: '退房',
+    CHANGE_ROOM: '换房',
+    ADJUST_TIME: '调时间'
+  };
+  return map[type] || type;
+};
+
+const formatLogTime = (time: string) => {
+  if (!time) return '';
+  return time.replace('T', ' ').slice(0, 16);
+};
+
+const parseChanges = (jsonStr: string) => {
+  try {
+    return JSON.parse(jsonStr);
+  } catch {
+    return [];
+  }
+};
+
 const scrollTo = (id: string) => {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -1092,6 +1167,18 @@ const cancelOrder = async (id: number) => {
     fetchData();
   } catch (e) {
     alert('Failed to cancel');
+  }
+};
+
+const cancelOrderFromModal = async (id: number) => {
+  if (!confirm('确定取消此订单？')) return;
+  try {
+    await api.post(`/orders/${id}/cancel`, {});
+    showModal.value = false;
+    fetchData();
+    alert('订单已取消');
+  } catch (e: any) {
+    alert('取消失败: ' + (e.response?.data || e.message));
   }
 };
 
@@ -1142,11 +1229,52 @@ const saveOrder = async () => {
     delete payload.userId;
     
     await api.post('/orders', payload);
+    isEditMode.value = false;
     showModal.value = false;
     fetchData();
   } catch (e: any) {
     const msg = e.response?.data?.message || e.response?.data || e.message || 'Failed to save order';
     alert('保存失败: ' + (typeof msg === 'string' ? msg : JSON.stringify(msg)));
+  }
+};
+
+const cancelEdit = async () => {
+  if (form.id) {
+    try {
+      const all = (await api.get('/orders/all')) as any[];
+      const fresh = all.find(o => o.id === form.id);
+      if (fresh) {
+        Object.assign(form, fresh);
+        if (fresh.createdAt) form.createdAt = fresh.createdAt.slice(0, 16);
+        if (fresh.startDate) form.startDate = fresh.startDate.slice(0, 16);
+        if (fresh.endDate) form.endDate = fresh.endDate.slice(0, 16);
+        if (fresh.roomOccupies) {
+          form.roomOccupies = fresh.roomOccupies.map((ro: any) => ({
+            ...ro,
+            roomId: ro.room?.id,
+            occupantUserId: ro.occupantUser?.id,
+            checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
+            checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
+          }));
+        } else {
+          form.roomOccupies = [];
+        }
+        form.bookerId = fresh.booker?.id || null;
+        if (fresh.productDetails) {
+          form.productDetails = fresh.productDetails.map((d: any) => ({
+            ...d,
+            productId: d.product?.id
+          }));
+        } else {
+          form.productDetails = [];
+        }
+        fetchOrderLogs(fresh.id);
+      }
+      isEditMode.value = false;
+    } catch (e) {
+      alert('重新获取订单失败');
+      isEditMode.value = false;
+    }
   }
 };
 
@@ -1337,9 +1465,13 @@ onMounted(fetchData);
 .modal-nav a:hover { color: #38bdf8; }
 
 .header-actions { display: flex; gap: 10px; align-items: center; }
-.maximize-btn, .checkout-btn {
+.maximize-btn, .checkout-btn, .cancel-order-btn, .edit-top-btn {
   background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 14px;
 }
+.edit-top-btn { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; font-weight: 600; }
+.edit-top-btn:hover { background: #dcfce7; }
+.cancel-order-btn { background: #fef3c7; color: #92400e; border-color: #fde68a; font-weight: 600; }
+.cancel-order-btn:hover { background: #fde68a; }
 .checkout-btn { background: #fee2e2; color: #b91c1c; border-color: #fecaca; font-weight: 600; }
 .checkout-btn:hover { background: #fecaca; }
 
@@ -1373,6 +1505,8 @@ onMounted(fetchData);
 .footer-summary { font-size: 16px; font-weight: 600; }
 .price-highlight { color: #ef4444; font-size: 20px; font-weight: 800; }
 .footer-btns { display: flex; gap: 10px; }
+.cancel-edit-btn { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 16px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s; }
+.cancel-edit-btn:hover { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
 
 /* Room Card Styles */
 .room-cards-container { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 15px; }
@@ -1411,4 +1545,32 @@ onMounted(fetchData);
 .period-item.order { background: #f0f9ff; color: #0369a1; border-color: #bae6fd; }
 .hint-text { font-size: 12px; color: #94a3b8; margin-top: 10px; font-style: italic; }
 .form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+
+/* Order Logs */
+.log-list { max-height: 400px; overflow-y: auto; }
+.log-item { padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 10px; background: #fafbfc; }
+.log-item.log-SAVE { border-left: 3px solid #3b82f6; }
+.log-item.log-SEND_CARD { border-left: 3px solid #10b981; }
+.log-item.log-CANCEL { border-left: 3px solid #ef4444; }
+.log-item.log-CHECKOUT { border-left: 3px solid #f59e0b; }
+.log-item.log-CHANGE_ROOM { border-left: 3px solid #8b5cf6; }
+.log-item.log-ADJUST_TIME { border-left: 3px solid #06b6d4; }
+.log-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.log-type-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #e2e8f0; color: #475569; text-transform: uppercase; }
+.log-item.log-SAVE .log-type-badge { background: #dbeafe; color: #1d4ed8; }
+.log-item.log-SEND_CARD .log-type-badge { background: #d1fae5; color: #047857; }
+.log-item.log-CANCEL .log-type-badge { background: #fee2e2; color: #b91c1c; }
+.log-item.log-CHECKOUT .log-type-badge { background: #fef3c7; color: #b45309; }
+.log-item.log-CHANGE_ROOM .log-type-badge { background: #ede9fe; color: #6d28d9; }
+.log-item.log-ADJUST_TIME .log-type-badge { background: #cffafe; color: #0891b2; }
+.log-time { font-size: 12px; color: #94a3b8; }
+.log-operator { font-size: 12px; color: #64748b; font-weight: 600; }
+.log-content { font-size: 13px; color: #334155; margin-bottom: 6px; }
+.log-changes { background: #f1f5f9; border-radius: 6px; padding: 8px 12px; }
+.log-change-row { font-size: 12px; color: #475569; padding: 2px 0; display: flex; align-items: center; gap: 6px; }
+.log-field { font-weight: 700; min-width: 60px; }
+.log-old { color: #ef4444; text-decoration: line-through; }
+.log-arrow { color: #94a3b8; }
+.log-new { color: #10b981; font-weight: 600; }
+.empty-log { text-align: center; padding: 30px; color: #94a3b8; font-size: 13px; }
 </style>

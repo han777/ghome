@@ -55,7 +55,7 @@ public class DataInitializer {
             }
 
             // Add a test user for mobile login
-            if (userRepository.findByPhone("13800138000").isEmpty()) {
+            if (userRepository.findByUsername("testuser").isEmpty()) {
                 SysUser testUser = new SysUser();
                 testUser.setUsername("testuser");
                 testUser.setPassword(passwordEncoder.encode("password"));

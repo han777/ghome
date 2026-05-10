@@ -113,8 +113,6 @@ public class RoomOrderService {
 
     public void calculatePrices(RoomOrder order) {
         BigDecimal totalRoomFee = BigDecimal.ZERO;
-        long totalDays = java.time.temporal.ChronoUnit.DAYS.between(order.getStartDate().toLocalDate(), order.getEndDate().toLocalDate());
-        if (totalDays <= 0) totalDays = 1;
 
         if (order.getRoomOccupies() != null) {
             for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
@@ -122,17 +120,22 @@ public class RoomOrderService {
                 if (room != null && (room.getRoomType() == null)) {
                     room = roomRepository.findById(room.getId()).orElse(room);
                 }
-                
+
                 // Initialize default values if not set
                 if (occupy.getActualPrice() == null && room != null && room.getRoomType() != null) {
-                    BigDecimal price = (order.getBizType() != null && order.getBizType() == 2) ? 
-                        room.getRoomType().getPriceLongRent() : 
+                    BigDecimal price = (order.getBizType() != null && order.getBizType() == 2) ?
+                        room.getRoomType().getPriceLongRent() :
                         room.getRoomType().getPriceShortRent();
                     occupy.setActualPrice(price);
                 }
-                if (occupy.getQuantity() == null) {
-                    occupy.setQuantity((int)totalDays);
-                }
+
+                // Calculate days from room-level check-in/check-out times, fall back to order dates
+                long days = 0;
+                java.time.LocalDate checkInDate = occupy.getCheckInTime() != null ? occupy.getCheckInTime().toLocalDate() : order.getStartDate().toLocalDate();
+                java.time.LocalDate checkOutDate = occupy.getCheckOutTime() != null ? occupy.getCheckOutTime().toLocalDate() : order.getEndDate().toLocalDate();
+                days = java.time.temporal.ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+                if (days <= 0) days = 1;
+                occupy.setQuantity((int)days);
 
                 if (occupy.getActualPrice() != null && occupy.getQuantity() != null) {
                     totalRoomFee = totalRoomFee.add(occupy.getActualPrice().multiply(new BigDecimal(occupy.getQuantity())));
