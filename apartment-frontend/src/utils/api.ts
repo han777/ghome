@@ -23,7 +23,12 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      const currentPath = window.location.pathname;
+      if (currentPath.startsWith('/m')) {
+        window.location.href = '/m/auth';
+      } else {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

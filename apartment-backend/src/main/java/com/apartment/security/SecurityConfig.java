@@ -41,7 +41,8 @@ public class SecurityConfig {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Error: Unauthorized");
             }))
             .authorizeHttpRequests(auth -> 
-                auth.requestMatchers("/api/auth/**", "/uploads/**").permitAll()
+                auth.requestMatchers("/api/auth/login", "/api/auth/mobile-login", "/api/auth/send-code",
+                        "/api/auth/wecom/**", "/uploads/**").permitAll()
                     .anyRequest().authenticated()
             );
 

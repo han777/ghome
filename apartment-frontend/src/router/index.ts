@@ -131,6 +131,11 @@ const router = createRouter({
             component: () => import('../views/mobile/Auth.vue')
         },
         {
+            path: '/m/auth/callback',
+            name: 'MobileWecomCallback',
+            component: () => import('../views/mobile/WecomCallback.vue')
+        },
+        {
             path: '/m/room-select',
             name: 'MobileRoomSelect',
             component: () => import('../views/mobile/RoomSelect.vue')

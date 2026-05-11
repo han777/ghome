@@ -26,6 +26,9 @@ public class SysUser {
     private String realName;
     private String phone;
 
+    @Column(nullable = false)
+    private String source = "system"; // "system" or "wecom"
+
     private Integer status = 1;
 
     @ManyToMany(fetch = FetchType.EAGER)
