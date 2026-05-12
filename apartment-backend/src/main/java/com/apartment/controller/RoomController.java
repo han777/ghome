@@ -20,8 +20,8 @@ public class RoomController {
 
     @GetMapping("/available")
     public List<Room> getAvailableRooms(@RequestParam String startDate, @RequestParam String endDate) {
-        java.time.LocalDateTime start = java.time.LocalDateTime.parse(startDate);
-        java.time.LocalDateTime end = java.time.LocalDateTime.parse(endDate);
+        java.time.LocalDateTime start = parseDateTime(startDate);
+        java.time.LocalDateTime end = parseDateTime(endDate);
         
         // 1. Get rooms occupied by active orders
         java.util.List<Long> occupiedRoomIds = orderRepository.findOccupiedRoomIds(start, end);
@@ -87,5 +87,17 @@ public class RoomController {
         }
         
         return periods;
+    }
+
+    /** 兼容多种日期格式：YYYY-MM-DD、YYYY-MM-DDTHH:mm、YYYY-MM-DDTHH:mm:ss */
+    private java.time.LocalDateTime parseDateTime(String str) {
+        if (str == null || str.isEmpty()) return null;
+        if (str.length() == 10) { // YYYY-MM-DD
+            return java.time.LocalDate.parse(str).atTime(0, 0);
+        }
+        if (str.length() == 16) { // YYYY-MM-DDTHH:mm
+            return java.time.LocalDateTime.parse(str + ":00");
+        }
+        return java.time.LocalDateTime.parse(str);
     }
 }
