@@ -73,16 +73,18 @@ public class AuthController {
             throw new RuntimeException("验证码格式错误，请输入4-6位数字");
         }
 
-        // 检查手机号是否已被其他用户使用
-        if (userRepository.findByPhone(phone).isPresent()) {
-            throw new RuntimeException("该手机号已被其他用户使用");
-        }
-
         // 获取当前登录用户
         String username = org.springframework.security.core.context.SecurityContextHolder
                 .getContext().getAuthentication().getName();
         SysUser user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
+
+        // 检查手机号是否已被**其他**用户使用（自己已有的phone可以重复设置）
+        userRepository.findByPhone(phone).ifPresent(existingUser -> {
+            if (!existingUser.getId().equals(user.getId())) {
+                throw new RuntimeException("该手机号已被其他用户使用");
+            }
+        });
 
         user.setPhone(phone);
         userRepository.save(user);

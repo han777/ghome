@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
@@ -78,25 +80,28 @@ public class WeComAuthController {
      * - Exchange code for userId → find/create user → generate JWT → redirect to frontend
      */
     @GetMapping("/callback")
-    public String handleGetCallback(
+    public void handleGetCallback(
             @RequestParam(required = false) String msg_signature,
             @RequestParam(required = false) String timestamp,
             @RequestParam(required = false) String nonce,
             @RequestParam(required = false) String echostr,
             @RequestParam(required = false) String code,
-            @RequestParam(required = false, defaultValue = "/m") String state) {
+            @RequestParam(required = false, defaultValue = "/m") String state,
+            HttpServletResponse response) throws IOException {
 
         // Mode 1: URL Verification - WeChat Work callback URL configuration
         if (msg_signature != null && echostr != null && timestamp != null && nonce != null) {
-            return handleUrlVerification(msg_signature, timestamp, nonce, echostr);
+            handleUrlVerification(msg_signature, timestamp, nonce, echostr, response);
+            return;
         }
 
         // Mode 2: OAuth2 Callback - user login authorization
         if (code != null) {
-            return handleOAuthCallback(code, state);
+            handleOAuthCallback(code, state, response);
+            return;
         }
 
-        return "invalid request";
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "invalid request");
     }
 
     /**
@@ -146,12 +151,13 @@ public class WeComAuthController {
      * URL Verification: verify signature and return decrypted echostr.
      * This is called when the admin configures the callback URL in WeChat Work admin console.
      */
-    private String handleUrlVerification(String msgSignature, String timestamp, String nonce, String echostr) {
+    private void handleUrlVerification(String msgSignature, String timestamp, String nonce, String echostr, HttpServletResponse response) throws IOException {
         try {
             // Verify the signature
             if (!cryptoService.verifySignature(msgSignature, timestamp, nonce, echostr)) {
                 System.out.println("WeChat Work URL verification: signature mismatch");
-                return "signature verification failed";
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "signature verification failed");
+                return;
             }
 
             // Decrypt echostr to get plaintext message
@@ -159,18 +165,20 @@ public class WeComAuthController {
 
             System.out.println("WeChat Work URL verification successful, returning: " + plaintext);
 
-            // Return plaintext directly (no quotes, no BOM, no newline)
-            return plaintext;
+            // Return plaintext directly - WeChat Work expects plain text response
+            response.setContentType("text/plain;charset=UTF-8");
+            response.getWriter().write(plaintext);
+            response.getWriter().flush();
         } catch (Exception e) {
             System.out.println("WeChat Work URL verification error: " + e.getMessage());
-            return "verification error";
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "verification error");
         }
     }
 
     /**
      * OAuth2 Callback: exchange code for user info, find/create user, generate JWT, redirect.
      */
-    private String handleOAuthCallback(String code, String state) {
+    private void handleOAuthCallback(String code, String state, HttpServletResponse response) throws IOException {
         try {
             // 1. Use code to get WeChat Work userId
             String wecomUserId = weComService.getUserIdByCode(code);
@@ -223,7 +231,7 @@ public class WeComAuthController {
             // 4. Generate JWT token
             String token = jwtUtils.generateToken(user.getUsername());
 
-            // 5. Redirect to frontend callback page
+            // 5. Redirect to frontend callback page using 302 redirect
             String redirectPath = state != null ? state : "/m";
             String frontendCallbackUrl = String.format(
                 "%s/m/auth/callback?token=%s&redirect=%s",
@@ -232,7 +240,7 @@ public class WeComAuthController {
                 URLEncoder.encode(redirectPath, StandardCharsets.UTF_8)
             );
 
-            return "<html><head><meta http-equiv='refresh' content='0;url=" + frontendCallbackUrl + "'></head><body>Redirecting...</body></html>";
+            response.sendRedirect(frontendCallbackUrl);
 
         } catch (Exception e) {
             System.out.println("WeChat Work OAuth callback error: " + e.getMessage());
@@ -241,7 +249,7 @@ public class WeComAuthController {
                 callbackBaseUrl,
                 URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8)
             );
-            return "<html><head><meta http-equiv='refresh' content='0;url=" + errorUrl + "'></head><body>Login failed.</body></html>";
+            response.sendRedirect(errorUrl);
         }
     }
 

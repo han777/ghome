@@ -24,8 +24,14 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       const currentPath = window.location.pathname;
+      const currentSearch = window.location.search;
       if (currentPath.startsWith('/m')) {
-        window.location.href = '/m/auth';
+        // Preserve collect-phone mode if currently in that flow
+        if (currentSearch.includes('mode=collect-phone')) {
+          window.location.href = '/m/auth?mode=collect-phone';
+        } else {
+          window.location.href = '/m/auth';
+        }
       } else {
         window.location.href = '/login';
       }

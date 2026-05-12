@@ -238,7 +238,8 @@ const handleSubmit = async () => {
       else router.push('/m');
     }
   } catch (error: any) {
-    alert(error.response?.data?.message || '操作失败');
+    const msg = error.response?.data?.message || error.response?.data || '操作失败';
+    alert(typeof msg === 'string' ? msg : '操作失败');
   } finally {
     loading.value = false;
   }
