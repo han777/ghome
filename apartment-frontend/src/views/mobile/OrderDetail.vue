@@ -18,12 +18,12 @@
 
     <div class="content">
       <!-- 1a. Key Code Card -->
-      <div class="mobile-card key-card" v-if="order.doorCode || order.roomOccupies?.[0]?.doorCode">
+      <div class="mobile-card key-card" v-if="hasKeyInfo">
         <div class="card-header-row">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="#1677ff"><path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z" /></svg>
           <span class="card-title-small">{{ $t('orderDetail.doorPassword') }}</span>
         </div>
-        <div class="key-display">{{ order.doorCode || order.roomOccupies?.[0]?.doorCode }}</div>
+        <div class="key-display">box:{{ keyInfo.boxCode || '-' }},password:{{ keyInfo.password || '-' }}</div>
         <div class="key-expiry">{{ $t('orderDetail.effectiveDate') }}{{ formatDate(order.startDate, true) }}</div>
       </div>
 
@@ -230,6 +230,19 @@ const statusClass = computed(() => {
   return map[order.value?.status] || '';
 });
 
+const keyInfo = computed(() => {
+  if (!order.value?.roomOccupies) return null;
+  const currentOccupy = order.value.roomOccupies.find((ro: any) => ro.status === 0);
+  if (!currentOccupy || (!currentOccupy.roomCardNo && !currentOccupy.doorCode)) return null;
+  return {
+    roomNo: currentOccupy.room?.roomNo || '-',
+    boxCode: currentOccupy.roomCardNo || '',
+    password: currentOccupy.doorCode || ''
+  };
+});
+
+const hasKeyInfo = computed(() => keyInfo.value !== null);
+
 // companions are rendered per-occupy via parseCoOccupants()
 
 const getRoomTypeName = (roomType: any): string => {
@@ -386,6 +399,7 @@ onMounted(fetchOrder);
   border-radius: 12px;
   margin: 10px 0;
   letter-spacing: 1px;
+  display: block;
 }
 
 .key-expiry {
