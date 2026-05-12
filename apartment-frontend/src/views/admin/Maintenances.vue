@@ -39,7 +39,7 @@
             </td>
             <td>{{ m.content || '-' }}</td>
             <td class="actions">
-              <button class="edit-btn" v-if="m.status === 0" @click="openModal(m)">修改</button>
+              <button class="edit-btn" @click="openModal(m)">修改</button>
               <button class="delete-btn" v-if="m.status === 0" @click="voidMaintenance(m)" style="background: #94a3b8; border-color: #94a3b8;">作废</button>
               <button class="delete-btn" v-if="m.status === 2" @click="deleteMaintenance(m.id)">删除</button>
             </td>
@@ -79,7 +79,7 @@
             </div>
             <div class="form-item">
               <label>状态</label>
-              <select v-model="form.status" :disabled="form.status === 1 || form.status === 2">
+              <select v-model="form.status">
                 <option :value="0">维修中</option>
                 <option :value="1">已完成</option>
                 <option :value="2">已取消</option>

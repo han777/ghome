@@ -67,8 +67,9 @@ public class RoomMaintenanceController {
 
         if (maintenance.getId() != null) {
             RoomMaintenance existing = maintenanceRepository.findById(maintenance.getId()).orElse(null);
-            if (existing != null && existing.getStatus() == 1 && maintenance.getStatus() != 2) {
-                return ResponseEntity.badRequest().body("已完成的维修记录不允许编辑（除作废外）");
+            if (existing != null && existing.getStatus() == 1 && maintenance.getStatus() != 1 && maintenance.getStatus() != 2) {
+                // 已完成的维修记录只能改为已完成或已取消
+                return ResponseEntity.badRequest().body("已完成的维修记录只能作废，不能改回维修中");
             }
         }
 
