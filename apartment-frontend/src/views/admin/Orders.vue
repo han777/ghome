@@ -206,7 +206,7 @@
                   </div>
                   <div class="card-actions">
                     <button class="card-action-btn adjust" v-if="occupy.status === 0" @click="openTimeAdjustModal(occupy)">调整时间</button>
-                    <button class="card-action-btn change" v-if="occupy.id" @click="startChangeRoom(occupy)">换房</button>
+                    <button class="card-action-btn change" v-if="occupy.id && occupy.status === 0" @click="startChangeRoom(occupy)">换房</button>
                     <button class="card-action-btn delete" v-if="isEditMode" @click="removeRoomRow(index)">×</button>
                   </div>
                 </div>
@@ -274,7 +274,7 @@
                   </div>
                   <div class="card-item span-3">
                     <label>同住人</label>
-                    <input v-model="occupy.coOccupants" placeholder="其他房客姓名">
+                    <input v-model="occupy.coOccupants" placeholder="其他房客姓名" :disabled="!isEditMode">
                   </div>
                 </div>
               </div>
@@ -389,9 +389,9 @@
             总计: <span class="price-highlight">¥{{ form.totalAmount }}</span>
           </div>
           <div class="footer-btns">
-            <button class="cancel-btn" @click="showModal = false">关闭</button>
+            <button class="cancel-btn" @click="showModal = false">{{ isEditMode ? '不保存关闭' : '关闭' }}</button>
             <button class="cancel-edit-btn" v-if="isEditMode && form.id" @click="cancelEdit">取消编辑</button>
-            <button class="save-btn" v-if="isEditMode" @click="saveOrder">保存更改</button>
+            <button class="save-btn" v-if="isEditMode" @click="saveOrder">{{ form.id ? '保存更改' : '保存新建' }}</button>
           </div>
         </div>
       </div>
@@ -413,20 +413,25 @@
               </div>
             </div>
             <div class="card-grid">
-              <div class="card-item span-4">
+              <div class="card-item span-2">
                 <label class="required">换房生效日期</label>
-                <input type="date" v-model="changeRoomDate" @change="fetchChangeRoomAvailableRooms" :min="new Date().toISOString().split('T')[0]">
-                <p style="font-size: 11px; color: #64748b; margin-top: 4px;">* 换房操作将从该日期起生效至 {{ form.endDate.slice(0, 10) }}</p>
+                <input type="date" v-model="changeRoomDate" :min="new Date().toISOString().split('T')[0]">
+              </div>
+              <div class="card-item span-2">
+                <label>退房截止日期</label>
+                <input type="date" :value="form.endDate ? form.endDate.slice(0, 10) : ''" disabled style="background-color: #f3f4f6; cursor: not-allowed;">
+                <p style="font-size: 11px; color: #64748b; margin-top: 4px;">* 换房从生效日期起至退房截止日期</p>
               </div>
 
               <div class="card-item span-4">
-                <label class="required">选择新房间 (仅显示可用)</label>
-                <select v-model="changeRoomNewRoomId" required>
-                  <option :value="null">-- 选择可用房间 --</option>
-                  <option v-for="r in changeRoomAvailableRooms" :key="r.id" :value="r.id">
-                    {{ r.roomNo }} ({{ getRoomTypeName(r.id) }}) - ¥{{ form.bizType === 1 ? r.roomType?.priceShortRent : r.roomType?.priceLongRent }}
-                  </option>
-                </select>
+                <label class="required">选择新房间</label>
+                <div class="room-selector-btn" @click="openChangeRoomPicker" style="margin-bottom: 0;">
+                  <span v-if="changeRoomNewRoomId" class="selected-room-info">
+                    <strong>{{ getRoomNo(changeRoomNewRoomId) }}</strong>
+                    <small>({{ getRoomTypeName(changeRoomNewRoomId) }}) ¥{{ getChangeRoomNewPrice() }}</small>
+                  </span>
+                  <span v-else class="placeholder">点击选择可用房间...</span>
+                </div>
               </div>
 
               <div class="card-item span-2">
@@ -452,10 +457,7 @@
               </div>
             </div>
           </div>
-          <div v-if="changeRoomAvailableRooms.length === 0 && changeRoomDate" style="text-align: center; color: #ef4444; font-size: 12px; margin-top: 10px;">
-            ⚠️ 所选日期范围内暂无可用房间，请调整日期。
           </div>
-        </div>
         <div class="modal-footer">
           <button class="cancel-btn" @click="showChangeRoomModal = false">不保存关闭</button>
           <button class="save-btn" :disabled="!changeRoomNewRoomId" @click="confirmChangeRoom">确认换房</button>
@@ -468,8 +470,8 @@
       <div class="modal-content room-picker-modal">
         <div class="modal-header">
           <div class="header-left">
-            <h2>选择可用房间</h2>
-            <p class="subtitle">显示无锁定、无维修且无重叠预订的房间。</p>
+            <h2>{{ pickerMode === 'change' ? '选择换房目标' : '选择可用房间' }}</h2>
+            <p class="subtitle">{{ pickerMode === 'change' ? '从换房生效日期到订单退房日期的可用房间（排除当前房间）' : '显示无锁定、无维修且无重叠预订的房间。' }}</p>
           </div>
           <button class="close-btn" @click="showRoomPicker = false">&times;</button>
         </div>
@@ -477,15 +479,15 @@
           <div class="picker-filter-bar">
             <div class="filter-group">
               <label>入住</label>
-              <input type="date" v-model="roomPickerFilters.startDate" @change="fetchPickerAvailableRooms">
+              <input type="date" v-model="roomPickerFilters.startDate" @change="fetchPickerAvailableRooms" :disabled="pickerMode === 'change'">
             </div>
             <div class="filter-group">
               <label>退房</label>
-              <input type="date" v-model="roomPickerFilters.endDate" @change="fetchPickerAvailableRooms">
+              <input type="date" v-model="roomPickerFilters.endDate" @change="fetchPickerAvailableRooms" :disabled="pickerMode === 'change'">
             </div>
             <div class="filter-group">
               <label>房型</label>
-              <select v-model="roomPickerFilters.roomTypeId">
+              <select v-model="roomPickerFilters.roomTypeId" @change="fetchPickerAvailableRooms">
                 <option :value="null">-- 全部房型 --</option>
                 <option v-for="t in roomTypes" :key="t.id" :value="t.id">
                   {{ t.typeCode }} ({{ parseNameIntl(t.nameIntlJson, 'zh') || parseNameIntl(t.nameIntlJson, 'en') }})
@@ -585,7 +587,6 @@ const changeRoomNewRoomId = ref<number | null>(null);
 const roomTypes = ref<any[]>([]);
 const showRoomPicker = ref(false);
 const pickingOccupyIndex = ref<number | null>(null);
-const changeRoomAvailableRooms = ref<any[]>([]);
 const showTimeAdjustModal = ref(false);
 const adjustingOccupy = ref<any>(null);
 const adjustingDates = reactive({ start: '', end: '' });
@@ -595,6 +596,7 @@ const roomPickerFilters = reactive({
   endDate: '',
   roomTypeId: null as number | null
 });
+const pickerMode = ref<'add' | 'change'>('add'); // 选房弹窗模式：新增 or 换房
 const changeRoomDate = ref(new Date().toISOString().slice(0, 10));
 const pickerAvailableRooms = ref<any[]>([]);
 const availableRooms = ref<any[]>([]);
@@ -792,6 +794,10 @@ const getRoomTypeName = (id: number) => {
 
 
 const addRoomRow = () => {
+  // 入住/退房时间默认与订单主信息一致
+  const checkIn = form.startDate || null;
+  const checkOut = form.endDate || null;
+  const days = calculateDays(checkIn, checkOut);
   form.roomOccupies.push({
     roomId: null,
     occupantUserId: form.customerType === 1 ? form.bookerId : null,
@@ -799,8 +805,10 @@ const addRoomRow = () => {
     status: 0,
     roomCardNo: '',
     coOccupants: '',
-    checkInTime: form.startDate ? `${form.startDate}T14:00` : null,
-    checkOutTime: form.endDate ? `${form.endDate}T12:00` : null
+    checkInTime: checkIn,
+    checkOutTime: checkOut,
+    actualPrice: 0,
+    quantity: days
   });
 };
 
@@ -826,21 +834,7 @@ const startChangeRoom = (occupy: any) => {
   changingOccupy.value = occupy;
   changeRoomNewRoomId.value = null;
   changeRoomDate.value = new Date().toISOString().slice(0, 10);
-  fetchChangeRoomAvailableRooms();
   showChangeRoomModal.value = true;
-};
-
-const fetchChangeRoomAvailableRooms = async () => {
-  if (!changeRoomDate.value || !form.endDate) return;
-  try {
-    const res = await api.get(`/rooms/available?startDate=${changeRoomDate.value}&endDate=${form.endDate}`) as any;
-    // Filter out maintenance/locked rooms and rooms in THIS order
-    changeRoomAvailableRooms.value = res.filter((r: any) => 
-      r.status === 0 && !r.isMaintenance && r.id !== changingOccupy.value?.roomId
-    );
-  } catch (e) {
-    console.error('Failed to fetch available rooms for change', e);
-  }
 };
 
 const confirmChangeRoom = async () => {
@@ -854,10 +848,33 @@ const confirmChangeRoom = async () => {
 
   try {
     const switchDate = changeRoomDate.value + 'T' + new Date().toTimeString().slice(0, 8);
-    await api.post(`/orders/occupy/${changingOccupy.value.id}/change-room?roomId=${changeRoomNewRoomId.value}&switchDate=${switchDate}`, {});
-    alert('换房成功');
+    const savedOrder: any = await api.post(`/orders/occupy/${changingOccupy.value.id}/change-room?roomId=${changeRoomNewRoomId.value}&switchDate=${switchDate}`, {});
     showChangeRoomModal.value = false;
-    showModal.value = false;
+    // 用返回数据刷新form，确保checkOutTime等字段已更新
+    if (savedOrder) {
+      Object.assign(form, savedOrder);
+      if (savedOrder.createdAt) form.createdAt = savedOrder.createdAt.slice(0, 16);
+      if (savedOrder.startDate) form.startDate = savedOrder.startDate.slice(0, 16);
+      if (savedOrder.endDate) form.endDate = savedOrder.endDate.slice(0, 16);
+      if (savedOrder.roomOccupies) {
+        form.roomOccupies = savedOrder.roomOccupies.map((ro: any) => ({
+          ...ro,
+          roomId: ro.room?.id,
+          occupantUserId: ro.occupantUser?.id,
+          checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
+          checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
+        }));
+      }
+      form.bookerId = savedOrder.booker?.id || null;
+      if (savedOrder.productDetails) {
+        form.productDetails = savedOrder.productDetails.map((d: any) => ({
+          ...d,
+          productId: d.product?.id
+        }));
+      } else {
+        form.productDetails = [];
+      }
+    }
     fetchData();
   } catch (e: any) {
     alert('换房失败: ' + (e.response?.data || e.message));
@@ -872,12 +889,31 @@ const onBookerChange = () => {
 };
 
 const openRoomPicker = (occupy: any, index: any) => {
+  pickerMode.value = 'add';
   pickingOccupyIndex.value = index;
-  roomPickerFilters.startDate = occupy.checkInTime ? occupy.checkInTime.split('T')[0] : form.startDate;
-  roomPickerFilters.endDate = occupy.checkOutTime ? occupy.checkOutTime.split('T')[0] : form.endDate;
+  roomPickerFilters.startDate = occupy.checkInTime ? occupy.checkInTime.split('T')[0] : (form.startDate ? form.startDate.split('T')[0] : '');
+  roomPickerFilters.endDate = occupy.checkOutTime ? occupy.checkOutTime.split('T')[0] : (form.endDate ? form.endDate.split('T')[0] : '');
   roomPickerFilters.roomTypeId = null; // Reset filter
   showRoomPicker.value = true;
   fetchPickerAvailableRooms();
+};
+
+const openChangeRoomPicker = () => {
+  pickerMode.value = 'change';
+  pickingOccupyIndex.value = null;
+  // 换房筛选条件：生效日期到订单退房日期
+  roomPickerFilters.startDate = changeRoomDate.value;
+  roomPickerFilters.endDate = form.endDate ? form.endDate.split('T')[0] : '';
+  roomPickerFilters.roomTypeId = null;
+  showRoomPicker.value = true;
+  fetchPickerAvailableRooms();
+};
+
+const getChangeRoomNewPrice = () => {
+  if (!changeRoomNewRoomId.value) return 0;
+  const room = rooms.value.find(r => r.id === changeRoomNewRoomId.value);
+  if (!room?.roomType) return 0;
+  return form.bizType === 1 ? room.roomType.priceShortRent : room.roomType.priceLongRent;
 };
 
 const fetchPickerAvailableRooms = async () => {
@@ -910,11 +946,22 @@ const filteredPickerRooms = computed(() => {
     .filter(Boolean);
     
   list = list.filter(r => !otherSelectedRoomIds.includes(r.id));
-  
+
+  // 换房模式：排除当前房间
+  if (pickerMode.value === 'change' && changingOccupy.value?.roomId) {
+    list = list.filter(r => r.id !== changingOccupy.value.roomId);
+  }
+
   return list;
 });
 
 const selectRoomFromPicker = (room: any) => {
+  if (pickerMode.value === 'change') {
+    // 换房模式：设置新房间ID
+    changeRoomNewRoomId.value = room.id;
+    showRoomPicker.value = false;
+    return;
+  }
   if (pickingOccupyIndex.value === null) return;
   const occupy = form.roomOccupies[pickingOccupyIndex.value];
   occupy.roomId = room.id;
@@ -1228,10 +1275,38 @@ const saveOrder = async () => {
     }
     delete payload.userId;
     
-    await api.post('/orders', payload);
+    const savedOrder: any = await api.post('/orders', payload);
     isEditMode.value = false;
-    showModal.value = false;
-    fetchData();
+    // 保存成功后不关闭form，用返回数据刷新form让用户查看更新结果
+    if (savedOrder) {
+      form.id = savedOrder.id;
+      Object.assign(form, savedOrder);
+      if (savedOrder.createdAt) form.createdAt = savedOrder.createdAt.slice(0, 16);
+      if (savedOrder.startDate) form.startDate = savedOrder.startDate.slice(0, 16);
+      if (savedOrder.endDate) form.endDate = savedOrder.endDate.slice(0, 16);
+      if (savedOrder.roomOccupies) {
+        form.roomOccupies = savedOrder.roomOccupies.map((ro: any) => ({
+          ...ro,
+          roomId: ro.room?.id,
+          occupantUserId: ro.occupantUser?.id,
+          checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
+          checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
+        }));
+      } else {
+        form.roomOccupies = [];
+      }
+      form.bookerId = savedOrder.booker?.id || null;
+      if (savedOrder.productDetails) {
+        form.productDetails = savedOrder.productDetails.map((d: any) => ({
+          ...d,
+          productId: d.product?.id
+        }));
+      } else {
+        form.productDetails = [];
+      }
+      if (savedOrder.id) fetchOrderLogs(savedOrder.id);
+    }
+    fetchData(); // 后台刷新订单列表
   } catch (e: any) {
     const msg = e.response?.data?.message || e.response?.data || e.message || 'Failed to save order';
     alert('保存失败: ' + (typeof msg === 'string' ? msg : JSON.stringify(msg)));
