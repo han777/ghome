@@ -57,11 +57,13 @@
             </div>
             <div class="form-item" v-if="form.id">
               <label>楼层</label>
-              <div v-for="(f, index) in form.floors" :key="index" style="display:flex; gap:8px; margin-bottom:8px;">
-                <input v-model="f.name" placeholder="楼层名称" style="flex:1">
-                <button type="button" @click="form.floors.splice(index, 1)" class="delete-btn">×</button>
+              <div v-for="(f, index) in form.floors" :key="index" v-show="f._editFlag !== 'deleted'" style="display:flex; gap:8px; margin-bottom:8px;">
+                <input v-model="f.name" placeholder="楼层名称" style="flex:1" @input="markFloorModified(f)">
+                <span v-if="f._editFlag === 'added'" class="edit-badge add-badge">新</span>
+                <span v-if="f._editFlag === 'modified'" class="edit-badge modify-badge">改</span>
+                <button type="button" @click="deleteFloor(f)" class="delete-btn">×</button>
               </div>
-              <button type="button" @click="form.floors.push({name:''})" class="add-btn" style="padding:4px 8px; font-size:12px;">+ 添加楼层</button>
+              <button type="button" @click="addNewFloor()" class="add-btn" style="padding:4px 8px; font-size:12px;">+ 添加楼层</button>
             </div>
           </form>
         </div>
@@ -98,7 +100,10 @@ const fetchBuildings = async () => {
 
 const openModal = (building?: any) => {
   if (building) {
-    Object.assign(form, JSON.parse(JSON.stringify(building)));
+    const copy = JSON.parse(JSON.stringify(building));
+    // 标记已有楼层为 'unchanged'，保存原始名称用于变更检测
+    copy.floors = copy.floors.map((f: any) => ({ ...f, _editFlag: 'unchanged', _originalName: f.name }));
+    Object.assign(form, copy);
   } else {
     Object.assign(form, { id: null, name: '', description: '', floors: [] });
   }
@@ -112,6 +117,29 @@ const saveBuilding = async () => {
     fetchBuildings();
   } catch (e) {
     alert('Failed to save building');
+  }
+};
+
+const deleteFloor = (f: any) => {
+  if (f.id) {
+    // 已有楼层标记为删除，保留在数组中以便后端识别
+    f._editFlag = 'deleted';
+  } else {
+    // 新增的楼层直接从数组移除（后端无需处理）
+    const index = form.floors.indexOf(f);
+    if (index !== -1) form.floors.splice(index, 1);
+  }
+};
+
+const addNewFloor = () => {
+  form.floors.push({ name: '', _editFlag: 'added' });
+};
+
+const markFloorModified = (f: any) => {
+  if (f._editFlag === 'unchanged' && f.name !== f._originalName) {
+    f._editFlag = 'modified';
+  } else if (f._editFlag === 'modified' && f.name === f._originalName) {
+    f._editFlag = 'unchanged';
   }
 };
 
@@ -140,4 +168,7 @@ onMounted(fetchBuildings);
 .item-tags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .tag { background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 100px; font-size: 12px; font-weight: 500; }
 .add-tag-btn { background: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; color: #64748b; }
+.edit-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; line-height: 1; }
+.add-badge { background: #dcfce7; color: #166534; }
+.modify-badge { background: #fef3c7; color: #92400e; }
 </style>

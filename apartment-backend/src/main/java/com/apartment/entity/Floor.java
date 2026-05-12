@@ -15,4 +15,8 @@ public class Floor {
     @JoinColumn(name = "building_id")
     @JsonIgnore
     private Building building;
+
+    /** 编辑标记：added / modified / deleted / unchanged，不持久化 */
+    @Transient
+    private String _editFlag;
 }
