@@ -1138,17 +1138,6 @@ const refreshTotals = () => {
   form.totalAmount = roomTotal + serviceTotal;
 };
 
-const deleteOrder = async (id: number) => {
-  if (!confirm('确定要永久删除此作废订单吗？')) return;
-  try {
-    await api.delete(`/orders/${id}`);
-    fetchData();
-    alert('删除成功');
-  } catch (e: any) {
-    alert('删除失败: ' + (e.response?.data || e.message));
-  }
-};
-
 const fetchOrderLogs = async (orderId: number) => {
   try {
     const res = await api.get(`/orders/${orderId}/logs`) as any;
@@ -1204,16 +1193,6 @@ const sendRoomCard = async (id: number) => {
     alert('房卡发送成功，订单状态已更新为已入住');
   } catch (e: any) {
     alert('发送失败: ' + (e.response?.data || e.message));
-  }
-};
-
-const cancelOrder = async (id: number) => {
-  if (!confirm('确定取消此订单？')) return;
-  try {
-    await api.post(`/orders/${id}/cancel`, {});
-    fetchData();
-  } catch (e) {
-    alert('Failed to cancel');
   }
 };
 
