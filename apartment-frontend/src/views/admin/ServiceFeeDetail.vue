@@ -3,24 +3,24 @@
     <!-- Filters -->
     <div class="detail-controls">
       <div class="filter-row">
-        <label>{{ $t('svcFee.checkInFrom') }}</label>
+        <label>入住开始</label>
         <input type="date" v-model="checkInFrom" @change="fetchData(0)" />
-        <label>{{ $t('svcFee.checkInTo') }}</label>
+        <label>入住结束</label>
         <input type="date" v-model="checkInTo" @change="fetchData(0)" />
-        <button class="admin-btn primary" @click="fetchData(0)">{{ $t('svcFee.search') }}</button>
-        <button class="admin-btn export" @click="exportExcel">{{ $t('svcFee.export') }}</button>
+        <button class="admin-btn primary" @click="fetchData(0)">查询</button>
+        <button class="admin-btn export" @click="exportExcel">导出Excel</button>
       </div>
     </div>
 
     <!-- Page size selector -->
     <div class="size-row">
-      <span>{{ $t('svcFee.pageSize') }}:</span>
+      <span>每页条数:</span>
       <select v-model="pageSize" @change="fetchData(0)">
         <option value="20">20</option>
         <option value="50">50</option>
         <option value="100">100</option>
       </select>
-      <span class="total-info">{{ $t('svcFee.totalRecords') }}: {{ totalElements }}</span>
+      <span class="total-info">总记录数: {{ totalElements }}</span>
     </div>
 
     <!-- Table -->
@@ -29,12 +29,12 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>{{ $t('svcFee.orderNo') }}</th>
-            <th>{{ $t('svcFee.productName') }}</th>
-            <th>{{ $t('svcFee.standardPrice') }}</th>
-            <th>{{ $t('svcFee.actualPrice') }}</th>
-            <th>{{ $t('svcFee.quantity') }}</th>
-            <th>{{ $t('svcFee.amount') }}</th>
+            <th>订单号</th>
+            <th>产品或服务</th>
+            <th>标准价格</th>
+            <th>实际价格</th>
+            <th>数量</th>
+            <th>金额</th>
           </tr>
         </thead>
         <tbody>
@@ -48,7 +48,7 @@
             <td class="bold">¥{{ formatPrice(row.amount) }}</td>
           </tr>
           <tr v-if="rows.length === 0">
-            <td colspan="7" class="empty-cell">{{ $t('svcFee.noData') }}</td>
+            <td colspan="7" class="empty-cell">暂无数据</td>
           </tr>
         </tbody>
       </table>
@@ -68,9 +68,9 @@
       <button class="page-btn" :disabled="currentPage >= totalPages - 1" @click="fetchData(totalPages - 1)">»</button>
 
       <span class="jump-row">
-        {{ $t('svcFee.jumpTo') }}
+        跳转到
         <input type="number" v-model.number="jumpPage" :min="1" :max="totalPages" class="jump-input" @keyup.enter="doJump" />
-        <button class="admin-btn small" @click="doJump">{{ $t('svcFee.go') }}</button>
+        <button class="admin-btn small" @click="doJump">跳转</button>
       </span>
     </div>
   </div>
@@ -78,10 +78,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 import api from '../../utils/api';
-
-const { t } = useI18n();
 
 const rows = ref<any[]>([]);
 const currentPage = ref(0);

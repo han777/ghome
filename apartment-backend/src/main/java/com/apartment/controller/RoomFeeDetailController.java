@@ -162,11 +162,11 @@ public class RoomFeeDetailController {
         });
 
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("Room Fee Detail");
+            Sheet sheet = workbook.createSheet("房间费结算明细");
 
             // Header
             Row header = sheet.createRow(0);
-            String[] headers = {"#", "Order No", "Room No", "Room Type", "Check-in Time", "Check-out Time", "Days", "Unit Price", "Total Price"};
+            String[] headers = {"#", "订单号", "房间号", "房型", "入住时间", "离开时间", "天数", "单价", "总价"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = header.createCell(i);
                 cell.setCellValue(headers[i]);

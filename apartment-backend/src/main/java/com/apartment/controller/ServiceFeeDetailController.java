@@ -129,10 +129,10 @@ public class ServiceFeeDetailController {
         });
 
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("Service Fee Detail");
+            Sheet sheet = workbook.createSheet("商品服务费结算明细");
 
             Row header = sheet.createRow(0);
-            String[] headers = {"#", "Order No", "Product/Service", "Standard Price", "Actual Price", "Quantity", "Amount"};
+            String[] headers = {"#", "订单号", "产品或服务", "标准价格", "实际价格", "数量", "金额"};
             CellStyle boldStyle = workbook.createCellStyle();
             Font boldFont = workbook.createFont();
             boldFont.setBold(true);

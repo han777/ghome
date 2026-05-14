@@ -3,22 +3,22 @@
     <!-- Controls -->
     <div class="forecast-controls">
       <div class="date-picker-row">
-        <label>{{ $t('forecast.startDate') }}</label>
+        <label>开始日期</label>
         <input type="date" v-model="startDate" :min="todayStr" @change="clampDates(); fetchData()" />
-        <label>{{ $t('forecast.endDate') }}</label>
+        <label>结束日期</label>
         <input type="date" v-model="endDate" :min="startDate" :max="maxEndStr" @change="clampDates(); fetchData()" />
       </div>
       <div class="action-row">
-        <button class="admin-btn" @click="prevWindow">◀ {{ $t('forecast.prev') }}</button>
-        <button class="admin-btn" @click="nextWindow">{{ $t('forecast.next') }} ▶</button>
-        <button class="admin-btn primary" @click="fetchData">{{ $t('forecast.refresh') }}</button>
-        <button class="admin-btn export" @click="exportExcel">{{ $t('forecast.export') }}</button>
+        <button class="admin-btn" @click="prevWindow">◀ 上一页</button>
+        <button class="admin-btn" @click="nextWindow">下一页 ▶</button>
+        <button class="admin-btn primary" @click="fetchData">刷新</button>
+        <button class="admin-btn export" @click="exportExcel">导出Excel</button>
       </div>
     </div>
 
     <!-- Period display -->
     <div class="period-info">
-      {{ $t('forecast.period') }}: {{ startDate }} → {{ endDate }} ({{ windowDays }} {{ $t('forecast.days') }})
+      时间窗口: {{ startDate }} → {{ endDate }} ({{ windowDays }} 天)
     </div>
 
     <!-- Table -->
@@ -26,15 +26,15 @@
       <table class="admin-table forecast-table">
         <thead>
           <tr>
-            <th rowspan="2" class="sticky-col type-col">{{ $t('forecast.roomType') }}</th>
-            <th rowspan="2" class="sticky-col total-col">{{ $t('forecast.totalRooms') }}</th>
+            <th rowspan="2" class="sticky-col type-col">房型</th>
+            <th rowspan="2" class="sticky-col total-col">总房间数</th>
             <th v-for="d in data.dates" :key="d" colspan="3" class="date-header">{{ formatDisplayDate(d) }}</th>
           </tr>
           <tr>
             <template v-for="d in data.dates" :key="d + '-sub'">
-              <th class="sub-header booked">{{ $t('forecast.booked') }}</th>
-              <th class="sub-header maint">{{ $t('forecast.maint') }}</th>
-              <th class="sub-header avail">{{ $t('forecast.available') }}</th>
+              <th class="sub-header booked">预订</th>
+              <th class="sub-header maint">维修</th>
+              <th class="sub-header avail">可订</th>
             </template>
           </tr>
         </thead>
@@ -50,7 +50,7 @@
           </tr>
           <!-- Total row -->
           <tr class="total-row" v-if="data.total">
-            <td class="sticky-col type-col bold">{{ $t('forecast.total') }}</td>
+            <td class="sticky-col type-col bold">合计</td>
             <td class="sticky-col total-col bold">{{ data.total.totalRooms }}</td>
             <template v-for="d in data.dates" :key="d + '-total'">
               <td class="num-cell booked bold">{{ data.total.bookedCount?.[d] ?? 0 }}</td>
@@ -61,16 +61,13 @@
         </tbody>
       </table>
     </div>
-    <div v-else class="loading-state">{{ $t('forecast.loading') }}</div>
+    <div v-else class="loading-state">加载中...</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
 import api from '../../utils/api';
-
-const { t } = useI18n();
 
 const todayStr = new Date().toISOString().split('T')[0];
 const startDate = ref(todayStr);
@@ -149,7 +146,7 @@ const exportExcel = () => {
 const formatDisplayDate = (dateStr: string) => {
   if (!dateStr) return '';
   const d = new Date(dateStr);
-  const weekdays = [t('booking.sun'), t('booking.mon'), t('booking.tue'), t('booking.wed'), t('booking.thu'), t('booking.fri'), t('booking.sat')];
+  const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
   return `${d.getMonth() + 1}/${d.getDate()} ${weekdays[d.getDay()]}`;
 };
 

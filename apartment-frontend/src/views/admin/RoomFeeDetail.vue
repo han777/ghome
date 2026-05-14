@@ -3,24 +3,24 @@
     <!-- Filters -->
     <div class="detail-controls">
       <div class="filter-row">
-        <label>{{ $t('feeDetail.checkInFrom') }}</label>
+        <label>入住开始</label>
         <input type="date" v-model="checkInFrom" @change="fetchData(0)" />
-        <label>{{ $t('feeDetail.checkInTo') }}</label>
+        <label>入住结束</label>
         <input type="date" v-model="checkInTo" @change="fetchData(0)" />
-        <button class="admin-btn primary" @click="fetchData(0)">{{ $t('feeDetail.search') }}</button>
-        <button class="admin-btn export" @click="exportExcel">{{ $t('feeDetail.export') }}</button>
+        <button class="admin-btn primary" @click="fetchData(0)">查询</button>
+        <button class="admin-btn export" @click="exportExcel">导出Excel</button>
       </div>
     </div>
 
     <!-- Page size selector -->
     <div class="size-row">
-      <span>{{ $t('feeDetail.pageSize') }}:</span>
+      <span>每页条数:</span>
       <select v-model="pageSize" @change="fetchData(0)">
         <option value="20">20</option>
         <option value="50">50</option>
         <option value="100">100</option>
       </select>
-      <span class="total-info">{{ $t('feeDetail.totalRecords') }}: {{ totalElements }}</span>
+      <span class="total-info">总记录数: {{ totalElements }}</span>
     </div>
 
     <!-- Table -->
@@ -29,14 +29,14 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>{{ $t('feeDetail.orderNo') }}</th>
-            <th>{{ $t('feeDetail.roomNo') }}</th>
-            <th>{{ $t('feeDetail.roomType') }}</th>
-            <th>{{ $t('feeDetail.checkIn') }}</th>
-            <th>{{ $t('feeDetail.checkOut') }}</th>
-            <th>{{ $t('feeDetail.days') }}</th>
-            <th>{{ $t('feeDetail.unitPrice') }}</th>
-            <th>{{ $t('feeDetail.totalPrice') }}</th>
+            <th>订单号</th>
+            <th>房间号</th>
+            <th>房型</th>
+            <th>入住时间</th>
+            <th>离开时间</th>
+            <th>天数</th>
+            <th>单价</th>
+            <th>总价</th>
           </tr>
         </thead>
         <tbody>
@@ -52,7 +52,7 @@
             <td class="bold">¥{{ formatPrice(row.totalPrice) }}</td>
           </tr>
           <tr v-if="rows.length === 0">
-            <td colspan="9" class="empty-cell">{{ $t('feeDetail.noData') }}</td>
+            <td colspan="9" class="empty-cell">暂无数据</td>
           </tr>
         </tbody>
       </table>
@@ -72,9 +72,9 @@
       <button class="page-btn" :disabled="currentPage >= totalPages - 1" @click="fetchData(totalPages - 1)">»</button>
 
       <span class="jump-row">
-        {{ $t('feeDetail.jumpTo') }}
+        跳转到
         <input type="number" v-model.number="jumpPage" :min="1" :max="totalPages" class="jump-input" @keyup.enter="doJump" />
-        <button class="admin-btn small" @click="doJump">{{ $t('feeDetail.go') }}</button>
+        <button class="admin-btn small" @click="doJump">跳转</button>
       </span>
     </div>
   </div>
@@ -82,10 +82,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 import api from '../../utils/api';
-
-const { t } = useI18n();
 
 const rows = ref<any[]>([]);
 const currentPage = ref(0);

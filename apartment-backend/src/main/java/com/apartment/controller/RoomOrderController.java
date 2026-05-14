@@ -10,9 +10,21 @@ import com.apartment.repository.RoomOccupyRepository;
 import com.apartment.repository.RoomOrderRepository;
 import com.apartment.repository.RoomRepository;
 import com.apartment.repository.SysUserRepository;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -294,6 +306,141 @@ public class RoomOrderController {
     @DeleteMapping("/{id}")
     public void deleteOrder(@PathVariable Long id) {
         orderRepository.deleteById(id);
+    }
+
+    private static final DateTimeFormatter REPORT_DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    @GetMapping("/paged-for-report")
+    public Page<RoomOrder> getPagedForReport(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(required = false) String bookerName,
+            @RequestParam(required = false) String orderNo) {
+
+        List<RoomOrder> allOrders = orderRepository.findAll();
+
+        // Filter
+        List<RoomOrder> filtered = allOrders;
+        if (startDate != null || endDate != null || bookerName != null || orderNo != null) {
+            filtered = new java.util.ArrayList<>();
+            for (RoomOrder o : allOrders) {
+                // Date range filter: order startDate within range
+                if (startDate != null && o.getStartDate() != null && o.getStartDate().isBefore(startDate)) continue;
+                if (endDate != null && o.getStartDate() != null && o.getStartDate().isAfter(endDate)) continue;
+                // Booker name filter
+                if (bookerName != null && !bookerName.isBlank()) {
+                    String name = o.getBooker() != null ? o.getBooker().getRealName() : "";
+                    if (name == null || !name.contains(bookerName)) continue;
+                }
+                // Order number filter
+                if (orderNo != null && !orderNo.isBlank()) {
+                    String no = o.getOrderNo() != null ? o.getOrderNo() : "";
+                    if (!no.contains(orderNo)) continue;
+                }
+                filtered.add(o);
+            }
+        }
+
+        // Sort by startDate descending
+        filtered.sort((a, b) -> {
+            LocalDateTime aTime = a.getStartDate() != null ? a.getStartDate() : LocalDateTime.MIN;
+            LocalDateTime bTime = b.getStartDate() != null ? b.getStartDate() : LocalDateTime.MIN;
+            return bTime.compareTo(aTime);
+        });
+
+        // Pagination
+        int total = filtered.size();
+        int start = Math.min(page * size, total);
+        int end = Math.min(start + size, total);
+        List<RoomOrder> pageContent = filtered.subList(start, end);
+
+        return new PageImpl<>(pageContent, PageRequest.of(page, size), total);
+    }
+
+    @GetMapping("/report-excel")
+    public ResponseEntity<byte[]> exportReportExcel(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(required = false) String bookerName,
+            @RequestParam(required = false) String orderNo) {
+
+        // Get all filtered data (same filter logic as paged endpoint)
+        List<RoomOrder> allOrders = orderRepository.findAll();
+        List<RoomOrder> filtered = allOrders;
+        if (startDate != null || endDate != null || bookerName != null || orderNo != null) {
+            filtered = new java.util.ArrayList<>();
+            for (RoomOrder o : allOrders) {
+                if (startDate != null && o.getStartDate() != null && o.getStartDate().isBefore(startDate)) continue;
+                if (endDate != null && o.getStartDate() != null && o.getStartDate().isAfter(endDate)) continue;
+                if (bookerName != null && !bookerName.isBlank()) {
+                    String name = o.getBooker() != null ? o.getBooker().getRealName() : "";
+                    if (name == null || !name.contains(bookerName)) continue;
+                }
+                if (orderNo != null && !orderNo.isBlank()) {
+                    String no = o.getOrderNo() != null ? o.getOrderNo() : "";
+                    if (!no.contains(orderNo)) continue;
+                }
+                filtered.add(o);
+            }
+        }
+
+        filtered.sort((a, b) -> {
+            LocalDateTime aTime = a.getStartDate() != null ? a.getStartDate() : LocalDateTime.MIN;
+            LocalDateTime bTime = b.getStartDate() != null ? b.getStartDate() : LocalDateTime.MIN;
+            return bTime.compareTo(aTime);
+        });
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("财务报表");
+
+            CellStyle boldStyle = workbook.createCellStyle();
+            Font boldFont = workbook.createFont();
+            boldFont.setBold(true);
+            boldStyle.setFont(boldFont);
+
+            CellStyle moneyStyle = workbook.createCellStyle();
+            moneyStyle.setDataFormat(workbook.createDataFormat().getFormat("#,##0.00"));
+
+            Row header = sheet.createRow(0);
+            String[] headers = {"#", "订单号", "订房人", "入住时间", "离开时间", "房间费", "商品服务费", "订单总金额"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = header.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(boldStyle);
+            }
+
+            int rowNum = 1;
+            for (int idx = 0; idx < filtered.size(); idx++) {
+                RoomOrder o = filtered.get(idx);
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(idx + 1);
+                row.createCell(1).setCellValue(o.getOrderNo() != null ? o.getOrderNo() : "");
+                row.createCell(2).setCellValue(o.getBooker() != null ? o.getBooker().getRealName() : "");
+                row.createCell(3).setCellValue(o.getStartDate() != null ? o.getStartDate().format(REPORT_DT_FMT) : "");
+                row.createCell(4).setCellValue(o.getEndDate() != null ? o.getEndDate().format(REPORT_DT_FMT) : "");
+                Cell roomFeeCell = row.createCell(5);
+                roomFeeCell.setCellValue(o.getRoomFee() != null ? o.getRoomFee().doubleValue() : 0);
+                roomFeeCell.setCellStyle(moneyStyle);
+                Cell serviceFeeCell = row.createCell(6);
+                serviceFeeCell.setCellValue(o.getServiceFee() != null ? o.getServiceFee().doubleValue() : 0);
+                serviceFeeCell.setCellStyle(moneyStyle);
+                Cell totalCell = row.createCell(7);
+                totalCell.setCellValue(o.getTotalAmount() != null ? o.getTotalAmount().doubleValue() : 0);
+                totalCell.setCellStyle(moneyStyle);
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            workbook.write(out);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial_report.xlsx\"")
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(out.toByteArray());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate Excel: " + e.getMessage(), e);
+        }
     }
 
     @PostMapping("/occupy/{occupyId}/adjust-time")
