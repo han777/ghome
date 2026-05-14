@@ -12,7 +12,7 @@ export default defineConfig({
   },
   server: {
     host: '127.0.0.1',
-    port: 3003,
+    port: 10030,
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:10080',

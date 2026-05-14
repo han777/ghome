@@ -192,6 +192,7 @@
     "day": "",
     "cancelConfirmMsg": "Are you sure you want to cancel the booking?",
     "cancelSuccess": "Booking cancelled",
+    "cancelDeadlinePassed": "Cancellation must be done before 24:00, 1 day prior to check-in. Deadline has passed.",
     "cancelFail": "Cancellation failed: ",
     "checkoutConfirmMsg": "Are you sure you want to checkout early?",
     "checkoutSuccess": "Early checkout processed",
@@ -212,6 +213,18 @@
     "subTotal": "Subtotal",
     "noServices": "No services",
     "person": " pax"
+  },
+  "login": {
+    "title": "G-HOME",
+    "subtitle": "Apartment Management System",
+    "username": "Username",
+    "usernamePlaceholder": "Enter your username",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "submit": "Login",
+    "submitting": "Logging in...",
+    "errorInvalid": "Invalid username or password",
+    "phoneLogin": "Phone & Code Login"
   },
   "mine": {
     "title": "My Center",

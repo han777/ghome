@@ -16,4 +16,4 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd apartment-fron
 
 Write-Host "Both services are starting in separate windows." -ForegroundColor Cyan
 Write-Host "   - Backend: http://localhost:10080"
-Write-Host "   - Frontend: http://localhost:3003"
+Write-Host "   - Frontend: http://localhost:10030"

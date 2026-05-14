@@ -192,6 +192,7 @@
     "day": "日",
     "cancelConfirmMsg": "予約をキャンセルしてもよろしいですか？",
     "cancelSuccess": "予約をキャンセルしました",
+    "cancelDeadlinePassed": "キャンセルはチェックイン前日の24:00までに操作が必要です。期限切れです。",
     "cancelFail": "キャンセル失敗: ",
     "checkoutConfirmMsg": "早期退去を確定しますか？",
     "checkoutSuccess": "早期退去の手続きが完了しました",
@@ -212,6 +213,18 @@
     "subTotal": "小計",
     "noServices": "サービス/商品はありません",
     "person": "人"
+  },
+  "login": {
+    "title": "G-HOME",
+    "subtitle": "アパート管理システム",
+    "username": "ユーザー名",
+    "usernamePlaceholder": "ユーザー名を入力してください",
+    "password": "パスワード",
+    "passwordPlaceholder": "パスワードを入力してください",
+    "submit": "ログイン",
+    "submitting": "ログイン中...",
+    "errorInvalid": "ユーザー名またはパスワードが正しくありません",
+    "phoneLogin": "電話番号認証コードログイン"
   },
   "mine": {
     "title": "個人設定",

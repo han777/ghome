@@ -1,8 +1,5 @@
 <template>
   <div class="records-page">
-    <header class="mobile-header">
-      <div class="mobile-header-title">{{ $t('records.title2') }}</div>
-    </header>
     <div class="content">
       <div v-if="records.length > 0">
         <div v-for="record in records" :key="record.id" class="mobile-card record-card" @click="goToDetail(record)">

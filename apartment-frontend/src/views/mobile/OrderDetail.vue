@@ -1,11 +1,6 @@
 <template>
   <div class="order-detail-page" v-if="order">
-    <header class="mobile-header">
-      <div class="header-left" @click="router.back()">
-        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
-      </div>
-      <div class="mobile-header-title">{{ $t('orderDetail.title') }}</div>
-    </header>
+    
 
     <!-- 1. Status Banner -->
     <div class="status-banner" :class="statusClass">
@@ -183,7 +178,7 @@
       </template>
       <template v-else>
         <button class="action-btn" :disabled="order.status !== 2" @click="earlyCheckOut">{{ $t('orderDetail.earlyCheckoutBtn') }}</button>
-        <button class="action-btn" :disabled="![0, 1].includes(order.status)" @click="cancelBooking">{{ $t('orderDetail.cancelBtn') }}</button>
+        <button class="action-btn" :disabled="!canCancel" @click="cancelBooking">{{ $t('orderDetail.cancelBtn') }}</button>
       </template>
     </div>
   </div>
@@ -243,6 +238,15 @@ const keyInfo = computed(() => {
 
 const hasKeyInfo = computed(() => keyInfo.value !== null);
 
+const canCancel = computed(() => {
+  if (!order.value) return false;
+  if (![0, 1].includes(order.value.status)) return false;
+  // Cancel deadline: no later than 24:00 of the day before check-in (startDate midnight)
+  const startDT = new Date(order.value.startDate);
+  const deadline = new Date(startDT.getFullYear(), startDT.getMonth(), startDT.getDate(), 0, 0, 0);
+  return Date.now() < deadline.getTime();
+});
+
 // companions are rendered per-occupy via parseCoOccupants()
 
 const getRoomTypeName = (roomType: any): string => {
@@ -285,6 +289,10 @@ const getDayOfWeek = (dateStr: string) => {
 };
 
 const cancelBooking = async () => {
+  if (!canCancel.value) {
+    alert(t('orderDetail.cancelDeadlinePassed'));
+    return;
+  }
   if (confirm(t('orderDetail.cancelConfirmMsg'))) {
     try {
       await api.post(`/orders/${orderId}/cancel`);

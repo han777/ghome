@@ -2,25 +2,30 @@
   <div class="login-container">
     <div class="login-card">
       <div class="login-header">
-        <h1>Genesis</h1>
-        <p>Apartment Management System</p>
+        <h1>{{ $t('login.title') }}</h1>
+        <p>{{ $t('login.subtitle') }}</p>
+        <div class="lang-switch-bar">
+          <span class="lang-pill" :class="{ 'lang-active': locale === 'zh' }" @click="switchLang('zh')">中</span>
+          <span class="lang-pill" :class="{ 'lang-active': locale === 'en' }" @click="switchLang('en')">EN</span>
+          <span class="lang-pill" :class="{ 'lang-active': locale === 'ja' }" @click="switchLang('ja')">日</span>
+        </div>
       </div>
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
-          <label>Username</label>
-          <input v-model="username" type="text" placeholder="Enter your username" required>
+          <label>{{ $t('login.username') }}</label>
+          <input v-model="username" type="text" :placeholder="$t('login.usernamePlaceholder')" required>
         </div>
         <div class="form-group">
-          <label>Password</label>
-          <input v-model="password" type="password" placeholder="Enter your password" required>
+          <label>{{ $t('login.password') }}</label>
+          <input v-model="password" type="password" :placeholder="$t('login.passwordPlaceholder')" required>
         </div>
         <div v-if="error" class="error-msg">{{ error }}</div>
         <button type="submit" :disabled="loading" class="login-btn">
-          <span v-if="loading">Logging in...</span>
-          <span v-else>Login</span>
+          <span v-if="loading">{{ $t('login.submitting') }}</span>
+          <span v-else>{{ $t('login.submit') }}</span>
         </button>
         <div class="other-login">
-          <a href="javascript:void(0)" @click="router.push('/m/auth')">手机号验证码登录</a>
+          <a href="javascript:void(0)" @click="router.push('/m/auth')">{{ $t('login.phoneLogin') }}</a>
         </div>
       </form>
     </div>
@@ -30,40 +35,47 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import api from '../utils/api';
 
 const router = useRouter();
 const route = useRoute();
+const { t, locale } = useI18n();
+
 const username = ref('admin');
 const password = ref('admin');
 const loading = ref(false);
 const error = ref('');
 
+const switchLang = (lang: string) => {
+  locale.value = lang;
+  localStorage.setItem('locale', lang);
+};
+
 const handleLogin = async () => {
   loading.value = true;
   error.value = '';
-  
+
   try {
     const res: any = await api.post('/auth/login', {
       username: username.value,
       password: password.value
     });
-    
+
     if (res.token) {
       localStorage.setItem('token', res.token);
-      
-      // Fetch profile to check roles
+
       try {
         const user: any = await api.get('/sys/profile');
         const roles = (user.roles || []).map((r: any) => r.roleCode);
-        
+
         const isAdmin = roles.includes('ROLE_ADMIN');
         const isUser = roles.includes('ROLE_USER');
-        
+
         const redirect = route.query.redirect as string;
         if (redirect && redirect !== '/admin') {
-           router.push(redirect);
-           return;
+          router.push(redirect);
+          return;
         }
 
         if (isAdmin && isUser) {
@@ -73,15 +85,15 @@ const handleLogin = async () => {
         } else if (isUser) {
           router.push('/m');
         } else {
-          router.push('/admin'); // Fallback
+          router.push('/admin');
         }
       } catch (profileErr) {
         console.error('Failed to fetch profile', profileErr);
-        router.push('/admin'); // Fallback
+        router.push('/admin');
       }
     }
   } catch (e: any) {
-    error.value = e.response?.data?.message || 'Invalid username or password';
+    error.value = e.response?.data?.message || t('login.errorInvalid');
   } finally {
     loading.value = false;
   }
@@ -123,6 +135,29 @@ const handleLogin = async () => {
 .login-header p {
   color: #94a3b8;
   font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.lang-switch-bar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.lang-pill {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.lang-pill.lang-active {
+  background: #38bdf8;
+  color: #fff;
 }
 
 .login-form {

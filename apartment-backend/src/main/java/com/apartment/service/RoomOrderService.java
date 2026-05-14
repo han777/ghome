@@ -222,6 +222,14 @@ public class RoomOrderService {
     public RoomOrder cancelOrder(Long orderId) {
         if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
         RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // Cancel deadline: must be no later than 24:00 of the day before check-in
+        // "前一天24:00" = 入住当天 00:00 (midnight of startDate)
+        LocalDateTime cancelDeadline = order.getStartDate().toLocalDate().atStartOfDay();
+        if (LocalDateTime.now().isAfter(cancelDeadline) || LocalDateTime.now().isEqual(cancelDeadline)) {
+            throw new RuntimeException("取消预订须于入住日前1天24:00前操作，现已超过截止时间");
+        }
+
         order.setStatus(4); // Canceled
         if (order.getRoomOccupies() != null) {
             for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {

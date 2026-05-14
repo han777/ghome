@@ -1,14 +1,5 @@
 <template>
   <div class="mine-page">
-    <header class="mobile-header">
-      <div class="header-left" @click="router.back()">
-        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
-      </div>
-      <div class="mobile-header-title">{{ $t('mine.title2') }}</div>
-      <div class="header-right">
-        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z" /></svg>
-      </div>
-    </header>
 
     <div class="content">
       <!-- Profile Card -->

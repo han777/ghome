@@ -16,5 +16,5 @@ start cmd /k "cd apartment-frontend && npm run dev"
 
 echo Both services are starting in separate windows.
 echo    - Backend: http://localhost:10080
-echo    - Frontend: http://localhost:3003
+echo    - Frontend: http://localhost:10030
 pause

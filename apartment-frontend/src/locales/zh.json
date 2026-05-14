@@ -192,6 +192,7 @@
     "day": "日",
     "cancelConfirmMsg": "确定要取消预订吗？",
     "cancelSuccess": "已取消预订",
+    "cancelDeadlinePassed": "取消预订须于入住日前1天24:00前操作，现已超过截止时间",
     "cancelFail": "取消失败: ",
     "checkoutConfirmMsg": "确定要提前退房吗？",
     "checkoutSuccess": "已办理提前退房",
@@ -212,6 +213,18 @@
     "subTotal": "小计",
     "noServices": "暂无产品服务",
     "person": "人"
+  },
+  "login": {
+    "title": "G-HOME",
+    "subtitle": "公寓管理系统",
+    "username": "用户名",
+    "usernamePlaceholder": "请输入用户名",
+    "password": "密码",
+    "passwordPlaceholder": "请输入密码",
+    "submit": "登录",
+    "submitting": "登录中...",
+    "errorInvalid": "用户名或密码错误",
+    "phoneLogin": "手机号验证码登录"
   },
   "mine": {
     "title": "个人中心",

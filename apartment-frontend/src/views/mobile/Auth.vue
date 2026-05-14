@@ -18,7 +18,11 @@
       <!-- normal login mode -->
       <div v-else class="welcome-section">
         <h1 class="welcome-title" v-html="$t('auth.welcome')"></h1>
-        <div class="lang-switch" @click="toggleLang">{{ nextLangLabel }} 🌐</div>
+        <div class="lang-switch-bar">
+          <span class="lang-pill" :class="{ 'lang-active': locale === 'zh' }" @click="switchLang('zh')">中</span>
+          <span class="lang-pill" :class="{ 'lang-active': locale === 'en' }" @click="switchLang('en')">EN</span>
+          <span class="lang-pill" :class="{ 'lang-active': locale === 'ja' }" @click="switchLang('ja')">日</span>
+        </div>
       </div>
 
       <div class="auth-form">
@@ -150,17 +154,9 @@ const wecomAutoLogin = async () => {
   }
 };
 
-const nextLangLabel = computed(() => {
-  if (locale.value === 'zh') return 'English';
-  if (locale.value === 'en') return '日本語';
-  return '简体中文';
-});
-
-const toggleLang = () => {
-  if (locale.value === 'zh') locale.value = 'en';
-  else if (locale.value === 'en') locale.value = 'ja';
-  else locale.value = 'zh';
-  localStorage.setItem('locale', locale.value);
+const switchLang = (lang: string) => {
+  locale.value = lang;
+  localStorage.setItem('locale', lang);
 };
 
 const handleBack = () => {
@@ -282,12 +278,27 @@ const handleSubmit = async () => {
   margin-top: 8px;
 }
 
-.lang-switch {
-  position: absolute;
-  top: 0;
-  right: 0;
+.lang-switch-bar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.lang-pill {
   font-size: 13px;
-  color: #666;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: #f0f0f0;
+  color: #888;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.lang-pill.lang-active {
+  background: #1677ff;
+  color: #fff;
 }
 
 .auth-form {
