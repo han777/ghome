@@ -266,6 +266,23 @@
     "jumpTo": "跳转到",
     "go": "跳转"
   },
+  "svcFee": {
+    "checkInFrom": "入住开始",
+    "checkInTo": "入住结束",
+    "search": "查询",
+    "export": "导出Excel",
+    "pageSize": "每页条数",
+    "totalRecords": "总记录数",
+    "orderNo": "订单号",
+    "productName": "产品或服务",
+    "standardPrice": "标准价格",
+    "actualPrice": "实际价格",
+    "quantity": "数量",
+    "amount": "金额",
+    "noData": "暂无数据",
+    "jumpTo": "跳转到",
+    "go": "跳转"
+  },
   "mine": {
     "title": "个人中心",
     "login": "登录/注册",

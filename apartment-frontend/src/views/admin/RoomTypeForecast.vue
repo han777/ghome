@@ -22,7 +22,7 @@
     </div>
 
     <!-- Table -->
-    <div class="table-card" v-if="data">
+    <div class="table-card scroll-wrapper" v-if="data">
       <table class="admin-table forecast-table">
         <thead>
           <tr>
@@ -303,5 +303,9 @@ onMounted(fetchData);
   text-align: center;
   padding: 60px 0;
   color: #999;
+}
+
+.scroll-wrapper {
+  overflow-x: auto;
 }
 </style>

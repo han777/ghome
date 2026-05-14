@@ -266,6 +266,23 @@
     "jumpTo": "Jump to",
     "go": "Go"
   },
+  "svcFee": {
+    "checkInFrom": "Check-in From",
+    "checkInTo": "Check-in To",
+    "search": "Search",
+    "export": "Export Excel",
+    "pageSize": "Per Page",
+    "totalRecords": "Total Records",
+    "orderNo": "Order No",
+    "productName": "Product/Service",
+    "standardPrice": "Standard Price",
+    "actualPrice": "Actual Price",
+    "quantity": "Quantity",
+    "amount": "Amount",
+    "noData": "No data",
+    "jumpTo": "Jump to",
+    "go": "Go"
+  },
   "mine": {
     "title": "My Center",
     "login": "Login/Register",

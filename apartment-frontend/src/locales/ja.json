@@ -266,6 +266,23 @@
     "jumpTo": "ページ指定",
     "go": "移動"
   },
+  "svcFee": {
+    "checkInFrom": "チェックイン開始",
+    "checkInTo": "チェックイン終了",
+    "search": "検索",
+    "export": "Excel出力",
+    "pageSize": "ページサイズ",
+    "totalRecords": "総レコード数",
+    "orderNo": "注文番号",
+    "productName": "商品/サービス",
+    "standardPrice": "標準価格",
+    "actualPrice": "実際価格",
+    "quantity": "数量",
+    "amount": "金額",
+    "noData": "データなし",
+    "jumpTo": "ページ指定",
+    "go": "移動"
+  },
   "mine": {
     "title": "個人設定",
     "login": "ログイン/登録",

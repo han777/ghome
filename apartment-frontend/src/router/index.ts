@@ -101,6 +101,11 @@ const router = createRouter({
                     component: () => import('../views/admin/RoomFeeDetail.vue')
                 },
                 {
+                    path: 'service-fee-detail',
+                    name: 'ServiceFeeDetail',
+                    component: () => import('../views/admin/ServiceFeeDetail.vue')
+                },
+                {
                     path: 'product-prices',
                     name: 'ProductPrices',
                     component: () => import('../views/admin/ProductPrices.vue')
