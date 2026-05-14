@@ -137,11 +137,11 @@
 
               <div class="form-item">
                 <label class="required">入住日期</label>
-                <input type="datetime-local" v-model="form.startDate" required :disabled="!isEditMode">
+                <input type="date" v-model="form.startDate" required :disabled="!isEditMode">
               </div>
               <div class="form-item">
                 <label>退房日期</label>
-                <input type="datetime-local" v-model="form.endDate" required :disabled="!isEditMode">
+                <input type="date" v-model="form.endDate" required :disabled="!isEditMode">
               </div>
 
               <div class="form-item">
@@ -606,8 +606,8 @@ const form = reactive<any>({
   id: null,
   userId: null,
   bizType: 1,
-  startDate: new Date().toISOString().slice(0, 10) + 'T14:00',
-  endDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10) + 'T12:00',
+  startDate: new Date().toISOString().slice(0, 10),
+  endDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
   createdAt: new Date().toISOString().slice(0, 16),
   roomFee: 0,
   serviceFee: 0,
@@ -795,8 +795,8 @@ const getRoomTypeName = (id: number) => {
 
 const addRoomRow = () => {
   // 入住/退房时间默认与订单主信息一致
-  const checkIn = form.startDate || null;
-  const checkOut = form.endDate || null;
+  const checkIn = form.startDate ? (form.startDate.length === 10 ? form.startDate + 'T14:00' : form.startDate) : null;
+  const checkOut = form.endDate ? (form.endDate.length === 10 ? form.endDate + 'T12:00' : form.endDate) : null;
   const days = calculateDays(checkIn, checkOut);
   form.roomOccupies.push({
     roomId: null,
@@ -854,8 +854,8 @@ const confirmChangeRoom = async () => {
     if (savedOrder) {
       Object.assign(form, savedOrder);
       if (savedOrder.createdAt) form.createdAt = savedOrder.createdAt.slice(0, 16);
-      if (savedOrder.startDate) form.startDate = savedOrder.startDate.slice(0, 16);
-      if (savedOrder.endDate) form.endDate = savedOrder.endDate.slice(0, 16);
+      if (savedOrder.startDate) form.startDate = savedOrder.startDate.slice(0, 10);
+      if (savedOrder.endDate) form.endDate = savedOrder.endDate.slice(0, 10);
       if (savedOrder.roomOccupies) {
         form.roomOccupies = savedOrder.roomOccupies.map((ro: any) => ({
           ...ro,
@@ -1012,10 +1012,10 @@ const openModal = (order?: any, tab: string = 'basic') => {
   isEditMode.value = !order; // new order = edit mode, existing order = read-only
   if (order) {
     Object.assign(form, order);
-    // Format dates for datetime-local input (YYYY-MM-DDTHH:mm)
+    // Format dates for date input (YYYY-MM-DD)
     if (order.createdAt) form.createdAt = order.createdAt.slice(0, 16);
-    if (order.startDate) form.startDate = order.startDate.slice(0, 16);
-    if (order.endDate) form.endDate = order.endDate.slice(0, 16);
+    if (order.startDate) form.startDate = order.startDate.slice(0, 10);
+    if (order.endDate) form.endDate = order.endDate.slice(0, 10);
     
     // Handle nested roomOccupies
     if (order.roomOccupies) {
@@ -1044,8 +1044,8 @@ const openModal = (order?: any, tab: string = 'basic') => {
       id: null, 
       userId: null, 
       bizType: 1, 
-      startDate: new Date().toISOString().slice(0, 10) + 'T14:00',
-      endDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10) + 'T12:00',
+      startDate: new Date().toISOString().slice(0, 10),
+      endDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
       createdAt: new Date().toISOString().slice(0, 16),
       roomFee: 0,
       serviceFee: 0,
@@ -1074,8 +1074,8 @@ const openModal = (order?: any, tab: string = 'basic') => {
 
 const openTimeAdjustModal = async (occupy: any) => {
   adjustingOccupy.value = occupy;
-  adjustingDates.start = occupy.checkInTime ? occupy.checkInTime.slice(0, 16) : form.startDate;
-  adjustingDates.end = occupy.checkOutTime ? occupy.checkOutTime.slice(0, 16) : form.endDate;
+  adjustingDates.start = occupy.checkInTime ? occupy.checkInTime.slice(0, 16) : (form.startDate.length === 10 ? form.startDate + 'T14:00' : form.startDate);
+  adjustingDates.end = occupy.checkOutTime ? occupy.checkOutTime.slice(0, 16) : (form.endDate.length === 10 ? form.endDate + 'T12:00' : form.endDate);
   
   try {
     const res = await api.get(`/rooms/${occupy.roomId}/booked-periods`) as any;
@@ -1100,8 +1100,8 @@ const confirmTimeAdjust = async () => {
     Object.assign(form, res);
     // Format dates again
     if (res.createdAt) form.createdAt = res.createdAt.slice(0, 16);
-    if (res.startDate) form.startDate = res.startDate.slice(0, 16);
-    if (res.endDate) form.endDate = res.endDate.slice(0, 16);
+    if (res.startDate) form.startDate = res.startDate.slice(0, 10);
+    if (res.endDate) form.endDate = res.endDate.slice(0, 10);
     if (res.roomOccupies) {
       form.roomOccupies = res.roomOccupies.map((ro: any) => ({
         ...ro,
@@ -1199,7 +1199,7 @@ const sendRoomCard = async (id: number) => {
 const cancelOrderFromModal = async (id: number) => {
   if (!confirm('确定取消此订单？')) return;
   try {
-    await api.post(`/orders/${id}/cancel`, {});
+    await api.post(`/orders/${id}/admin-cancel`, {});
     showModal.value = false;
     fetchData();
     alert('订单已取消');
@@ -1230,6 +1230,9 @@ const saveOrder = async () => {
 
     // Map IDs to objects for backend
     const payload = { ...form };
+    // 日期选择器只返回日期，需要补充默认时间
+    if (payload.startDate && payload.startDate.length === 10) payload.startDate += 'T14:00:00';
+    if (payload.endDate && payload.endDate.length === 10) payload.endDate += 'T12:00:00';
     
     if (form.bookerId) {
       payload.booker = { id: form.bookerId };
@@ -1261,8 +1264,8 @@ const saveOrder = async () => {
       form.id = savedOrder.id;
       Object.assign(form, savedOrder);
       if (savedOrder.createdAt) form.createdAt = savedOrder.createdAt.slice(0, 16);
-      if (savedOrder.startDate) form.startDate = savedOrder.startDate.slice(0, 16);
-      if (savedOrder.endDate) form.endDate = savedOrder.endDate.slice(0, 16);
+      if (savedOrder.startDate) form.startDate = savedOrder.startDate.slice(0, 10);
+      if (savedOrder.endDate) form.endDate = savedOrder.endDate.slice(0, 10);
       if (savedOrder.roomOccupies) {
         form.roomOccupies = savedOrder.roomOccupies.map((ro: any) => ({
           ...ro,
@@ -1300,8 +1303,8 @@ const cancelEdit = async () => {
       if (fresh) {
         Object.assign(form, fresh);
         if (fresh.createdAt) form.createdAt = fresh.createdAt.slice(0, 16);
-        if (fresh.startDate) form.startDate = fresh.startDate.slice(0, 16);
-        if (fresh.endDate) form.endDate = fresh.endDate.slice(0, 16);
+        if (fresh.startDate) form.startDate = fresh.startDate.slice(0, 10);
+        if (fresh.endDate) form.endDate = fresh.endDate.slice(0, 10);
         if (fresh.roomOccupies) {
           form.roomOccupies = fresh.roomOccupies.map((ro: any) => ({
             ...ro,

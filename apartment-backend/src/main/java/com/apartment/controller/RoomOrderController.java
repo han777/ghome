@@ -282,6 +282,13 @@ public class RoomOrderController {
         return result;
     }
 
+    @PostMapping("/{id}/admin-cancel")
+    public RoomOrder adminCancel(@PathVariable Long id) {
+        RoomOrder result = orderService.adminCancelOrder(id);
+        logOperation(result, "CANCEL", "管理后台取消订单", null);
+        return result;
+    }
+
     @PostMapping("/{id}/checkout")
     public RoomOrder checkout(@PathVariable Long id) {
         RoomOrder result = orderService.checkoutOrder(id);

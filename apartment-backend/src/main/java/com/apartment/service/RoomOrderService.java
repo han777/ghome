@@ -243,6 +243,25 @@ public class RoomOrderService {
         return orderRepository.save(order);
     }
 
+    // Admin cancel: no time window restriction
+    @Transactional
+    public RoomOrder adminCancelOrder(Long orderId) {
+        if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
+        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+
+        order.setStatus(4); // Canceled
+        if (order.getRoomOccupies() != null) {
+            for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
+                com.apartment.entity.Room room = occupy.getRoom();
+                if (room != null) {
+                    room.setStatus(0); // Set room back to free
+                    roomRepository.save(room);
+                }
+            }
+        }
+        return orderRepository.save(order);
+    }
+
     @Transactional
     public RoomOrder checkoutOrder(Long orderId) {
         if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
