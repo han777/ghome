@@ -152,7 +152,11 @@
     "status1": "预订中",
     "status2": "已入住",
     "status3": "已退房",
-    "status4": "已取消"
+    "status4": "已取消",
+    "tabPending": "待入住",
+    "tabAll": "全部",
+    "loadingMore": "加载中...",
+    "noMore": "没有更多了"
   },
   "orderDetail": {
     "title": "订单详情",
@@ -225,6 +229,42 @@
     "submitting": "登录中...",
     "errorInvalid": "用户名或密码错误",
     "phoneLogin": "手机号验证码登录"
+  },
+  "forecast": {
+    "startDate": "开始日期",
+    "endDate": "结束日期",
+    "prev": "上一页",
+    "next": "下一页",
+    "refresh": "刷新",
+    "export": "导出Excel",
+    "period": "时间窗口",
+    "days": "天",
+    "roomType": "房型",
+    "totalRooms": "总房间数",
+    "booked": "预订",
+    "maint": "维修",
+    "available": "可订",
+    "total": "合计",
+    "loading": "加载中..."
+  },
+  "feeDetail": {
+    "checkInFrom": "入住开始",
+    "checkInTo": "入住结束",
+    "search": "查询",
+    "export": "导出Excel",
+    "pageSize": "每页条数",
+    "totalRecords": "总记录数",
+    "orderNo": "订单号",
+    "roomNo": "房间号",
+    "roomType": "房型",
+    "checkIn": "入住时间",
+    "checkOut": "离开时间",
+    "days": "天数",
+    "unitPrice": "单价",
+    "totalPrice": "总价",
+    "noData": "暂无数据",
+    "jumpTo": "跳转到",
+    "go": "跳转"
   },
   "mine": {
     "title": "个人中心",

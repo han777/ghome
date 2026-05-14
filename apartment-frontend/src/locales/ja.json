@@ -152,7 +152,11 @@
     "status1": "予約済み",
     "status2": "滞在中",
     "status3": "チェックアウト済み",
-    "status4": "キャンセル済み"
+    "status4": "キャンセル済み",
+    "tabPending": "チェックイン待ち",
+    "tabAll": "全て",
+    "loadingMore": "読み込み中...",
+    "noMore": "それ以上の履歴はありません"
   },
   "orderDetail": {
     "title": "注文詳細",
@@ -225,6 +229,42 @@
     "submitting": "ログイン中...",
     "errorInvalid": "ユーザー名またはパスワードが正しくありません",
     "phoneLogin": "電話番号認証コードログイン"
+  },
+  "forecast": {
+    "startDate": "開始日",
+    "endDate": "終了日",
+    "prev": "前へ",
+    "next": "次へ",
+    "refresh": "更新",
+    "export": "Excel出力",
+    "period": "期間",
+    "days": "日",
+    "roomType": "部屋タイプ",
+    "totalRooms": "総部屋数",
+    "booked": "予約",
+    "maint": "维修",
+    "available": "空室",
+    "total": "合計",
+    "loading": "読み込み中..."
+  },
+  "feeDetail": {
+    "checkInFrom": "チェックイン開始",
+    "checkInTo": "チェックイン終了",
+    "search": "検索",
+    "export": "Excel出力",
+    "pageSize": "ページサイズ",
+    "totalRecords": "総レコード数",
+    "orderNo": "注文番号",
+    "roomNo": "部屋番号",
+    "roomType": "部屋タイプ",
+    "checkIn": "チェックイン",
+    "checkOut": "チェックアウト",
+    "days": "日数",
+    "unitPrice": "単価",
+    "totalPrice": "合計金額",
+    "noData": "データなし",
+    "jumpTo": "ページ指定",
+    "go": "移動"
   },
   "mine": {
     "title": "個人設定",

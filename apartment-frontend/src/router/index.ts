@@ -91,6 +91,16 @@ const router = createRouter({
                     component: () => import('../views/admin/Reports.vue')
                 },
                 {
+                    path: 'room-type-forecast',
+                    name: 'RoomTypeForecast',
+                    component: () => import('../views/admin/RoomTypeForecast.vue')
+                },
+                {
+                    path: 'room-fee-detail',
+                    name: 'RoomFeeDetail',
+                    component: () => import('../views/admin/RoomFeeDetail.vue')
+                },
+                {
                     path: 'product-prices',
                     name: 'ProductPrices',
                     component: () => import('../views/admin/ProductPrices.vue')

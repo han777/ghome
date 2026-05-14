@@ -66,6 +66,8 @@ const menuGroups = [
       { name: '维修管理', path: '/admin/maintenances', icon: '🔧' },
       { name: '线性房态', path: '/admin/gantt', icon: '📅' },
       { name: '财务报表', path: '/admin/reports', icon: '📈' },
+      { name: '房型预测报表', path: '/admin/room-type-forecast', icon: '📉' },
+      { name: '房间费结算明细', path: '/admin/room-fee-detail', icon: '🧾' },
     ]
   },
   {
@@ -117,6 +119,8 @@ const titles: Record<string, string> = {
   'Gantt': '线性房态',
   'Maintenances': '维修管理',
   'Reports': '财务报表',
+  'RoomTypeForecast': '房型预测报表',
+  'RoomFeeDetail': '房间费结算明细',
   'ProductPrices': '商品服务价格'
 };
 

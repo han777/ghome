@@ -1,6 +1,8 @@
 package com.apartment.repository;
 
 import com.apartment.entity.RoomOrder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import java.time.LocalDateTime;
@@ -36,4 +38,8 @@ public interface RoomOrderRepository extends JpaRepository<RoomOrder, Long> {
     java.util.List<RoomOrder> findByBookerIdAndStatus(Long bookerId, Integer status);
     
     java.util.List<RoomOrder> findByBookerIdOrderByCreatedAtDesc(Long bookerId);
+
+    Page<RoomOrder> findByBookerIdOrderByCreatedAtDesc(Long bookerId, Pageable pageable);
+
+    Page<RoomOrder> findByBookerIdAndStatusInOrderByCreatedAtDesc(Long bookerId, java.util.Collection<Integer> statuses, Pageable pageable);
 }

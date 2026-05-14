@@ -70,6 +70,35 @@ public class RoomOrderController {
         return orderRepository.findByBookerIdOrderByCreatedAtDesc(u.getId());
     }
 
+    @GetMapping("/mine/paged")
+    public org.springframework.data.domain.Page<RoomOrder> getMyOrdersPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        SysUser u = getCurrentUser();
+        if (u == null) return org.springframework.data.domain.Page.empty();
+        return orderRepository.findByBookerIdOrderByCreatedAtDesc(u.getId(),
+                org.springframework.data.domain.PageRequest.of(page, size));
+    }
+
+    @GetMapping("/mine/pending")
+    public org.springframework.data.domain.Page<RoomOrder> getMyPendingOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        SysUser u = getCurrentUser();
+        if (u == null) return org.springframework.data.domain.Page.empty();
+        // Pending check-in: status 0 (Cooling-off) or 1 (Pending/Booked)
+        return orderRepository.findByBookerIdAndStatusInOrderByCreatedAtDesc(u.getId(),
+                java.util.Arrays.asList(0, 1),
+                org.springframework.data.domain.PageRequest.of(page, size));
+}
+
+    @GetMapping("/mine/pending-count")
+    public long getMyPendingCount() {
+        SysUser u = getCurrentUser();
+        if (u == null) return 0;
+        return orderRepository.findByBookerIdAndStatusIn(u.getId(), java.util.Arrays.asList(0, 1)).size();
+    }
+
     @PostMapping
     public RoomOrder saveOrder(@RequestBody RoomOrder order) {
         SysUser u = getCurrentUser();
