@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface NotificationRecordRepository extends JpaRepository<NotificationRecord, Long> {
     List<NotificationRecord> findByStatus(String status);
+
+    List<NotificationRecord> findByStatusIn(List<String> statuses);
 }

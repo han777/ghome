@@ -10,12 +10,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
 public class NotificationSendService {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationSendService.class);
+    private static final int MAX_RETRIES = 3;
 
     @Autowired
     private NotificationRecordRepository notificationRecordRepository;
@@ -26,12 +28,12 @@ public class NotificationSendService {
     @Scheduled(fixedRate = 5 * 60 * 1000)
     @Transactional
     public void sendPendingNotifications() {
-        List<NotificationRecord> pending = notificationRecordRepository.findByStatus("pending");
-        if (pending.isEmpty()) return;
+        List<NotificationRecord> records = notificationRecordRepository.findByStatusIn(Arrays.asList("pending", "failed"));
+        if (records.isEmpty()) return;
 
-        log.info("Processing {} pending notification records", pending.size());
+        log.info("Processing {} notification records (pending + failed)", records.size());
 
-        for (NotificationRecord nr : pending) {
+        for (NotificationRecord nr : records) {
             try {
                 if ("wecom".equals(nr.getChannel())) {
                     SysUser recipient = nr.getRecipientUser();
@@ -40,7 +42,6 @@ public class NotificationSendService {
                     }
                     weComService.sendTextMessage(recipient.getWecomId(), nr.getContent());
                 } else if ("email".equals(nr.getChannel())) {
-                    // Email sending not implemented yet
                     throw new RuntimeException("Email channel not implemented yet");
                 } else {
                     throw new RuntimeException("Unknown channel: " + nr.getChannel());
@@ -48,14 +49,22 @@ public class NotificationSendService {
 
                 nr.setStatus("sent");
                 nr.setFailReason(null);
+                nr.setRetryCount(nr.getRetryCount() + 1);
                 notificationRecordRepository.save(nr);
-                log.info("Notification {} sent successfully via {}", nr.getId(), nr.getChannel());
+                log.info("Notification {} sent successfully via {} (attempts: {})", nr.getId(), nr.getChannel(), nr.getRetryCount());
 
             } catch (Exception e) {
-                nr.setStatus("failed");
+                int newRetryCount = nr.getRetryCount() + 1;
+                nr.setRetryCount(newRetryCount);
                 nr.setFailReason(e.getMessage());
+                if (newRetryCount >= MAX_RETRIES) {
+                    nr.setStatus("permanently_failed");
+                    log.error("Notification {} permanently failed after {} retries: {}", nr.getId(), newRetryCount, e.getMessage());
+                } else {
+                    nr.setStatus("failed");
+                    log.warn("Notification {} failed (attempt {}/{}): {}", nr.getId(), newRetryCount, MAX_RETRIES, e.getMessage());
+                }
                 notificationRecordRepository.save(nr);
-                log.warn("Notification {} failed: {}", nr.getId(), e.getMessage());
             }
         }
     }

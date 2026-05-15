@@ -34,7 +34,12 @@ public class NotificationRecord {
     private String channel; // "wecom" or "email"
 
     @Column(nullable = false)
-    private String status = "pending"; // "pending", "sent", "failed"
+    private String status = "pending"; // "pending", "sent", "failed", "permanently_failed"
+
+    @Column(nullable = false)
+    private int retryCount = 0;
+
+    private static final int MAX_RETRIES = 3;
 
     private String orderNo;
     private String roomNo;
