@@ -21,7 +21,7 @@ public class FilesService {
         }
         // If relative path, prepend project root
         if (!uploadPath.startsWith("file://") && !java.nio.file.Paths.get(uploadPath).isAbsolute()) {
-            return System.getProperty("user.dir") + uploadPath.replaceFirst("^\\.\/", "");
+            return System.getProperty("user.dir") + uploadPath.replaceFirst("^\\./", "");
         }
         return uploadPath;
     }
