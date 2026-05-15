@@ -69,6 +69,7 @@ const menuGroups = [
       { name: '房型预测报表', path: '/admin/room-type-forecast', icon: '📉' },
       { name: '房间费结算明细', path: '/admin/room-fee-detail', icon: '🧾' },
       { name: '商品服务费结算明细', path: '/admin/service-fee-detail', icon: '📋' },
+      { name: '通知记录', path: '/admin/notification-records', icon: '🔔' },
     ]
   },
   {
@@ -123,7 +124,8 @@ const titles: Record<string, string> = {
   'RoomTypeForecast': '房型预测报表',
   'RoomFeeDetail': '房间费结算明细',
   'ServiceFeeDetail': '商品服务费结算明细',
-  'ProductPrices': '商品服务价格'
+  'ProductPrices': '商品服务价格',
+  'NotificationRecords': '通知记录'
 };
 
 const currentTitle = computed(() => titles[route.name as string] || 'Dashboard');

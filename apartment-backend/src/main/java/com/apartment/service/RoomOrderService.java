@@ -4,15 +4,19 @@ import com.apartment.entity.OrderFee;
 import com.apartment.entity.Room;
 import com.apartment.entity.RoomOccupy;
 import com.apartment.entity.RoomOrder;
+import com.apartment.entity.NotificationRecord;
+import com.apartment.entity.SysUser;
 import com.apartment.repository.OrderFeeRepository;
 import com.apartment.repository.RoomOrderRepository;
 import com.apartment.repository.RoomRepository;
+import com.apartment.repository.NotificationRecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -32,6 +36,9 @@ public class RoomOrderService {
 
     @Autowired
     private com.apartment.repository.RoomMaintenanceRepository maintenanceRepository;
+
+    @Autowired
+    private NotificationRecordRepository notificationRecordRepository;
 
     public void validateOrder(RoomOrder order) {
         if (order.getRoomOccupies() == null || order.getRoomOccupies().isEmpty()) {
@@ -176,7 +183,46 @@ public class RoomOrderService {
                 ro.setCheckInTime(now);
             }
         }
-        
+
+        // Create notification records
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        for (RoomOccupy ro : order.getRoomOccupies()) {
+            if (ro.getStatus() != null && ro.getStatus() == 0) {
+                SysUser recipient = ro.getOccupantUser();
+                if (recipient == null) recipient = order.getBooker();
+                if (recipient == null) continue;
+
+                String channel = "wecom".equals(recipient.getSource()) ? "wecom" : "email";
+                String roomNoVal = ro.getRoom() != null ? ro.getRoom().getRoomNo() : "";
+                LocalDateTime ciTime = ro.getCheckInTime() != null ? ro.getCheckInTime() : order.getStartDate();
+                LocalDateTime coTime = order.getEndDate();
+                String recipientNameVal = recipient.getRealName() != null ? recipient.getRealName() : recipient.getUsername();
+
+                String content = "您的房间信息如下：\n"
+                    + "房间号: " + roomNoVal + "\n"
+                    + "房卡号: " + ro.getRoomCardNo() + "\n"
+                    + "门锁密码: " + ro.getDoorCode() + "\n"
+                    + "入住时间: " + (ciTime != null ? ciTime.format(fmt) : "") + "\n"
+                    + "离店时间: " + (coTime != null ? coTime.format(fmt) : "");
+
+                NotificationRecord nr = new NotificationRecord();
+                nr.setOrder(order);
+                nr.setOccupy(ro);
+                nr.setRecipientUser(recipient);
+                nr.setChannel(channel);
+                nr.setOrderNo(order.getOrderNo());
+                nr.setRoomNo(roomNoVal);
+                nr.setRoomCardNo(ro.getRoomCardNo());
+                nr.setDoorCode(ro.getDoorCode());
+                nr.setCheckInTime(ciTime);
+                nr.setCheckOutTime(coTime);
+                nr.setRecipientName(recipientNameVal);
+                nr.setContent(content);
+
+                notificationRecordRepository.save(nr);
+            }
+        }
+
         return orderRepository.save(order);
     }
 

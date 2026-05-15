@@ -115,6 +115,11 @@ const router = createRouter({
                     path: 'maintenances',
                     name: 'Maintenances',
                     component: () => import('../views/admin/Maintenances.vue')
+                },
+                {
+                    path: 'notification-records',
+                    name: 'NotificationRecords',
+                    component: () => import('../views/admin/NotificationRecords.vue')
                 }
             ]
         },
