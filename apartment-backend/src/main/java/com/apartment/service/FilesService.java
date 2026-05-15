@@ -16,13 +16,15 @@ public class FilesService {
      * Get the absolute path to the upload directory.
      */
     public String getUploadDir() {
-        if (uploadPath == null || uploadPath.isEmpty()) {
-            return System.getProperty("user.dir") + "/uploads/";
+        String path = uploadPath;
+        if (path == null || path.isEmpty()) {
+            path = System.getProperty("user.dir") + "/uploads";
+        } else if (!path.startsWith("file://") && !java.nio.file.Paths.get(path).isAbsolute()) {
+            path = System.getProperty("user.dir") + "/" + path.replaceFirst("^\\./", "");
         }
-        // If relative path, prepend project root
-        if (!uploadPath.startsWith("file://") && !java.nio.file.Paths.get(uploadPath).isAbsolute()) {
-            return System.getProperty("user.dir") + uploadPath.replaceFirst("^\\./", "");
+        if (!path.endsWith("/")) {
+            path = path + "/";
         }
-        return uploadPath;
+        return path;
     }
 }
