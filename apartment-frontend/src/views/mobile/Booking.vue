@@ -4,6 +4,13 @@
     <div class="content">
       <h2 class="page-title">{{ $t('booking.title2') }}</h2>
 
+      <!-- Timezone Warning -->
+      <div v-if="showTimezoneWarn" class="timezone-warn">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="#e6a23c"><path d="M12,2L1,21H23M12,6L19.53,19H4.47M11,10V14H13V10M11,16V18H13V16"/></svg>
+        <span>{{ $t('booking.timezoneWarn') }}</span>
+        <button class="warn-dismiss" @click="showTimezoneWarn = false">{{ $t('booking.timezoneDismiss') }}</button>
+      </div>
+
       <!-- Date Selection Card -->
       <div class="mobile-card date-card">
         <div class="date-item">
@@ -109,6 +116,9 @@ const endDate = ref(new Date(Date.now() + 86400000).toISOString().split('T')[0])
 const roomTypes = ref<any[]>([]);
 const selectedTypeId = ref<number | null>(null);
 const defaultRoomImage = 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&q=80&w=400';
+
+// Beijing time is UTC+8, getTimezoneOffset returns -480 for UTC+8
+const showTimezoneWarn = ref(new Date().getTimezoneOffset() !== -480);
 
 const showGallery = ref(false);
 const currentGalleryImages = ref<any[]>([]);
@@ -343,6 +353,35 @@ const goToRoomSelect = () => {
   align-items: center;
   font-size: 15px;
   font-weight: 500;
+}
+
+.timezone-warn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 4px 0;
+  padding: 10px 12px;
+  background: #fdf6ec;
+  border: 1px solid #e6a23c;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #8a6d3b;
+  line-height: 1.5;
+}
+
+.timezone-warn svg {
+  flex-shrink: 0;
+}
+
+.warn-dismiss {
+  flex-shrink: 0;
+  background: #e6a23c;
+  color: #fff;
+  border: none;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
 }
 
 .bottom-action {
