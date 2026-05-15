@@ -23,3 +23,6 @@ wecom:
   encoding-aes-key: ${WECOM_ENCODING_AES_KEY:7CiOlMDrLPYNIm5xzaDtk1YopqOp6yIBOSSNPJyDJfs}
   callback:
     base-url: ${WECOM_CALLBACK_BASE_URL:http://ghome.genesismedtech.com}
+
+file:
+  upload-path: ${FILE_UPLOAD_PATH:./uploads}
