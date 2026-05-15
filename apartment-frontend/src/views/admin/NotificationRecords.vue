@@ -55,6 +55,7 @@
             <th>通知渠道</th>
             <th>通知状态</th>
             <th>创建时间</th>
+            <th>失败原因</th>
           </tr>
         </thead>
         <tbody>
@@ -70,9 +71,10 @@
             <td>{{ channelLabel(row.channel) }}</td>
             <td>{{ statusLabel(row.status) }}</td>
             <td>{{ formatDT(row.createdAt) }}</td>
+            <td>{{ row.failReason || '-' }}</td>
           </tr>
           <tr v-if="rows.length === 0">
-            <td colspan="11" class="empty-cell">暂无数据</td>
+            <td colspan="12" class="empty-cell">暂无数据</td>
           </tr>
         </tbody>
       </table>

@@ -153,4 +153,46 @@ public class WeComService {
         public String position;
         public String avatar;
     }
+
+    /**
+     * Send a text message to a WeChat Work user via /cgi-bin/message/send.
+     * @param toUser The WeChat Work user ID (userid)
+     * @param content The message content (text)
+     * @return true if sent successfully, false otherwise
+     */
+    public boolean sendTextMessage(String toUser, String content) {
+        String accessToken = getAccessToken();
+        String url = String.format(
+            "https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=%s",
+            accessToken
+        );
+
+        try {
+            String body = String.format(
+                "{\"touser\":\"%s\",\"msgtype\":\"text\",\"agentid\":%s,\"text\":{\"content\":\"%s\"}}",
+                toUser, agentId, escapeJson(content)
+            );
+
+            String response = restTemplate.postForObject(url, body, String.class);
+            JsonNode node = objectMapper.readTree(response);
+
+            int errcode = node.get("errcode").asInt();
+            if (errcode == 0) {
+                return true;
+            } else {
+                throw new RuntimeException("errcode=" + errcode + ", errmsg=" + node.get("errmsg").asText());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send WeChat Work message: " + e.getMessage(), e);
+        }
+    }
+
+    private String escapeJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+    }
 }
