@@ -97,9 +97,11 @@ echo "[6/7] Checking database schema..."
 # Example: psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "ALTER TABLE ... ADD COLUMN IF NOT EXISTS ..."
 echo "Skip automatic schema migration. Run manually if JPA entities changed."
 
-# === Step 7: Ensure upload directory + restart services ===
+# === Step 7: Ensure upload directory + update configs + restart services ===
 echo "[7/7] Restarting services..."
 mkdir -p /opt/uploads
+cp "$DEPLOY_DIR/nginx.conf" /etc/nginx/conf.d/ghome.conf
+cp "$DEPLOY_DIR/apartment-backend.service" /etc/systemd/system/apartment-backend.service
 systemctl daemon-reload
 systemctl restart apartment-backend
 nginx -t && nginx -s reload || { echo "WARNING: nginx reload failed."; }
