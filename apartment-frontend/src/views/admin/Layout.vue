@@ -141,6 +141,7 @@ onMounted(async () => {
 
 const logout = () => {
   localStorage.removeItem('token');
+  localStorage.removeItem('roles');
   router.push('/login');
 };
 </script>

@@ -45,7 +45,8 @@ onMounted(async () => {
   try {
     const user: any = await api.get('/sys/profile');
     const roles = (user.roles || []).map((r: any) => r.roleCode);
-    
+    localStorage.setItem('roles', JSON.stringify(roles));
+
     const isAdmin = roles.includes('ROLE_ADMIN');
     const isUser = roles.includes('ROLE_USER');
 

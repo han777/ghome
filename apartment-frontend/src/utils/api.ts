@@ -23,6 +23,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('roles');
       const currentPath = window.location.pathname;
       const currentSearch = window.location.search;
       if (currentPath.startsWith('/m')) {

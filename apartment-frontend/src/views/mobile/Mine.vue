@@ -123,6 +123,7 @@ const maskPhone = (phone: string) => {
 
 const handleLogout = () => {
   localStorage.removeItem('token');
+  localStorage.removeItem('roles');
   router.push('/m/auth');
 };
 

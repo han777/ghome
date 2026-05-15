@@ -5,7 +5,8 @@ const router = createRouter({
     routes: [
         {
             path: '/',
-            redirect: '/admin'
+            name: 'Home',
+            component: () => import('../views/Home.vue')
         },
         {
             path: '/login',
@@ -22,7 +23,7 @@ const router = createRouter({
             path: '/admin',
             name: 'Admin',
             component: () => import('../views/admin/Layout.vue'),
-            meta: { requiresAuth: true },
+            meta: { requiresAuth: true, roles: ['ROLE_ADMIN'] },
             redirect: '/admin/dashboard',
             children: [
                 {
@@ -121,7 +122,7 @@ const router = createRouter({
             path: '/m',
             component: () => import('../views/mobile/MobileLayout.vue'),
             redirect: '/m/booking',
-            meta: { requiresAuth: true },
+            meta: { requiresAuth: true, roles: ['ROLE_USER'] },
             children: [
                 {
                     path: 'booking',
@@ -173,10 +174,26 @@ router.beforeEach((to, _from, next) => {
     const token = localStorage.getItem('token')
     if (to.meta.requiresAuth && !token) {
         const loginPath = to.path.startsWith('/m/') ? '/m/auth' : '/login'
-        next({ path: loginPath, query: { redirect: to.fullPath } })
-    } else {
-        next()
+        const defaultPaths = ['/', '/admin', '/admin/dashboard', '/m', '/m/booking']
+        const query = defaultPaths.includes(to.path) ? {} : { redirect: to.fullPath }
+        next({ path: loginPath, query })
+        return
     }
+
+    if (to.meta.roles && token) {
+        const roles: string[] = JSON.parse(localStorage.getItem('roles') || '[]')
+        if (!roles.some(r => (to.meta.roles as string[]).includes(r))) {
+            const isAdmin = roles.includes('ROLE_ADMIN')
+            const isUser = roles.includes('ROLE_USER')
+            if (isAdmin && isUser) next('/role-selection')
+            else if (isAdmin) next('/admin')
+            else if (isUser) next('/m')
+            else next('/login')
+            return
+        }
+    }
+
+    next()
 })
 
 export default router
