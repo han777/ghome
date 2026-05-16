@@ -71,7 +71,7 @@ sed -i "s|password: .*|password: ${DB_PASSWORD}|g" BOOT-INF/classes/application.
 sed -i "s|corpid: .*|corpid: ${WECOM_CORPID}|g" BOOT-INF/classes/application.yml
 sed -i "s|secret: .*|secret: ${WECOM_SECRET}|g" BOOT-INF/classes/application.yml
 sed -i "s|agentid: .*|agentid: ${WECOM_AGENTID}|g" BOOT-INF/classes/application.yml
-sed -i "s|callback-base-url: .*|callback-base-url: ${WECOM_CALLBACK_BASE_URL}|g" BOOT-INF/classes/application.yml
+sed -i "s|    base-url: .*|    base-url: ${WECOM_CALLBACK_BASE_URL}|g" BOOT-INF/classes/application.yml
 
 # Repack jar with updated config
 jar uf ../apartment-backend-0.0.1-SNAPSHOT.jar BOOT-INF/classes/application.yml

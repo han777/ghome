@@ -36,7 +36,7 @@ public class NotificationRecord {
     @Column(nullable = false)
     private String status = "pending"; // "pending", "sent", "failed", "permanently_failed"
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "integer default 0")
     private int retryCount = 0;
 
     private static final int MAX_RETRIES = 3;

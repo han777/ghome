@@ -42,7 +42,7 @@ public class SecurityConfig {
             }))
             .authorizeHttpRequests(auth -> 
                 auth.requestMatchers("/api/auth/login", "/api/auth/mobile-login", "/api/auth/send-code",
-                        "/api/auth/wecom/**", "/uploads/**").permitAll()
+                        "/api/auth/wecom/**", "/api/auth/update-phone", "/uploads/**", "/error").permitAll()
                     .anyRequest().authenticated()
             );
 
