@@ -42,4 +42,6 @@ public interface RoomOrderRepository extends JpaRepository<RoomOrder, Long> {
     Page<RoomOrder> findByBookerIdOrderByCreatedAtDesc(Long bookerId, Pageable pageable);
 
     Page<RoomOrder> findByBookerIdAndStatusInOrderByCreatedAtDesc(Long bookerId, java.util.Collection<Integer> statuses, Pageable pageable);
+
+    java.util.List<RoomOrder> findByStatusAndEndDateBefore(Integer status, LocalDateTime endDate);
 }
