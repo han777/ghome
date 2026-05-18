@@ -25,6 +25,9 @@ public class NotificationSendService {
     @Autowired
     private WeComService weComService;
 
+    @Autowired
+    private EmailService emailService;
+
     @Scheduled(fixedRate = 5 * 60 * 1000)
     @Transactional
     public void sendPendingNotifications() {
@@ -42,7 +45,11 @@ public class NotificationSendService {
                     }
                     weComService.sendTextMessage(recipient.getWecomId(), nr.getContent());
                 } else if ("email".equals(nr.getChannel())) {
-                    throw new RuntimeException("Email channel not implemented yet");
+                    SysUser recipient = nr.getRecipientUser();
+                    if (recipient == null || recipient.getEmail() == null || recipient.getEmail().isBlank()) {
+                        throw new RuntimeException("Recipient email is null or blank");
+                    }
+                    emailService.sendEmail(recipient.getEmail(), "房间入住信息通知", nr.getContent());
                 } else {
                     throw new RuntimeException("Unknown channel: " + nr.getChannel());
                 }
