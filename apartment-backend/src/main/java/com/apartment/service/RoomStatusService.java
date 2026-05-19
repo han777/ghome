@@ -113,6 +113,16 @@ public class RoomStatusService {
                 }
             }
 
+            // Ensure ARRIVING_TODAY rooms have orderId for frontend click
+            if (detail.getOrderId() == null && labels.contains("ARRIVING_TODAY")) {
+                RoomOrder arrivingOrder = arrivingToday.stream()
+                    .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))
+                    .findFirst().orElse(null);
+                if (arrivingOrder != null) {
+                    detail.setOrderId(arrivingOrder.getId());
+                }
+            }
+
             return detail;
         }).collect(Collectors.toList());
 
