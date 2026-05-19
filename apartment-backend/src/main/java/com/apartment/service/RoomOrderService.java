@@ -6,6 +6,8 @@ import com.apartment.entity.RoomOccupy;
 import com.apartment.entity.RoomOrder;
 import com.apartment.entity.NotificationRecord;
 import com.apartment.entity.SysUser;
+import com.apartment.exception.BusinessException;
+import com.apartment.exception.ErrorCode;
 import com.apartment.repository.OrderFeeRepository;
 import com.apartment.repository.RoomOrderRepository;
 import com.apartment.repository.RoomRepository;
@@ -18,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class RoomOrderService {
@@ -40,22 +43,25 @@ public class RoomOrderService {
     @Autowired
     private NotificationRecordRepository notificationRecordRepository;
 
+    @Autowired
+    private MessageTemplateService messageTemplateService;
+
     public void validateOrder(RoomOrder order) {
         if (order.getRoomOccupies() == null || order.getRoomOccupies().isEmpty()) {
-            throw new RuntimeException("房间不能为空");
+            throw new BusinessException(ErrorCode.ORDER_ROOM_EMPTY);
         }
         if (order.getOrderNo() == null || order.getOrderNo().isEmpty()) {
             order.setOrderNo(generateOrderNo());
         }
         if (order.getStartDate() == null || order.getEndDate() == null) {
-            throw new RuntimeException("入住和离开日期不能为空");
+            throw new BusinessException(ErrorCode.ORDER_DATES_EMPTY);
         }
 
         LocalDateTime startDT = order.getStartDate();
         LocalDateTime endDT = order.getEndDate();
-        
+
         if (!startDT.isBefore(endDT)) {
-            throw new RuntimeException("离开时间必须晚于入住时间");
+            throw new BusinessException(ErrorCode.ORDER_END_BEFORE_START);
         }
 
         java.util.List<Integer> activeStatuses = java.util.Arrays.asList(1, 2);
@@ -63,30 +69,30 @@ public class RoomOrderService {
 
         for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
             if (occupy.getRoom() == null || occupy.getRoom().getId() == null) {
-                throw new RuntimeException("房号不能为空");
+                throw new BusinessException(ErrorCode.ORDER_ROOM_NO_EMPTY);
             }
-            
+
             if (occupy.getStatus() != null && occupy.getStatus() == 0) {
                 currentStatusCount++;
             }
-            
+
             // 1. Room Overlap check for each room
             List<RoomOrder> roomOrders = orderRepository.findByRoomIdAndStatusIn(occupy.getRoom().getId(), activeStatuses);
             for (RoomOrder existing : roomOrders) {
                 if (order.getId() != null && order.getId().equals(existing.getId())) continue;
-                
+
                 LocalDateTime exStartDT = existing.getStartDate();
                 LocalDateTime exEndDT = existing.getEndDate();
-                
+
                 if (startDT.isBefore(exEndDT) && endDT.isAfter(exStartDT)) {
-                    throw new RuntimeException("房间 " + occupy.getRoom().getRoomNo() + " 的入住到离开时间与已有的未结订单冲突！");
+                    throw new BusinessException(ErrorCode.ORDER_ROOM_TIME_CONFLICT, occupy.getRoom().getRoomNo());
                 }
             }
 
             // 2. Room Maintenance Overlap
             long maintenanceCount = maintenanceRepository.countOverlappingMaintenances(occupy.getRoom().getId(), startDT, endDT);
             if (maintenanceCount > 0) {
-                throw new RuntimeException("房间 " + occupy.getRoom().getRoomNo() + " 处于维修状态！");
+                throw new BusinessException(ErrorCode.ORDER_ROOM_MAINTENANCE, occupy.getRoom().getRoomNo());
             }
 
             // 3. Occupant User Overlap check (Only if occupant is set)
@@ -99,7 +105,7 @@ public class RoomOrderService {
                     LocalDateTime exEndDT = existing.getEndDate();
 
                     if (startDT.isBefore(exEndDT) && endDT.isAfter(exStartDT)) {
-                        throw new RuntimeException("入住人 " + occupy.getOccupantUser().getRealName() + " 在此期间已有其他房间预约，存在时段冲突！");
+                        throw new BusinessException(ErrorCode.ORDER_OCCUPANT_CONFLICT, occupy.getOccupantUser().getRealName());
                     }
                 }
             }
@@ -108,7 +114,7 @@ public class RoomOrderService {
         // 4. Individual guest constraint: only one current occupy allowed
         if (order.getCustomerType() != null && order.getCustomerType() == 1) {
             if (currentStatusCount > 1) {
-                throw new RuntimeException("个人客人订单只允许一条记录为当前状态");
+                throw new BusinessException(ErrorCode.ORDER_INDIVIDUAL_ONE_CURRENT);
             }
         }
 
@@ -155,25 +161,24 @@ public class RoomOrderService {
     }
 
     @Transactional
-    public RoomOrder sendRoomCard(Long orderId) {
+    public RoomOrder sendRoomCard(Long orderId, String keyBoxNo, String boxPassword) {
         if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
-        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
-        
+        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
         if (order.getRoomOccupies() == null || order.getRoomOccupies().isEmpty()) {
-            throw new RuntimeException("该订单没有房间记录");
+            throw new BusinessException(ErrorCode.ORDER_NO_ROOM_RECORDS);
         }
 
-        for (RoomOccupy ro : order.getRoomOccupies()) {
-            // Status 0 is Current
-            if (ro.getStatus() != null && ro.getStatus() == 0) {
-                if (ro.getRoomCardNo() == null || ro.getRoomCardNo().isBlank()) {
-                    throw new RuntimeException("房间 " + ro.getRoom().getRoomNo() + " 的房卡号不能为空");
-                }
-                if (ro.getDoorCode() == null || ro.getDoorCode().isBlank()) {
-                    throw new RuntimeException("房间 " + ro.getRoom().getRoomNo() + " 的门锁密码不能为空");
-                }
-            }
+        if (keyBoxNo == null || keyBoxNo.isBlank()) {
+            throw new BusinessException(ErrorCode.ORDER_KEY_BOX_NO_EMPTY);
         }
+        if (boxPassword == null || boxPassword.isBlank()) {
+            throw new BusinessException(ErrorCode.ORDER_BOX_PASSWORD_EMPTY);
+        }
+
+        // Write key box info to order
+        order.setKeyBoxNo(keyBoxNo);
+        order.setBoxPassword(boxPassword);
 
         order.setStatus(2); // Set to In (已入住)
         // Set actual check-in time if not set
@@ -197,13 +202,17 @@ public class RoomOrderService {
                 LocalDateTime ciTime = ro.getCheckInTime() != null ? ro.getCheckInTime() : order.getStartDate();
                 LocalDateTime coTime = order.getEndDate();
                 String recipientNameVal = recipient.getRealName() != null ? recipient.getRealName() : recipient.getUsername();
+                String userLocale = recipient.getLocale() != null ? recipient.getLocale() : "zh";
 
-                String content = "您的房间信息如下：\n"
-                    + "房间号: " + roomNoVal + "\n"
-                    + "房卡号: " + ro.getRoomCardNo() + "\n"
-                    + "门锁密码: " + ro.getDoorCode() + "\n"
-                    + "入住时间: " + (ciTime != null ? ciTime.format(fmt) : "") + "\n"
-                    + "离店时间: " + (coTime != null ? coTime.format(fmt) : "");
+                String content = messageTemplateService.buildCheckInNotification(
+                    userLocale,
+                    order.getOrderNo(),
+                    roomNoVal,
+                    keyBoxNo,
+                    boxPassword,
+                    ciTime != null ? ciTime.format(fmt) : "",
+                    coTime != null ? coTime.format(fmt) : ""
+                );
 
                 NotificationRecord nr = new NotificationRecord();
                 nr.setOrder(order);
@@ -212,8 +221,9 @@ public class RoomOrderService {
                 nr.setChannel(channel);
                 nr.setOrderNo(order.getOrderNo());
                 nr.setRoomNo(roomNoVal);
-                nr.setRoomCardNo(ro.getRoomCardNo());
-                nr.setDoorCode(ro.getDoorCode());
+                nr.setKeyBoxNo(keyBoxNo);
+                nr.setBoxPassword(boxPassword);
+                nr.setLocale(userLocale);
                 nr.setCheckInTime(ciTime);
                 nr.setCheckOutTime(coTime);
                 nr.setRecipientName(recipientNameVal);
@@ -227,53 +237,14 @@ public class RoomOrderService {
     }
 
     @Transactional
-    public RoomOrder sendDoorCode(Long orderId) {
-        if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
-        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
-        // Generate a 6-digit code and set to all rooms
-        if (order.getRoomOccupies() != null) {
-            for (RoomOccupy ro : order.getRoomOccupies()) {
-                String code = String.format("%06d", new java.util.Random().nextInt(1000000));
-                ro.setDoorCode(code);
-            }
-        }
-        // In real world, send SMS/Email here
-        return orderRepository.save(order);
-    }
-
-    @Transactional
-    public OrderFee addExtraFee(Long orderId, String feeType, BigDecimal amount, String remarks) {
-        if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
-        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
-        OrderFee fee = new OrderFee();
-        fee.setOrder(order);
-        fee.setFeeType(feeType);
-        fee.setAmount(amount);
-        fee.setRemarks(remarks);
-        fee.setCreatedAt(LocalDateTime.now());
-        
-        // Update total amount in order
-        if (order.getTotalAmount() == null) order.setTotalAmount(BigDecimal.ZERO);
-        order.setTotalAmount(order.getTotalAmount().add(amount));
-        orderRepository.save(order);
-        
-        return feeRepository.save(fee);
-    }
-
-    public List<OrderFee> getOrderFees(Long orderId) {
-        return feeRepository.findByOrderId(orderId);
-    }
-
-    @Transactional
     public RoomOrder cancelOrder(Long orderId) {
         if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
-        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
         // Cancel deadline: must be no later than 24:00 of the day before check-in
-        // "前一天24:00" = 入住当天 00:00 (midnight of startDate)
         LocalDateTime cancelDeadline = order.getStartDate().toLocalDate().atStartOfDay();
         if (LocalDateTime.now().isAfter(cancelDeadline) || LocalDateTime.now().isEqual(cancelDeadline)) {
-            throw new RuntimeException("取消预订须于入住日前1天24:00前操作，现已超过截止时间");
+            throw new BusinessException(ErrorCode.ORDER_CANCEL_DEADLINE_PASSED);
         }
 
         order.setStatus(4); // Canceled
@@ -293,7 +264,7 @@ public class RoomOrderService {
     @Transactional
     public RoomOrder adminCancelOrder(Long orderId) {
         if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
-        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
         order.setStatus(4); // Canceled
         if (order.getRoomOccupies() != null) {
@@ -311,7 +282,7 @@ public class RoomOrderService {
     @Transactional
     public RoomOrder checkoutOrder(Long orderId) {
         if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
-        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
         order.setStatus(3); // Out
         LocalDateTime now = LocalDateTime.now();
         order.setEndDate(now);
@@ -333,15 +304,15 @@ public class RoomOrderService {
     @Transactional
     public RoomOrder changeRoom(Long occupyId, Long newRoomId, LocalDateTime switchDate) {
         if (occupyId == null || newRoomId == null) throw new IllegalArgumentException("IDs cannot be null");
-        
+
         if (switchDate == null) switchDate = LocalDateTime.now();
-        
+
         RoomOccupy oldOccupy = occupyRepository.findById(occupyId)
-            .orElseThrow(() -> new RuntimeException("Occupy record not found"));
+            .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_OCCUPY_NOT_FOUND));
         RoomOrder order = oldOccupy.getOrder();
         Room oldRoom = oldOccupy.getRoom();
         Room newRoom = roomRepository.findById(newRoomId)
-            .orElseThrow(() -> new RuntimeException("Room not found"));
+            .orElseThrow(() -> new BusinessException(ErrorCode.GENERAL_ROOM_NOT_FOUND));
 
         // 1. Finish Old Occupation
         oldOccupy.setStatus(1); // Finish
@@ -358,12 +329,10 @@ public class RoomOrderService {
         newOccupy.setOccupantUser(oldOccupy.getOccupantUser());
         newOccupy.setOccupantCount(oldOccupy.getOccupantCount());
         newOccupy.setCoOccupants(oldOccupy.getCoOccupants());
-        newOccupy.setRoomCardNo(oldOccupy.getRoomCardNo());
-        newOccupy.setDoorCode(oldOccupy.getDoorCode());
         newOccupy.setCheckInTime(switchDate);
         newOccupy.setCheckOutTime(null); // Will follow order's end date in display
         newOccupy.setStatus(0); // Current
-        
+
         newRoom.setStatus(1); // Occupied
         roomRepository.save(newRoom);
         // 3. Update Occupations' price and quantity
@@ -386,40 +355,44 @@ public class RoomOrderService {
         }
         newOccupy.setActualPrice(newPrice);
         newOccupy.setQuantity((int)remainingDays);
-        
+
         occupyRepository.save(newOccupy);
         occupyRepository.save(oldOccupy);
 
         // 4. Record Log and Recalculate
-        String log = String.format("\n[Log %s] 换房: %s -> %s, 生效日期: %s, 剩余天数: %d", 
+        String log = String.format("\n[Log %s] 换房: %s -> %s, 生效日期: %s, 剩余天数: %d",
             LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
-            oldRoom != null ? oldRoom.getRoomNo() : "Unknown", 
-            newRoom.getRoomNo(), 
+            oldRoom != null ? oldRoom.getRoomNo() : "Unknown",
+            newRoom.getRoomNo(),
             switchDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")),
             remainingDays);
         order.setRemarks((order.getRemarks() == null ? "" : order.getRemarks()) + log);
 
         calculatePrices(order);
+
+        // Recalculate order date range from all active occupies
+        recalcOrderDateRange(order);
+
         return orderRepository.save(order);
     }
 
     @Transactional
     public RoomOrder addRoom(Long orderId, Long roomId) {
         if (orderId == null || roomId == null) throw new IllegalArgumentException("IDs cannot be null");
-        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
-        com.apartment.entity.Room room = roomRepository.findById(roomId).orElseThrow(() -> new RuntimeException("Room not found"));
-        
+        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        com.apartment.entity.Room room = roomRepository.findById(roomId).orElseThrow(() -> new BusinessException(ErrorCode.GENERAL_ROOM_NOT_FOUND));
+
         com.apartment.entity.RoomOccupy occupy = new com.apartment.entity.RoomOccupy();
         occupy.setOrder(order);
         occupy.setRoom(room);
         occupy.setCheckInTime(LocalDateTime.now());
         occupy.setOccupantUser(order.getBooker());
         occupy.setStatus(0);
-        
+
         room.setStatus(1);
         roomRepository.save(room);
         occupyRepository.save(occupy);
-        
+
         return order;
     }
 
@@ -429,12 +402,11 @@ public class RoomOrderService {
     public synchronized String generateOrderNo() {
         LocalDateTime now = LocalDateTime.now();
         String prefix = "RO" + now.format(java.time.format.DateTimeFormatter.ofPattern("yyMM"));
-        
+
         try {
             Long seq = orderRepository.getNextOrderSeq();
             return prefix + String.format("%04d", seq % 10000);
         } catch (Exception e) {
-            // If sequence doesn't exist, create it and retry once
             try {
                 jdbcTemplate.execute("CREATE SEQUENCE IF NOT EXISTS room_order_no_seq START WITH 1");
                 Long seq = orderRepository.getNextOrderSeq();
@@ -448,41 +420,41 @@ public class RoomOrderService {
     @Transactional
     public RoomOrder adjustOccupyTime(Long occupyId, LocalDateTime newStart, LocalDateTime newEnd) {
         RoomOccupy occupy = occupyRepository.findById(occupyId)
-            .orElseThrow(() -> new RuntimeException("入住记录未找到"));
+            .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_OCCUPY_NOT_FOUND));
         RoomOrder order = occupy.getOrder();
-        
+
         if (newStart.isAfter(newEnd) || newStart.isEqual(newEnd)) {
-            throw new RuntimeException("结束时间必须晚于开始时间");
+            throw new BusinessException(ErrorCode.ORDER_END_BEFORE_START);
         }
 
         // Validate conflicts
         java.util.List<Integer> activeStatuses = java.util.Arrays.asList(1, 2);
-        
-        // 1. Room Conflict (Both Individual and Group)
+
+        // 1. Room Conflict
         List<RoomOrder> roomOrders = orderRepository.findByRoomIdAndStatusIn(occupy.getRoom().getId(), activeStatuses);
         for (RoomOrder existing : roomOrders) {
             if (order.getId().equals(existing.getId())) {
                 continue;
             }
             if (newStart.isBefore(existing.getEndDate()) && newEnd.isAfter(existing.getStartDate())) {
-                throw new RuntimeException("该时段与房间已有的订单冲突");
+                throw new BusinessException(ErrorCode.ORDER_TIME_CONFLICT);
             }
         }
 
         // 2. Room Maintenance Conflict
         long maintenanceCount = maintenanceRepository.countOverlappingMaintenances(occupy.getRoom().getId(), newStart, newEnd);
         if (maintenanceCount > 0) {
-            throw new RuntimeException("该时段房间处于维修状态");
+            throw new BusinessException(ErrorCode.ORDER_MAINTENANCE_CONFLICT);
         }
 
-        // 3. Occupant User Conflict (Only for Individual Booking)
-        if (order.getCustomerType() != null && order.getCustomerType() == 1) { // 1: Individual
+        // 3. Occupant User Conflict
+        if (order.getCustomerType() != null && order.getCustomerType() == 1) {
             if (occupy.getOccupantUser() != null) {
                 List<RoomOrder> occupantOrders = orderRepository.findByOccupantUserIdAndStatusIn(occupy.getOccupantUser().getId(), activeStatuses);
                 for (RoomOrder existing : occupantOrders) {
                     if (order.getId().equals(existing.getId())) continue;
                     if (newStart.isBefore(existing.getEndDate()) && newEnd.isAfter(existing.getStartDate())) {
-                        throw new RuntimeException("该入住人在所选时段已有其他预约，存在冲突");
+                        throw new BusinessException(ErrorCode.ORDER_OCCUPANT_TIME_CONFLICT);
                     }
                 }
             }
@@ -491,17 +463,82 @@ public class RoomOrderService {
         // Update times
         occupy.setCheckInTime(newStart);
         occupy.setCheckOutTime(newEnd);
-        
-        // Sync order level times if needed
-        if (newStart.isBefore(order.getStartDate())) {
-            order.setStartDate(newStart);
-        }
-        if (newEnd.isAfter(order.getEndDate())) {
-            order.setEndDate(newEnd);
-        }
-        
+
         occupyRepository.save(occupy);
         calculatePrices(order);
+
+        // Recalculate order date range from all active occupies
+        recalcOrderDateRange(order);
+
         return orderRepository.save(order);
+    }
+
+    /**
+     * Recalculate order-level start/end dates to cover all active (status=0) occupy date ranges.
+     */
+    private void recalcOrderDateRange(RoomOrder order) {
+        List<RoomOccupy> allOccupies = occupyRepository.findByOrderId(order.getId());
+        LocalDateTime minStart = null;
+        LocalDateTime maxEnd = null;
+        for (RoomOccupy o : allOccupies) {
+            if (o.getStatus() != null && o.getStatus() == 0) {
+                LocalDateTime ci = o.getCheckInTime();
+                LocalDateTime co = o.getCheckOutTime();
+                if (ci != null) {
+                    if (minStart == null || ci.isBefore(minStart)) minStart = ci;
+                }
+                if (co != null) {
+                    if (maxEnd == null || co.isAfter(maxEnd)) maxEnd = co;
+                }
+            }
+        }
+        // For occupies with null checkOutTime, use order's endDate as fallback
+        for (RoomOccupy o : allOccupies) {
+            if (o.getStatus() != null && o.getStatus() == 0 && o.getCheckOutTime() == null) {
+                if (maxEnd == null || order.getEndDate().isAfter(maxEnd)) {
+                    maxEnd = order.getEndDate();
+                }
+            }
+        }
+        if (minStart != null) order.setStartDate(minStart);
+        if (maxEnd != null) order.setEndDate(maxEnd);
+    }
+
+    @Transactional
+    public RoomOrder sendDoorCode(Long orderId) {
+        if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
+        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        // Generate a 6-digit code and set to all rooms
+        if (order.getRoomOccupies() != null) {
+            for (RoomOccupy ro : order.getRoomOccupies()) {
+                String code = String.format("%06d", new java.util.Random().nextInt(1000000));
+                // Note: roomCardNo/doorCode removed from RoomOccupy; this method is no longer used
+                // Keeping the method signature for API compatibility
+            }
+        }
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    public OrderFee addExtraFee(Long orderId, String feeType, BigDecimal amount, String remarks) {
+        if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
+        RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        OrderFee fee = new OrderFee();
+        fee.setOrder(order);
+        fee.setFeeType(feeType);
+        fee.setAmount(amount);
+        fee.setRemarks(remarks);
+        fee.setCreatedAt(LocalDateTime.now());
+
+        // Update total amount in order
+        if (order.getTotalAmount() == null) order.setTotalAmount(BigDecimal.ZERO);
+        order.setTotalAmount(order.getTotalAmount().add(amount));
+        orderRepository.save(order);
+
+        return feeRepository.save(fee);
+    }
+
+    public List<OrderFee> getOrderFees(Long orderId) {
+        return feeRepository.findByOrderId(orderId);
     }
 }

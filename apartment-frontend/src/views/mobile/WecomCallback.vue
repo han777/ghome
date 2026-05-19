@@ -10,10 +10,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import api from '../../utils/api';
 
 const router = useRouter();
 const route = useRoute();
+const { locale } = useI18n();
 const statusMessage = ref('正在处理企业微信登录...');
 
 onMounted(async () => {
@@ -47,14 +49,14 @@ onMounted(async () => {
     const roles = (user.roles || []).map((r: any) => r.roleCode);
     localStorage.setItem('roles', JSON.stringify(roles));
 
+    // Apply user's locale preference
+    if (user.locale) {
+      locale.value = user.locale;
+      localStorage.setItem('locale', user.locale);
+    }
+
     const isAdmin = roles.includes('ROLE_ADMIN');
     const isUser = roles.includes('ROLE_USER');
-
-    // If phone is missing, redirect to collect-phone mode first
-    if (!user.phone || user.phone.trim() === '') {
-      router.push('/m/auth?mode=collect-phone');
-      return;
-    }
 
     if (redirect && redirect !== '/m/booking' && redirect !== '/m') {
       router.push(redirect);

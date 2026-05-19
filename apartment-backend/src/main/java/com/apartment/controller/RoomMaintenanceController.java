@@ -1,11 +1,12 @@
 package com.apartment.controller;
 
 import com.apartment.entity.RoomMaintenance;
+import com.apartment.exception.BusinessException;
+import com.apartment.exception.ErrorCode;
 import com.apartment.repository.RoomMaintenanceRepository;
 import com.apartment.repository.RoomOrderRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,7 +34,7 @@ public class RoomMaintenanceController {
     }
 
     @PostMapping
-    public ResponseEntity<?> saveMaintenance(@RequestBody RoomMaintenance maintenance) {
+    public RoomMaintenance saveMaintenance(@RequestBody RoomMaintenance maintenance) {
         if (maintenance.getStartTime() == null) {
             maintenance.setStartTime(LocalDateTime.now());
         }
@@ -42,25 +43,23 @@ public class RoomMaintenanceController {
         }
 
         if (maintenance.getStartTime().isAfter(maintenance.getEndTime())) {
-            return ResponseEntity.badRequest().body("开始时间不能晚于结束时间");
+            throw new BusinessException(ErrorCode.MAINT_START_AFTER_END);
         }
 
         // Only check overlap if it's not cancelled
         if (maintenance.getStatus() != 2) {
-            // 1. Check Order Overlap
             long orderCount = orderRepository.countOverlappingActiveOrders(maintenance.getRoom().getId(), maintenance.getStartTime(), maintenance.getEndTime());
             if (orderCount > 0) {
-                return ResponseEntity.badRequest().body("所选时间段内房间已有预订订单，冲突！");
+                throw new BusinessException(ErrorCode.MAINT_ORDER_CONFLICT);
             }
 
-            // 2. Check Maintenance Overlap
             java.util.List<RoomMaintenance> others = maintenanceRepository.findByRoomId(maintenance.getRoom().getId());
             for (RoomMaintenance other : others) {
-                if (other.getStatus() == 2) continue; // Skip cancelled
-                if (maintenance.getId() != null && maintenance.getId().equals(other.getId())) continue; // Skip self
-                
+                if (other.getStatus() == 2) continue;
+                if (maintenance.getId() != null && maintenance.getId().equals(other.getId())) continue;
+
                 if (maintenance.getStartTime().isBefore(other.getEndTime()) && maintenance.getEndTime().isAfter(other.getStartTime())) {
-                    return ResponseEntity.badRequest().body("所选时间段内房间已有其他维修记录，冲突！");
+                    throw new BusinessException(ErrorCode.MAINT_OTHER_CONFLICT);
                 }
             }
         }
@@ -68,27 +67,25 @@ public class RoomMaintenanceController {
         if (maintenance.getId() != null) {
             RoomMaintenance existing = maintenanceRepository.findById(maintenance.getId()).orElse(null);
             if (existing != null && existing.getStatus() == 1 && maintenance.getStatus() != 1 && maintenance.getStatus() != 2) {
-                // 已完成的维修记录只能改为已完成或已取消
-                return ResponseEntity.badRequest().body("已完成的维修记录只能作废，不能改回维修中");
+                throw new BusinessException(ErrorCode.MAINT_COMPLETED_NO_REVERT);
             }
         }
 
-        return ResponseEntity.ok(maintenanceRepository.save(maintenance));
+        return maintenanceRepository.save(maintenance);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteMaintenance(@PathVariable Long id) {
+    public void deleteMaintenance(@PathVariable Long id) {
         RoomMaintenance existing = maintenanceRepository.findById(id).orElse(null);
         if (existing == null) {
-            return ResponseEntity.notFound().build();
+            return;
         }
         if (existing.getStatus() == 1) {
-            return ResponseEntity.badRequest().body("已完成的维修记录不允许删除");
+            throw new BusinessException(ErrorCode.MAINT_COMPLETED_NO_DELETE);
         }
         if (existing.getStatus() == 0) {
-            return ResponseEntity.badRequest().body("维修中的记录不允许删除，只能取消");
+            throw new BusinessException(ErrorCode.MAINT_ACTIVE_NO_DELETE);
         }
         maintenanceRepository.deleteById(id);
-        return ResponseEntity.ok().build();
     }
 }

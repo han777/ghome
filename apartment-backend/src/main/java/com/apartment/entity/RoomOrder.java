@@ -37,7 +37,10 @@ public class RoomOrder {
     private BigDecimal roomFee = BigDecimal.ZERO;
     private BigDecimal serviceFee = BigDecimal.ZERO;
     private String bookPhone;
-    
+
+    private String keyBoxNo;     // 房卡箱号
+    private String boxPassword;  // 箱密码
+
     private String remarks;
 
     private String company;

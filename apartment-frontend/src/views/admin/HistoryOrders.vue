@@ -236,14 +236,6 @@
                     <div class="value">{{ occupy.occupantUser?.realName || '-' }}</div>
                   </div>
                   <div class="card-item">
-                    <label>房卡号</label>
-                    <div class="value">{{ occupy.roomCardNo || '-' }}</div>
-                  </div>
-                  <div class="card-item">
-                    <label>门锁密码</label>
-                    <div class="value">{{ occupy.doorCode || '-' }}</div>
-                  </div>
-                  <div class="card-item">
                     <label>入住人数</label>
                     <div class="value">{{ occupy.occupantCount }}</div>
                   </div>

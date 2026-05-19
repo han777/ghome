@@ -76,7 +76,7 @@ import api from '../../utils/api';
 const router = useRouter();
 const { locale } = useI18n();
 
-const toggleLanguage = () => {
+const toggleLanguage = async () => {
   if (locale.value === 'zh') {
     locale.value = 'en';
   } else if (locale.value === 'en') {
@@ -85,6 +85,11 @@ const toggleLanguage = () => {
     locale.value = 'zh';
   }
   localStorage.setItem('locale', locale.value);
+  try {
+    await api.post('/sys/profile/locale', { locale: locale.value });
+  } catch (e) {
+    console.error('Failed to save locale preference', e);
+  }
 };
 
 const user = ref<any>(null);

@@ -43,8 +43,10 @@ public class NotificationRecord {
 
     private String orderNo;
     private String roomNo;
-    private String roomCardNo;
-    private String doorCode;
+    private String keyBoxNo;
+    private String boxPassword;
+    @Column(length = 5)
+    private String locale;
     private LocalDateTime checkInTime;
     private LocalDateTime checkOutTime;
     private String recipientName;

@@ -26,6 +26,9 @@ public class SysUser {
     private String realName;
     private String phone;
 
+    @Column(length = 5)
+    private String locale = "zh";
+
     @Column(nullable = false)
     private String source = "system"; // "system" or "wecom"
 

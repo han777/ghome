@@ -22,5 +22,6 @@ public class RoomStatusDashboardDTO {
         private String floorName;
         private List<String> labels;
         private String guestName;
+        private Long orderId;
     }
 }

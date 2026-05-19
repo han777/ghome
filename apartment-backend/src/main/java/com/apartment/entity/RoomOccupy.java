@@ -27,8 +27,6 @@ public class RoomOccupy {
 
     private LocalDateTime checkInTime; // 实际入住时间
     private LocalDateTime checkOutTime; // 实际离开时间
-    private String roomCardNo; // 房间卡号
-    private String doorCode; // 门锁码
     private Integer occupantCount; // 入住人数
     private String coOccupants; // 同住人
     

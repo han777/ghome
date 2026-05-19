@@ -4,19 +4,12 @@
       <div class="header-left" @click="handleBack">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
       </div>
-      <div class="mobile-header-title">{{ isCollectPhoneMode ? '补充手机号' : $t('auth.identity') }}</div>
+      <div class="mobile-header-title">{{ $t('auth.identity') }}</div>
       <div class="header-right"></div>
     </header>
 
     <div class="auth-content">
-      <!-- collect-phone mode: user already logged in via wecom, just needs phone -->
-      <div v-if="isCollectPhoneMode" class="welcome-section">
-        <h1 class="welcome-title">完善个人信息</h1>
-        <p class="collect-phone-hint">请补充您的手机号，以便接收订单通知</p>
-      </div>
-
-      <!-- normal login mode -->
-      <div v-else class="welcome-section">
+      <div class="welcome-section">
         <h1 class="welcome-title" v-html="$t('auth.welcome')"></h1>
         <div class="lang-switch-bar">
           <span class="lang-pill" :class="{ 'lang-active': locale === 'zh' }" @click="switchLang('zh')">中</span>
@@ -26,62 +19,24 @@
       </div>
 
       <div class="auth-form">
-        <!-- WeChat Work auto-login status (normal mode only) -->
+        <!-- WeChat Work auto-login status -->
         <div v-if="statusMessage" class="wecom-status">
           <div class="loading-spinner-small"></div>
           <span>{{ statusMessage }}</span>
         </div>
 
-        <!-- WeChat Work login button (normal mode, not in WeChat env) -->
-        <button v-if="!isCollectPhoneMode && !isWeComEnv && !statusMessage" class="mobile-btn-primary wecom-login-btn" @click="wecomAutoLogin">
-          <span class="wecom-icon">💬</span> 企业微信一键登录
+        <!-- WeChat Work login button (not in WeChat env) -->
+        <button v-if="!isWeComEnv && !statusMessage" class="mobile-btn-primary wecom-login-btn" @click="wecomAutoLogin">
+          <span class="wecom-icon">💬</span> {{ $t('auth.wecomLogin') }}
         </button>
 
-        <div v-if="!statusMessage && !isCollectPhoneMode" class="divider-line"><span>手机号登录</span></div>
-
-        <!-- Phone input (both modes) -->
-        <div class="input-group">
-          <label>{{ $t('auth.phone') }}<span class="required">*</span></label>
-          <input type="tel" v-model="phone" :placeholder="isCollectPhoneMode ? '请输入手机号' : $t('auth.phonePlaceholder')" />
-        </div>
-
-        <!-- Code input (both modes) -->
-        <div class="input-group">
-          <label>{{ isCollectPhoneMode ? '验证码（输入任意4-6位数字即可）' : $t('auth.code') }}<span class="required">*</span></label>
-          <div class="code-input-wrap">
-            <input type="text" v-model="code" :placeholder="isCollectPhoneMode ? '输入任意数字' : $t('auth.codePlaceholder')" />
-            <span v-if="!isCollectPhoneMode" class="code-btn" @click="countdown === 0 && sendCode()">
-              {{ countdown > 0 ? $t('auth.sent', { time: countdown }) : $t('auth.getCode') }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Submit button -->
-        <button class="mobile-btn-primary login-btn" :disabled="loading" @click="handleSubmit">
-          {{ loading ? '提交中...' : (isCollectPhoneMode ? '确认补充手机号' : $t('auth.login')) }}
-        </button>
-
-        <!-- Normal mode extras -->
-        <template v-if="!isCollectPhoneMode && !statusMessage">
-          <div class="agreement-row">
-            <input type="checkbox" id="agree" checked />
-            <label for="agree">
-              {{ $t('auth.agreePrefix') }}<a href="javascript:void(0)" @click="showPrivacyModal = true">{{ $t('auth.policy') }}</a>
-            </label>
-          </div>
-          <div class="other-login">
-            <a href="javascript:void(0)" @click="router.push('/login')">{{ $t('auth.pwdLogin') }}</a>
-          </div>
-        </template>
-
-        <!-- Collect-phone mode skip option -->
-        <div v-if="isCollectPhoneMode" class="skip-row">
-          <a href="javascript:void(0)" @click="router.push('/m')">暂不填写，直接进入</a>
+        <div class="other-login">
+          <a href="javascript:void(0)" @click="router.push('/login')">{{ $t('auth.pwdLogin') }}</a>
         </div>
       </div>
 
-      <!-- Privacy Policy Modal (normal mode) -->
-      <div v-if="!isCollectPhoneMode && showPrivacyModal" class="privacy-modal-overlay">
+      <!-- Privacy Policy Modal -->
+      <div v-if="showPrivacyModal" class="privacy-modal-overlay">
         <div class="privacy-modal-content">
           <div class="privacy-modal-header">{{ $t('auth.privacyTitle') }}</div>
           <div class="privacy-modal-body">
@@ -103,7 +58,7 @@
       <div class="brand-footer">
         <div class="brand-text">
           <span class="logo-icon">💠</span>
-          <strong>Genesis</strong> 健适医疗
+          <strong>Genesis</strong> G-HOME
         </div>
       </div>
     </div>
@@ -120,29 +75,26 @@ const router = useRouter();
 const route = useRoute();
 const { t, locale } = useI18n();
 
-// Mode detection: collect-phone means user already has token (wecom login), just needs phone
-const isCollectPhoneMode = computed(() => route.query.mode === 'collect-phone');
-
 // WeChat Work environment detection
 const isWeComEnv = computed(() => {
   const ua = navigator.userAgent.toLowerCase();
   return ua.includes('wxwork');
 });
 
-// Auto WeChat Work OAuth (normal mode only, when in WeChat env)
+// Auto WeChat Work OAuth (when in WeChat env)
 onMounted(async () => {
   const errorParam = route.query.error as string;
   if (errorParam === 'wecom_login_failed') {
     alert(route.query.message || t('auth.loginFailed'));
   }
-  if (!isCollectPhoneMode.value && isWeComEnv.value) {
+  if (isWeComEnv.value) {
     wecomAutoLogin();
   }
 });
 
 const wecomAutoLogin = async () => {
   loading.value = true;
-  statusMessage.value = '正在跳转企业微信登录...';
+  statusMessage.value = t('auth.redirectingWecom');
   try {
     const redirect = route.query.redirect as string || '/m';
     const res: any = await api.get('/auth/wecom/authorize', { params: { redirect } });
@@ -154,93 +106,24 @@ const wecomAutoLogin = async () => {
   }
 };
 
-const switchLang = (lang: string) => {
+const switchLang = async (lang: string) => {
   locale.value = lang;
   localStorage.setItem('locale', lang);
-};
-
-const handleBack = () => {
-  if (isCollectPhoneMode.value) {
-    router.push('/m');
-  } else {
-    router.back();
+  try {
+    await api.post('/sys/profile/locale', { locale: lang });
+  } catch (e) {
+    // Silently fail if user is not logged in yet
   }
 };
 
-const phone = ref('');
-const code = ref('');
-const countdown = ref(0);
+const handleBack = () => {
+  router.back();
+};
+
 const loading = ref(false);
 const showPrivacyModal = ref(false);
 const statusMessage = ref('');
 
-const startCountdown = () => {
-  countdown.value = 60;
-  const timer = setInterval(() => {
-    countdown.value--;
-    if (countdown.value <= 0) clearInterval(timer);
-  }, 1000);
-};
-
-const sendCode = async () => {
-  if (!phone.value || !/^1[3-9]\d{9}$/.test(phone.value)) {
-    alert(t('auth.invalidPhone'));
-    return;
-  }
-  try {
-    await api.post('/auth/send-code', { phone: phone.value });
-    startCountdown();
-  } catch (error: any) {
-    alert(error.response?.data?.message || t('auth.sendFailed'));
-  }
-};
-
-// Unified submit handler
-const handleSubmit = async () => {
-  if (!phone.value || !/^1[3-9]\d{9}$/.test(phone.value)) {
-    alert('请输入正确的手机号');
-    return;
-  }
-  if (!code.value) {
-    alert('请输入验证码');
-    return;
-  }
-
-  loading.value = true;
-  try {
-    if (isCollectPhoneMode.value) {
-      // collect-phone mode: user already has token, call update-phone endpoint
-      await api.post('/auth/update-phone', { phone: phone.value, code: code.value });
-      alert('手机号已补充完成');
-      router.push('/m');
-    } else {
-      // normal login mode: call mobile-login endpoint
-      const res: any = await api.post('/auth/mobile-login', { phone: phone.value, code: code.value });
-      localStorage.setItem('token', res.token);
-
-      const user: any = await api.get('/sys/profile');
-      const roles = (user.roles || []).map((r: any) => r.roleCode);
-      localStorage.setItem('roles', JSON.stringify(roles));
-      const isAdmin = roles.includes('ROLE_ADMIN');
-      const isUser = roles.includes('ROLE_USER');
-
-      const redirect = route.query.redirect as string;
-      if (redirect && redirect !== '/m/booking') {
-        router.push(redirect);
-        return;
-      }
-      if (isAdmin && isUser) router.push('/role-selection');
-      else if (isAdmin) router.push('/admin');
-      else if (isUser) router.push('/m');
-      else router.push('/m');
-    }
-  } catch (error: any) {
-    const msg = error.response?.data?.message || error.response?.data || '操作失败';
-    alert(typeof msg === 'string' ? msg : '操作失败');
-  } finally {
-    loading.value = false;
-  }
-};
 </script>
 
 <style scoped>
@@ -273,12 +156,6 @@ const handleSubmit = async () => {
   color: #333;
 }
 
-.collect-phone-hint {
-  font-size: 14px;
-  color: #666;
-  margin-top: 8px;
-}
-
 .lang-switch-bar {
   display: flex;
   justify-content: center;
@@ -304,71 +181,6 @@ const handleSubmit = async () => {
 
 .auth-form {
   margin-top: 60px;
-}
-
-.input-group {
-  margin-bottom: 24px;
-  border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 8px;
-}
-
-.input-group label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 8px;
-}
-
-.required { color: #ff4d4f; margin-left: 2px; }
-
-.input-group input {
-  width: 100%;
-  border: none;
-  font-size: 16px;
-  outline: none;
-  padding: 4px 0;
-}
-
-.code-input-wrap {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.code-btn {
-  font-size: 14px;
-  color: var(--mobile-primary);
-  opacity: 0.7;
-}
-
-.login-btn {
-  margin-top: 40px;
-  height: 48px;
-  border-radius: 6px;
-  width: 100%;
-  display: block;
-}
-
-.agreement-row {
-  margin-top: 20px;
-  display: flex;
-  gap: 8px;
-  font-size: 12px;
-  color: #666;
-  align-items: flex-start;
-}
-
-.agreement-row a { color: var(--mobile-primary); text-decoration: none; }
-
-.skip-row {
-  margin-top: 20px;
-  text-align: center;
-}
-
-.skip-row a {
-  color: #999;
-  font-size: 14px;
-  text-decoration: none;
 }
 
 .brand-footer {
@@ -533,28 +345,6 @@ const handleSubmit = async () => {
 .wecom-icon {
   font-size: 20px;
 }
-
-.divider-line {
-  text-align: center;
-  margin: 24px 0 0;
-  position: relative;
-  font-size: 13px;
-  color: #999;
-}
-
-.divider-line::before,
-.divider-line::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 35%;
-  height: 1px;
-  background: #e8e8e8;
-}
-
-.divider-line::before { left: 0; }
-.divider-line::after { right: 0; }
-.divider-line span { background: #fff; padding: 0 8px; }
 
 .wecom-status {
   display: flex;

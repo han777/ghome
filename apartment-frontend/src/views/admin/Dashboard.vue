@@ -75,11 +75,13 @@
       <div v-for="floor in filteredFloors" :key="floor.id" class="floor-section">
         <div class="floor-title">{{ floor.name }}</div>
         <div class="room-grid">
-          <div 
-            v-for="room in floor.rooms" 
+          <div
+            v-for="room in floor.rooms"
             :key="room.roomId"
             class="room-card"
             :class="getRoomStatusClass(room.status)"
+            :style="room.orderId ? 'cursor: pointer' : ''"
+            @click="room.orderId && router.push({ path: '/admin/orders', query: { orderId: room.orderId } })"
           >
             <div class="room-header">
               <span class="room-no">{{ room.roomNo }}</span>
@@ -106,7 +108,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import api from '../../utils/api';
+
+const router = useRouter();
 
 const data = ref<any>({
   arrivingToday: 0,

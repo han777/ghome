@@ -99,8 +99,18 @@ public class RoomStatusService {
             } else if (currentOrder != null) {
                 detail.setStatus(1); // 1: Occupied
                 detail.setGuestName(currentOrder.getBooker() != null ? currentOrder.getBooker().getRealName() : "-");
+                detail.setOrderId(currentOrder.getId());
             } else {
                 detail.setStatus(0); // 0: Available
+                // Find nearest future order for this room
+                List<Integer> futureStatuses = Arrays.asList(0, 1);
+                RoomOrder futureOrder = orderRepository.findByRoomIdAndStatusIn(room.getId(), futureStatuses).stream()
+                    .filter(o -> o.getStartDate() != null && o.getStartDate().isAfter(now))
+                    .min(Comparator.comparing(RoomOrder::getStartDate))
+                    .orElse(null);
+                if (futureOrder != null) {
+                    detail.setOrderId(futureOrder.getId());
+                }
             }
 
             return detail;

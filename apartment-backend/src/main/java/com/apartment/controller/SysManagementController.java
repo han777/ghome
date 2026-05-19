@@ -45,6 +45,15 @@ public class SysManagementController {
     @DeleteMapping("/users/{id}")
     public void deleteUser(@PathVariable Long id) { userRepository.deleteById(id); }
 
+    @PostMapping("/profile/locale")
+    public java.util.Map<String, String> updateLocale(@RequestBody java.util.Map<String, String> body) {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        SysUser user = userRepository.findByUsername(username).orElseThrow();
+        user.setLocale(body.get("locale"));
+        userRepository.save(user);
+        return java.util.Map.of("locale", user.getLocale());
+    }
+
     // --- Roles ---
     @GetMapping("/roles") public List<SysRole> getRoles() { return roleRepository.findAll(); }
     @PostMapping("/roles")

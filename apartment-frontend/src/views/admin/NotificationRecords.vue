@@ -47,8 +47,8 @@
             <th>#</th>
             <th>订单号</th>
             <th>房间号</th>
-            <th>房卡号</th>
-            <th>门锁密码</th>
+            <th>房卡箱号</th>
+            <th>箱密码</th>
             <th>入住时间</th>
             <th>离店时间</th>
             <th>收件人</th>
@@ -63,8 +63,8 @@
             <td>{{ rowNumber(idx) }}</td>
             <td>{{ row.orderNo }}</td>
             <td>{{ row.roomNo }}</td>
-            <td>{{ row.roomCardNo }}</td>
-            <td>{{ row.doorCode }}</td>
+            <td>{{ row.keyBoxNo }}</td>
+            <td>{{ row.boxPassword }}</td>
             <td>{{ formatDT(row.checkInTime) }}</td>
             <td>{{ formatDT(row.checkOutTime) }}</td>
             <td>{{ row.recipientName }}</td>

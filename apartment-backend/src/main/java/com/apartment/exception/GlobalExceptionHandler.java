@@ -6,31 +6,43 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
-    public ResponseEntity<String> handleSQLInjectionOrConstraint(Exception e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Data constraint violation or invalid request.");
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Map<String, Object>> handleBizEx(BusinessException e) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("code", e.getErrorCode().getCode());
+        body.put("args", e.getArgs());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<String> handleBizEx(BusinessException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleSQLConstraint(Exception e) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("code", "general.DATA_CONSTRAINT_VIOLATION");
+        body.put("args", new Object[0]);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> handleRuntimeEx(RuntimeException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("message", e.getMessage()));
+    public ResponseEntity<Map<String, Object>> handleRuntimeEx(RuntimeException e) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("code", "runtime.UNEXPECTED");
+        body.put("message", e.getMessage());
+        body.put("args", new Object[0]);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleGeneralEx(Exception e) {
+    public ResponseEntity<Map<String, Object>> handleGeneralEx(Exception e) {
         e.printStackTrace();
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("message", "An internal error occurred: " + e.getMessage()));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("code", "general.INTERNAL_ERROR");
+        body.put("args", new Object[0]);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }

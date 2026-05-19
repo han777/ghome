@@ -200,6 +200,7 @@ public class WeComAuthController {
                 user.setRealName(wecomUserInfo.name != null ? wecomUserInfo.name : wecomUserId);
                 user.setPhone(wecomUserInfo.mobile);
                 user.setEmail(wecomUserInfo.email);
+                user.setLocale("zh");
                 user.setStatus(1);
 
                 // Assign ROLE_USER by default for wecom users

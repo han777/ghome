@@ -21,8 +21,8 @@
     </div>
 
     <div class="content">
-      <div v-for="floor in floors" :key="floor.level" class="floor-section">
-        <div class="floor-title">{{ floor.level }}{{ $t('roomSelect.floor') }}</div>
+      <div v-for="floor in floors" :key="floor.name" class="floor-section">
+        <div class="floor-title">{{ floor.name }}{{ $t('roomSelect.floor') }}</div>
         <div class="room-grid">
           <div 
             v-for="room in floor.rooms" 
@@ -44,7 +44,7 @@
 
     <div class="footer-actions">
       <button class="mobile-btn-outline" @click="router.back()">{{ $t('roomSelect.cancel') }}</button>
-      <button class="mobile-btn-primary" :disabled="!selectedRoomId" @click="confirmSelection">{{ $t('roomSelect.confirm') }}</button>
+      <button class="mobile-btn-primary" :disabled="!selectedRoomId || submitting" @click="confirmSelection">{{ $t('roomSelect.confirm') }}</button>
     </div>
   </div>
 </template>
@@ -67,6 +67,7 @@ const typeId = route.query.typeId as string;
 const selectedRoomId = ref<number | null>(null);
 const roomTypeName = ref(t('booking.loading'));
 const floors = ref<any[]>([]);
+const submitting = ref(false);
 
 const getDirectionLabel = (direction: string): string => {
   if (!direction) return '';
@@ -96,16 +97,21 @@ const fetchRooms = async () => {
 
     // Group by floor
     const grouped = filteredRooms.reduce((acc: any, room: any) => {
-      const floorLevel = room.floor?.level || 0;
-      if (!acc[floorLevel]) {
-        acc[floorLevel] = { level: floorLevel, rooms: [] };
+      const floorKey = room.floor?.name || '0';
+      if (!acc[floorKey]) {
+        acc[floorKey] = { name: floorKey, rooms: [] };
       }
       room.statusClass = 'available';
-      acc[floorLevel].rooms.push(room);
+      acc[floorKey].rooms.push(room);
       return acc;
     }, {});
 
-    floors.value = Object.values(grouped).sort((a: any, b: any) => b.level - a.level);
+    floors.value = Object.values(grouped).sort((a: any, b: any) => {
+      const numA = parseInt(a.name);
+      const numB = parseInt(b.name);
+      if (!isNaN(numA) && !isNaN(numB)) return numB - numA;
+      return b.name.localeCompare(a.name);
+    });
   } catch (e) {
     console.error('Failed to fetch rooms', e);
   }
@@ -118,7 +124,8 @@ const handleSelect = (room: any) => {
 };
 
 const confirmSelection = async () => {
-  if (!selectedRoomId.value) return;
+  if (!selectedRoomId.value || submitting.value) return;
+  submitting.value = true;
   
   try {
     const startDT = startDate + 'T14:00:00';
@@ -149,6 +156,8 @@ const confirmSelection = async () => {
     });
   } catch (e: any) {
     alert(t('roomSelect.fail') + (e.response?.data?.message || e.message));
+  } finally {
+    submitting.value = false;
   }
 };
 </script>

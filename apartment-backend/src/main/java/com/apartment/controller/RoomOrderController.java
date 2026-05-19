@@ -4,6 +4,8 @@ import com.apartment.entity.OrderLog;
 import com.apartment.entity.RoomOccupy;
 import com.apartment.entity.RoomOrder;
 import com.apartment.entity.SysUser;
+import com.apartment.exception.BusinessException;
+import com.apartment.exception.ErrorCode;
 import com.apartment.repository.OrderLogRepository;
 import com.apartment.repository.ProductPriceRepository;
 import com.apartment.repository.RoomOccupyRepository;
@@ -117,11 +119,11 @@ public class RoomOrderController {
         if (u != null) {
             order.setLastUpdateUser(u);
 
-            // If creating a new order in status 0 (Cooling-off), delete existing ones for this user
+            // If creating a new order in status 0 (Cooling-off), reject if one already exists
             if (order.getId() == null && order.getStatus() != null && order.getStatus() == 0) {
                 List<RoomOrder> existing = orderRepository.findByBookerIdAndStatus(u.getId(), 0);
                 if (!existing.isEmpty()) {
-                    orderRepository.deleteAll(existing);
+                    throw new BusinessException(ErrorCode.ORDER_ALREADY_EXISTS);
                 }
             }
 
@@ -254,8 +256,10 @@ public class RoomOrderController {
     }
 
     @PostMapping("/{id}/send-card")
-    public RoomOrder sendRoomCard(@PathVariable Long id) {
-        RoomOrder result = orderService.sendRoomCard(id);
+    public RoomOrder sendRoomCard(@PathVariable Long id, @RequestBody(required = false) java.util.Map<String, String> body) {
+        String keyBoxNo = body != null ? body.get("keyBoxNo") : null;
+        String boxPassword = body != null ? body.get("boxPassword") : null;
+        RoomOrder result = orderService.sendRoomCard(id, keyBoxNo, boxPassword);
         logOperation(result, "SEND_CARD", "发送房卡", null);
         return result;
     }

@@ -98,7 +98,7 @@
         <div class="total-price">¥ {{ (roomPrice * stayDays).toFixed(2) }}</div>
       </div>
       <button class="bar-btn cancel" @click="cancelOrder">{{ $t('confirm.cancelOrder') }}</button>
-      <button class="bar-btn submit" :disabled="isExpired" @click="submitOrder">{{ $t('confirm.submit') }}</button>
+      <button class="bar-btn submit" :disabled="isExpired || submitting" @click="submitOrder">{{ submitting ? $t('confirm.submitting') : $t('confirm.submit') }}</button>
     </div>
   </div>
   <div v-else class="loading-state">
@@ -125,6 +125,7 @@ const showCompanionInput = ref(false);
 const newCompanionName = ref('');
 const countdown = ref(900); // 15 mins in seconds
 const isExpired = ref(false);
+const submitting = ref(false);
 let timer: any = null;
 
 const roomNo = computed(() => order.value?.roomOccupies?.[0]?.room?.roomNo || '-');
@@ -219,21 +220,24 @@ const cancelOrder = async () => {
 };
 
 const submitOrder = async () => {
+  if (submitting.value) return;
+  submitting.value = true;
   try {
     const updatedOrder = JSON.parse(JSON.stringify(order.value));
     updatedOrder.status = 1; // Pending
     if (updatedOrder.roomOccupies && updatedOrder.roomOccupies[0]) {
       updatedOrder.roomOccupies[0].coOccupants = companions.value.join(',');
-      // Clean up to avoid recursion issues if any, but keep ID for mapping
       updatedOrder.roomOccupies[0].order = { id: Number(orderId) };
     }
-    
+
     await api.post('/orders', updatedOrder);
-    
+
     alert(t('confirm.bookSuccess'));
     router.push('/m/records');
   } catch (e: any) {
     alert(t('confirm.submitFail') + (e.response?.data?.message || e.message));
+  } finally {
+    submitting.value = false;
   }
 };
 

@@ -24,9 +24,6 @@
           <span v-if="loading">{{ $t('login.submitting') }}</span>
           <span v-else>{{ $t('login.submit') }}</span>
         </button>
-        <div class="other-login">
-          <a href="javascript:void(0)" @click="router.push('/m/auth')">{{ $t('login.phoneLogin') }}</a>
-        </div>
       </form>
     </div>
   </div>
@@ -47,9 +44,14 @@ const password = ref('admin');
 const loading = ref(false);
 const error = ref('');
 
-const switchLang = (lang: string) => {
+const switchLang = async (lang: string) => {
   locale.value = lang;
   localStorage.setItem('locale', lang);
+  try {
+    await api.post('/sys/profile/locale', { locale: lang });
+  } catch (e) {
+    // Silently fail if user is not logged in yet
+  }
 };
 
 const handleLogin = async () => {
@@ -69,6 +71,12 @@ const handleLogin = async () => {
         const user: any = await api.get('/sys/profile');
         const roles = (user.roles || []).map((r: any) => r.roleCode);
         localStorage.setItem('roles', JSON.stringify(roles));
+
+        // Apply user's locale preference
+        if (user.locale) {
+          locale.value = user.locale;
+          localStorage.setItem('locale', user.locale);
+        }
 
         const isAdmin = roles.includes('ROLE_ADMIN');
         const isUser = roles.includes('ROLE_USER');
@@ -223,26 +231,5 @@ const handleLogin = async () => {
 .login-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-}
-
-.other-login {
-  margin-top: 24px;
-  text-align: center;
-}
-
-.other-login a {
-  color: #94a3b8;
-  font-size: 14px;
-  text-decoration: none;
-  transition: all 0.3s;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.other-login a:hover {
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.1);
-  border-color: rgba(56, 189, 248, 0.2);
 }
 </style>

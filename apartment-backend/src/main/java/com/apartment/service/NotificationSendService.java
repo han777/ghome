@@ -2,6 +2,8 @@ package com.apartment.service;
 
 import com.apartment.entity.NotificationRecord;
 import com.apartment.entity.SysUser;
+import com.apartment.exception.BusinessException;
+import com.apartment.exception.ErrorCode;
 import com.apartment.repository.NotificationRecordRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,9 @@ public class NotificationSendService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private MessageTemplateService messageTemplateService;
+
     @Scheduled(fixedRate = 5 * 60 * 1000)
     @Transactional
     public void sendPendingNotifications() {
@@ -41,17 +46,20 @@ public class NotificationSendService {
                 if ("wecom".equals(nr.getChannel())) {
                     SysUser recipient = nr.getRecipientUser();
                     if (recipient == null || recipient.getWecomId() == null || recipient.getWecomId().isBlank()) {
-                        throw new RuntimeException("Recipient wecomId is null or blank");
+                        throw new BusinessException(ErrorCode.NOTIF_RECIPIENT_MISSING);
                     }
                     weComService.sendTextMessage(recipient.getWecomId(), nr.getContent());
                 } else if ("email".equals(nr.getChannel())) {
                     SysUser recipient = nr.getRecipientUser();
                     if (recipient == null || recipient.getEmail() == null || recipient.getEmail().isBlank()) {
-                        throw new RuntimeException("Recipient email is null or blank");
+                        throw new BusinessException(ErrorCode.NOTIF_RECIPIENT_MISSING);
                     }
-                    emailService.sendEmail(recipient.getEmail(), "房间入住信息通知", nr.getContent());
+                    String userLocale = nr.getLocale() != null ? nr.getLocale() :
+                        (recipient.getLocale() != null ? recipient.getLocale() : "zh");
+                    String subject = messageTemplateService.buildEmailSubject(userLocale);
+                    emailService.sendEmail(recipient.getEmail(), subject, nr.getContent());
                 } else {
-                    throw new RuntimeException("Unknown channel: " + nr.getChannel());
+                    throw new BusinessException(ErrorCode.NOTIF_UNKNOWN_CHANNEL);
                 }
 
                 nr.setStatus("sent");
@@ -60,6 +68,12 @@ public class NotificationSendService {
                 notificationRecordRepository.save(nr);
                 log.info("Notification {} sent successfully via {} (attempts: {})", nr.getId(), nr.getChannel(), nr.getRetryCount());
 
+            } catch (BusinessException e) {
+                // Non-retryable business errors: mark as permanently failed
+                nr.setRetryCount(nr.getRetryCount() + 1);
+                nr.setFailReason(e.getErrorCode().getCode());
+                nr.setStatus("permanently_failed");
+                notificationRecordRepository.save(nr);
             } catch (Exception e) {
                 int newRetryCount = nr.getRetryCount() + 1;
                 nr.setRetryCount(newRetryCount);

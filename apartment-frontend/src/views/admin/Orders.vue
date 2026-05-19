@@ -108,7 +108,7 @@
           <div class="header-actions">
             <button v-if="form.id && !isEditMode" class="edit-top-btn" @click="isEditMode = true">编辑</button>
             <button v-if="form.id && form.status <= 1" class="cancel-order-btn" @click="cancelOrderFromModal(form.id)">取消订单</button>
-            <button v-if="form.id && form.status === 1" class="send-card-btn" @click="sendRoomCard(form.id)">📇 发送房卡</button>
+            <button v-if="form.id && form.status === 1" class="send-card-btn" @click="openSendCardModal(form.id)">📇 发送房卡</button>
             <button v-if="form.id && form.status < 3 && form.status > 1" class="checkout-btn" @click="handleCheckout">🔔 退房</button>
             <button class="maximize-btn" @click="isMaximized = !isMaximized">
               {{ isMaximized ? '🗗' : '🗖' }}
@@ -244,14 +244,6 @@
                         {{ u.realName }} ({{ u.username }})
                       </option>
                     </select>
-                  </div>
-                  <div class="card-item">
-                    <label>房卡号</label>
-                    <input v-model="occupy.roomCardNo" :disabled="!isEditMode">
-                  </div>
-                  <div class="card-item">
-                    <label>门锁密码</label>
-                    <input v-model="occupy.doorCode" :disabled="!isEditMode">
                   </div>
                   <div class="card-item">
                     <label>入住人数</label>
@@ -438,11 +430,6 @@
                 <label>入住人</label>
                 <input :value="users.find(u => u.id === changingOccupy?.occupantUserId)?.realName" disabled>
               </div>
-              <div class="card-item span-2">
-                <label>原房卡号</label>
-                <input :value="changingOccupy?.roomCardNo" disabled>
-              </div>
-
               <div class="card-item span-4" v-if="changeRoomPriceDiff !== 0">
                 <div class="amount-display highlight" :style="{ borderColor: changeRoomPriceDiff > 0 ? '#ef4444' : '#10b981' }">
                   <span style="font-size: 13px; color: #64748b;">补缴/退还差价：</span>
@@ -562,11 +549,35 @@
       </div>
     </div>
   </div>
+
+  <!-- Send Card Modal -->
+  <div v-if="showSendCardModal" class="modal-overlay" @click.self="showSendCardModal = false">
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header">
+        <h2>发送房卡</h2>
+        <button class="close-btn" @click="showSendCardModal = false">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <div class="form-item">
+          <label>房卡箱号</label>
+          <input v-model="sendCardForm.keyBoxNo" placeholder="请输入房卡箱号">
+        </div>
+        <div class="form-item">
+          <label>箱密码</label>
+          <input v-model="sendCardForm.boxPassword" placeholder="请输入箱密码">
+        </div>
+        <button class="mobile-btn-primary" style="width: 100%; margin-top: 16px;" @click="confirmSendCard">确认发送</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import api from '../../utils/api';
+
+const route = useRoute();
 
 const orders = ref<any[]>([]);
 const dicts = ref<any[]>([]);
@@ -575,6 +586,9 @@ const rooms = ref<any[]>([]);
 const productPrices = ref<any[]>([]);
 const activeTab = ref('basic');
 const showModal = ref(false);
+const showSendCardModal = ref(false);
+const sendCardOrderId = ref<number | null>(null);
+const sendCardForm = reactive({ keyBoxNo: '', boxPassword: '' });
 const isMaximized = ref(false);
 const isEditMode = ref(false);
 const searchQuery = ref('');
@@ -803,7 +817,6 @@ const addRoomRow = () => {
     occupantUserId: form.customerType === 1 ? form.bookerId : null,
     occupantCount: 1,
     status: 0,
-    roomCardNo: '',
     coOccupants: '',
     checkInTime: checkIn,
     checkOutTime: checkOut,
@@ -1183,18 +1196,30 @@ const handleCheckout = async () => {
   await saveOrder();
 };
 
-const sendRoomCard = async (id: number) => {
+const openSendCardModal = (id: number) => {
+  sendCardOrderId.value = id;
+  sendCardForm.keyBoxNo = '';
+  sendCardForm.boxPassword = '';
+  showSendCardModal.value = true;
+};
+
+const confirmSendCard = async () => {
+  if (!sendCardForm.keyBoxNo || !sendCardForm.boxPassword) {
+    alert('请填写房卡箱号和箱密码');
+    return;
+  }
   try {
-    // If we are in the modal, we might want to save the form first if it's dirty,
-    // but the requirement says "validation in form", so we assume the backend handles it.
-    await api.post(`/orders/${id}/send-card`, {});
+    await api.post(`/orders/${sendCardOrderId.value}/send-card`, sendCardForm);
+    showSendCardModal.value = false;
     fetchData();
     if (showModal.value) showModal.value = false;
     alert('房卡发送成功，订单状态已更新为已入住');
   } catch (e: any) {
-    alert('发送失败: ' + (e.response?.data || e.message));
+    alert('发送失败: ' + (e.response?.data?.message || e.response?.data || e.message));
   }
 };
+
+const sendRoomCard = openSendCardModal;
 
 const cancelOrderFromModal = async (id: number) => {
   if (!confirm('确定取消此订单？')) return;
@@ -1335,7 +1360,14 @@ const cancelEdit = async () => {
   }
 };
 
-onMounted(fetchData);
+onMounted(async () => {
+  await fetchData();
+  const queryOrderId = route.query.orderId;
+  if (queryOrderId) {
+    const order = orders.value.find((o: any) => o.id.toString() === queryOrderId);
+    if (order) openModal(order);
+  }
+});
 </script>
 
 <style scoped>
