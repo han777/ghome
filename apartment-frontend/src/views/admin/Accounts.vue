@@ -48,7 +48,7 @@
               </div>
             </td>
             <td>{{ localeLabel(user.locale) }}</td>
-            <td>{{ sourceLabel(user.source) }}</td>
+            <td>{{ getDictLabel('USER_SOURCE', user.source) }}</td>
             <td>
               <span class="status-badge" :class="{ active: user.status === 1 }">
                 {{ user.status === 1 ? '启用' : '禁用' }}
@@ -149,6 +149,7 @@ import { ref, onMounted, reactive, computed } from 'vue';
 import api from '../../utils/api';
 
 const users = ref<any[]>([]);
+const dicts = ref<any[]>([]);
 const showModal = ref(false);
 const form = reactive<any>({
   id: null,
@@ -180,14 +181,16 @@ const localeLabel = (locale: string) => {
   return map[locale] || locale || '-';
 };
 
-const sourceLabel = (source: string) => {
-  const map: Record<string, string> = {
-    "0": '手动添加',
-    "1": '企业微信',
-    system: '手动添加',
-    wecom: '企业微信'
-  };
-  return map[source] || source || '-';
+const dictLabelZh: Record<string, Record<string, string>> = {
+  USER_SOURCE: { 'Manual': '人工', 'WeCom': '企业微信' }
+};
+
+const getDictLabel = (code: string, value: any) => {
+  const dict = dicts.value.find(d => d.dictCode === code);
+  if (!dict) return value || '-';
+  const item = dict.items.find((i: any) => i.itemValue === String(value));
+  if (!item) return value || '-';
+  return dictLabelZh[code]?.[item.itemLabel] || item.itemLabel;
 };
 
 const promptChangePassword = async (user: any) => {
@@ -286,8 +289,12 @@ const deleteUser = async (id: number) => {
   }
 };
 
-onMounted(() => {
-  fetchUsers(0);
+onMounted(async () => {
+  const [, dictRes] = await Promise.all([
+    fetchUsers(0),
+    api.get('/sys/dict/all')
+  ]) as any[];
+  dicts.value = dictRes;
   fetchRoles();
 });
 </script>
