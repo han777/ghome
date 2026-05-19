@@ -2,23 +2,23 @@
   <div class="admin-page">
     <div class="page-header">
       <div class="search-bar">
-        <input type="text" :placeholder="$t('accounts.searchPlaceholder')">
+        <input type="text" placeholder="账号搜索...">
       </div>
-      <button class="add-btn" @click="openModal()">+ {{ $t('accounts.addAccount').replace('+ ', '') }}</button>
+      <button class="add-btn" @click="openModal()">+ 添加账号</button>
     </div>
     <div class="table-card">
       <table class="admin-table">
         <thead>
           <tr>
-            <th>{{ $t('accounts.username') }}</th>
-            <th>{{ $t('accounts.realName') }}</th>
-            <th>{{ $t('accounts.email') }}</th>
-            <th>{{ $t('accounts.phone') }}</th>
-            <th>{{ $t('accounts.roles') }}</th>
-            <th>{{ $t('accounts.locale') }}</th>
-            <th>{{ $t('accounts.source') }}</th>
-            <th>{{ $t('accounts.status') }}</th>
-            <th>{{ $t('accounts.actions') }}</th>
+            <th>用户名</th>
+            <th>姓名</th>
+            <th>邮箱</th>
+            <th>电话</th>
+            <th>角色</th>
+            <th>语言</th>
+            <th>来源</th>
+            <th>状态</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -39,13 +39,13 @@
             <td>{{ sourceLabel(user.source) }}</td>
             <td>
               <span class="status-badge" :class="{ active: user.status === 1 }">
-                {{ user.status === 1 ? $t('accounts.active') : $t('accounts.disabled') }}
+                {{ user.status === 1 ? '启用' : '禁用' }}
               </span>
             </td>
             <td class="actions">
-              <button class="edit-btn" @click="openModal(user)">{{ $t('accounts.edit') }}</button>
-              <button class="edit-btn" style="background-color: #f59e0b; color: white; border-color: #f59e0b;" @click="promptChangePassword(user)">{{ $t('accounts.password') }}</button>
-              <button class="delete-btn" @click="deleteUser(user.id)">{{ $t('accounts.delete') }}</button>
+              <button class="edit-btn" @click="openModal(user)">编辑</button>
+              <button class="edit-btn" style="background-color: #f59e0b; color: white; border-color: #f59e0b;" @click="promptChangePassword(user)">密码</button>
+              <button class="delete-btn" @click="deleteUser(user.id)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -56,44 +56,44 @@
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ form.id ? $t('accounts.editUser') : $t('accounts.addUser') }}</h2>
+          <h2>{{ form.id ? '编辑用户' : '添加用户' }}</h2>
           <button class="close-btn" @click="showModal = false">&times;</button>
         </div>
         <div class="modal-body">
           <form class="admin-form" @submit.prevent="saveUser">
             <div class="form-item">
-              <label>{{ $t('accounts.username') }}</label>
+              <label>用户名</label>
               <input v-model="form.username" required>
             </div>
             <div class="form-item">
-              <label>{{ $t('accounts.realName') }}</label>
+              <label>姓名</label>
               <input v-model="form.realName">
             </div>
             <div class="form-item">
-              <label>{{ $t('accounts.email') }}</label>
+              <label>邮箱</label>
               <input v-model="form.email" type="email">
             </div>
             <div class="form-item">
-              <label>{{ $t('accounts.phone') }}</label>
+              <label>电话</label>
               <input v-model="form.phone">
             </div>
             <div class="form-item">
-              <label>{{ $t('accounts.status') }}</label>
+              <label>状态</label>
               <select v-model="form.status">
-                <option :value="1">{{ $t('accounts.statusEnabled') }}</option>
-                <option :value="0">{{ $t('accounts.statusDisabled') }}</option>
+                <option :value="1">启用</option>
+                <option :value="0">禁用</option>
               </select>
             </div>
             <div class="form-item">
-              <label>{{ $t('accounts.locale') }}</label>
+              <label>语言</label>
               <select v-model="form.locale">
-                <option value="zh">{{ $t('accounts.localeZh') }}</option>
-                <option value="en">{{ $t('accounts.localeEn') }}</option>
-                <option value="ja">{{ $t('accounts.localeJa') }}</option>
+                <option value="zh">简体中文</option>
+                <option value="en">English</option>
+                <option value="ja">日本語</option>
               </select>
             </div>
             <div class="form-item">
-              <label>{{ $t('accounts.roles') }}</label>
+              <label>角色</label>
               <div class="roles-selection">
                 <label v-for="role in allRoles" :key="role.id" class="role-checkbox">
                   <input type="checkbox" :value="role.id" v-model="selectedRoleIds">
@@ -104,8 +104,8 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="showModal = false">{{ $t('accounts.cancel') }}</button>
-          <button class="save-btn" @click="saveUser">{{ $t('accounts.save') }}</button>
+          <button class="cancel-btn" @click="showModal = false">不保存关闭</button>
+          <button class="save-btn" @click="saveUser">保存更改</button>
         </div>
       </div>
     </div>
@@ -114,10 +114,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
-import { useI18n } from 'vue-i18n';
 import api from '../../utils/api';
-
-const { t } = useI18n();
 
 const users = ref<any[]>([]);
 const showModal = ref(false);
@@ -136,31 +133,31 @@ const selectedRoleIds = ref<number[]>([]);
 
 const localeLabel = (locale: string) => {
   const map: Record<string, string> = {
-    zh: t('accounts.localeZh'),
-    en: t('accounts.localeEn'),
-    ja: t('accounts.localeJa')
+    zh: '简体中文',
+    en: 'English',
+    ja: '日本語'
   };
   return map[locale] || locale || '-';
 };
 
 const sourceLabel = (source: string) => {
   const map: Record<string, string> = {
-    "0": t('accounts.sourceSystem'),
-    "1": t('accounts.sourceWecom'),
-    system: t('accounts.sourceSystem'),
-    wecom: t('accounts.sourceWecom')
+    "0": '手动添加',
+    "1": '企业微信',
+    system: '手动添加',
+    wecom: '企业微信'
   };
   return map[source] || source || '-';
 };
 
 const promptChangePassword = async (user: any) => {
-  const newPass = prompt(`${t('accounts.passwordPrompt')} (${user.username}):`, 'password123');
+  const newPass = prompt(`输入新密码 (${user.username}):`, 'password123');
   if (newPass) {
     try {
       await api.post(`/sys/users/${user.id}/password`, { password: newPass });
-      alert(t('accounts.passwordSuccess'));
+      alert('密码更新成功');
     } catch (e) {
-      alert(t('accounts.passwordFail'));
+      alert('密码更新失败');
     }
   }
 };
@@ -202,18 +199,18 @@ const saveUser = async () => {
     showModal.value = false;
     fetchUsers();
   } catch (e: any) {
-    const errorMsg = e.response?.data?.message || t('accounts.saveFail');
+    const errorMsg = e.response?.data?.message || '保存失败';
     alert(errorMsg);
   }
 };
 
 const deleteUser = async (id: number) => {
-  if (!confirm(t('accounts.deleteConfirm'))) return;
+  if (!confirm('确定要删除该用户吗？')) return;
   try {
     await api.delete(`/sys/users/${id}`);
     fetchUsers();
   } catch (e: any) {
-    const errorMsg = e.response?.data?.message || t('accounts.saveFail');
+    const errorMsg = e.response?.data?.message || '保存失败';
     alert(errorMsg);
   }
 };
