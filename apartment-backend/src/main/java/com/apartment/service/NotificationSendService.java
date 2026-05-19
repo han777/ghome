@@ -43,15 +43,23 @@ public class NotificationSendService {
 
         for (NotificationRecord nr : records) {
             try {
-                if ("wecom".equals(nr.getChannel())) {
-                    SysUser recipient = nr.getRecipientUser();
-                    if (recipient == null || recipient.getWecomId() == null || recipient.getWecomId().isBlank()) {
-                        throw new BusinessException(ErrorCode.NOTIF_RECIPIENT_MISSING);
-                    }
+                // Resolve recipient and re-validate channel against current user source
+                SysUser recipient = nr.getRecipientUser();
+                if (recipient == null) {
+                    throw new BusinessException(ErrorCode.NOTIF_RECIPIENT_MISSING);
+                }
+
+                String effectiveChannel = nr.getChannel();
+                // If stored channel is "wecom" but user is manually created (no wecomId), force email
+                if ("wecom".equals(effectiveChannel) && (recipient.getWecomId() == null || recipient.getWecomId().isBlank())) {
+                    log.warn("Notification {} has channel=wecom but recipient {} has no wecomId, falling back to email", nr.getId(), recipient.getUsername());
+                    effectiveChannel = "email";
+                }
+
+                if ("wecom".equals(effectiveChannel)) {
                     weComService.sendTextMessage(recipient.getWecomId(), nr.getContent());
-                } else if ("email".equals(nr.getChannel())) {
-                    SysUser recipient = nr.getRecipientUser();
-                    if (recipient == null || recipient.getEmail() == null || recipient.getEmail().isBlank()) {
+                } else if ("email".equals(effectiveChannel)) {
+                    if (recipient.getEmail() == null || recipient.getEmail().isBlank()) {
                         throw new BusinessException(ErrorCode.NOTIF_RECIPIENT_MISSING);
                     }
                     String userLocale = nr.getLocale() != null ? nr.getLocale() :
