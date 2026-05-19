@@ -137,11 +137,11 @@
 
               <div class="form-item">
                 <label class="required">入住日期</label>
-                <input type="date" v-model="form.startDate" required :disabled="!isEditMode">
+                <input type="date" v-model="form.startDate" required :disabled="!isEditMode || !!form.id">
               </div>
               <div class="form-item">
                 <label>退房日期</label>
-                <input type="date" v-model="form.endDate" required :disabled="!isEditMode">
+                <input type="date" v-model="form.endDate" required :disabled="!isEditMode || !!form.id">
               </div>
 
               <div class="form-item">
@@ -183,6 +183,15 @@
                 <label>创建人</label>
                 <input :value="form.createUser?.realName || form.createUser?.username || '-'" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
               </div>
+
+              <div class="form-item">
+                <label>房卡箱号</label>
+                <input v-model="form.keyBoxNo" placeholder="房卡箱号" :disabled="!isEditMode">
+              </div>
+              <div class="form-item">
+                <label>箱密码</label>
+                <input v-model="form.boxPassword" placeholder="箱密码" :disabled="!isEditMode">
+              </div>
             </div>
           </section>
 
@@ -213,20 +222,16 @@
                 <div class="card-grid">
                   <div class="card-item">
                     <label>实际入住</label>
-                    <input type="datetime-local" v-model="occupy.checkInTime" :disabled="!isEditMode">
+                    <input type="datetime-local" v-model="occupy.checkInTime" :disabled="!isEditMode || !!form.id">
                   </div>
                   <div class="card-item">
                     <label>实际退房</label>
-                    <input type="datetime-local" v-model="occupy.checkOutTime" :disabled="!isEditMode">
+                    <input type="datetime-local" v-model="occupy.checkOutTime" :disabled="!isEditMode || !!form.id">
                   </div>
                     <div class="card-item">
                       <label>房间</label>
-                      <div class="room-selector-btn" @click="openRoomPicker(occupy, index)" v-if="isEditMode">
-                        <span v-if="occupy.roomId" class="selected-room-info">
-                          <strong>{{ getRoomNo(Number(occupy.roomId)) }}</strong>
-                          <small>({{ getRoomTypeName(Number(occupy.roomId)) }})</small>
-                        </span>
-                        <span v-else class="placeholder">选择房间...</span>
+                      <div class="room-selector-btn" @click="openRoomPicker(occupy, index)" v-if="isEditMode && !occupy.roomId">
+                        <span class="placeholder">选择房间...</span>
                       </div>
                       <div class="room-selector-btn" v-else style="cursor: default; opacity: 0.8;">
                         <span v-if="occupy.roomId" class="selected-room-info">
@@ -633,6 +638,8 @@ const form = reactive<any>({
   remarks: '',
   company: '',
   costCenter: '',
+  keyBoxNo: '',
+  boxPassword: '',
   roomOccupies: [],
   productDetails: []
 });

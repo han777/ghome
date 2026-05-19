@@ -330,7 +330,7 @@ public class RoomOrderService {
         newOccupy.setOccupantCount(oldOccupy.getOccupantCount());
         newOccupy.setCoOccupants(oldOccupy.getCoOccupants());
         newOccupy.setCheckInTime(switchDate);
-        newOccupy.setCheckOutTime(null); // Will follow order's end date in display
+        newOccupy.setCheckOutTime(order.getEndDate());
         newOccupy.setStatus(0); // Current
 
         newRoom.setStatus(1); // Occupied
