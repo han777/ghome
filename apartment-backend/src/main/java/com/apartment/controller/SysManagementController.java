@@ -20,6 +20,17 @@ public class SysManagementController {
 
     // --- Users ---
     @GetMapping("/users") public List<SysUser> getUsers() { return userRepository.findAll(); }
+    @GetMapping("/users/paged")
+    public org.springframework.data.domain.Page<SysUser> getPagedUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        if (search != null && !search.trim().isEmpty()) {
+            return userRepository.findByUsernameContainingIgnoreCaseOrRealNameContainingIgnoreCase(search, search, pageable);
+        }
+        return userRepository.findAll(pageable);
+    }
     @GetMapping("/profile")
     public SysUser getProfile() {
         String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();

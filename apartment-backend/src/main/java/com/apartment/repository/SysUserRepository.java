@@ -9,4 +9,5 @@ public interface SysUserRepository extends JpaRepository<SysUser, Long> {
     Optional<SysUser> findByEmail(String email);
     Optional<SysUser> findByPhone(String phone);
     Optional<SysUser> findByWecomId(String wecomId);
+    org.springframework.data.domain.Page<SysUser> findByUsernameContainingIgnoreCaseOrRealNameContainingIgnoreCase(String username, String realName, org.springframework.data.domain.Pageable pageable);
 }

@@ -2,10 +2,22 @@
   <div class="admin-page">
     <div class="page-header">
       <div class="search-bar">
-        <input type="text" placeholder="账号搜索...">
+        <input type="text" placeholder="账号搜索..." v-model="searchQuery" @input="fetchUsers(0)" @keyup.enter="fetchUsers(0)">
       </div>
       <button class="add-btn" @click="openModal()">+ 添加账号</button>
     </div>
+
+    <!-- Page size selector -->
+    <div class="size-row">
+      <span>每页条数:</span>
+      <select v-model="pageSize" @change="fetchUsers(0)">
+        <option :value="20">20</option>
+        <option :value="50">50</option>
+        <option :value="100">100</option>
+      </select>
+      <span class="total-info">总记录数: {{ totalElements }}</span>
+    </div>
+
     <div class="table-card">
       <table class="admin-table">
         <thead>
@@ -50,6 +62,26 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" v-if="totalPages > 0">
+      <button class="page-btn" :disabled="currentPage === 0" @click="fetchUsers(0)">«</button>
+      <button class="page-btn" :disabled="currentPage === 0" @click="fetchUsers(currentPage - 1)">‹</button>
+
+      <template v-for="p in visiblePages" :key="p">
+        <button v-if="p === '...'" class="page-btn ellipsis">...</button>
+        <button v-else class="page-btn" :class="{ active: p === currentPage }" @click="fetchUsers(p)">{{ p + 1 }}</button>
+      </template>
+
+      <button class="page-btn" :disabled="currentPage >= totalPages - 1" @click="fetchUsers(currentPage + 1)">›</button>
+      <button class="page-btn" :disabled="currentPage >= totalPages - 1" @click="fetchUsers(totalPages - 1)">»</button>
+
+      <span class="jump-row">
+        跳转到
+        <input type="number" v-model.number="jumpPage" :min="1" :max="totalPages" class="jump-input" @keyup.enter="doJump" />
+        <button class="page-btn" style="padding: 0 10px; min-width: auto; height: 28px; font-size: 12px; margin-left: 4px;" @click="doJump">跳转</button>
+      </span>
     </div>
 
     <!-- User Modal -->
@@ -113,7 +145,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, computed } from 'vue';
 import api from '../../utils/api';
 
 const users = ref<any[]>([]);
@@ -130,6 +162,14 @@ const form = reactive<any>({
 });
 const allRoles = ref<any[]>([]);
 const selectedRoleIds = ref<number[]>([]);
+
+// Pagination variables
+const currentPage = ref(0);
+const pageSize = ref(20);
+const totalElements = ref(0);
+const totalPages = ref(0);
+const jumpPage = ref(1);
+const searchQuery = ref('');
 
 const localeLabel = (locale: string) => {
   const map: Record<string, string> = {
@@ -171,12 +211,43 @@ const fetchRoles = async () => {
   }
 };
 
-const fetchUsers = async () => {
+const fetchUsers = async (page = 0) => {
+  currentPage.value = page;
   try {
-    const res: any = await api.get('/sys/users');
-    users.value = res;
+    let url = `/sys/users/paged?page=${page}&size=${pageSize.value}`;
+    if (searchQuery.value) {
+      url += `&search=${encodeURIComponent(searchQuery.value)}`;
+    }
+    const res: any = await api.get(url);
+    users.value = res.content || [];
+    totalElements.value = res.totalElements || 0;
+    totalPages.value = res.totalPages || 0;
   } catch (e) {
     console.error('Failed to fetch users', e);
+  }
+};
+
+const visiblePages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: (number | string)[] = [];
+  if (total <= 7) {
+    for (let i = 0; i < total; i++) pages.push(i);
+  } else {
+    pages.push(0);
+    if (current > 2) pages.push('...');
+    const start = Math.max(1, current - 1);
+    const end = Math.min(total - 2, current + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (current < total - 3) pages.push('...');
+    pages.push(total - 1);
+  }
+  return pages;
+});
+
+const doJump = () => {
+  if (jumpPage.value >= 1 && jumpPage.value <= totalPages.value) {
+    fetchUsers(jumpPage.value - 1);
   }
 };
 
@@ -197,7 +268,7 @@ const saveUser = async () => {
     form.roles = selectedRoleIds.value.map(id => ({ id }));
     await api.post('/sys/users', form);
     showModal.value = false;
-    fetchUsers();
+    fetchUsers(currentPage.value);
   } catch (e: any) {
     const errorMsg = e.response?.data?.message || '保存失败';
     alert(errorMsg);
@@ -208,7 +279,7 @@ const deleteUser = async (id: number) => {
   if (!confirm('确定要删除该用户吗？')) return;
   try {
     await api.delete(`/sys/users/${id}`);
-    fetchUsers();
+    fetchUsers(currentPage.value);
   } catch (e: any) {
     const errorMsg = e.response?.data?.message || '保存失败';
     alert(errorMsg);
@@ -216,7 +287,7 @@ const deleteUser = async (id: number) => {
 };
 
 onMounted(() => {
-  fetchUsers();
+  fetchUsers(0);
   fetchRoles();
 });
 </script>
@@ -260,5 +331,85 @@ onMounted(() => {
 .role-checkbox input {
   width: auto;
   margin: 0;
+}
+
+/* Pagination & Paging styles */
+.size-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.size-row select {
+  padding: 4px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.total-info {
+  font-weight: 600;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 0;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) { background: #f1f5f9; }
+
+.page-btn.active {
+  background: #38bdf8;
+  color: #fff;
+  border-color: #38bdf8;
+}
+
+.page-btn:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.page-btn.ellipsis {
+  cursor: default;
+  border: none;
+  min-width: 24px;
+}
+
+.jump-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.jump-input {
+  width: 60px;
+  padding: 4px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 14px;
+  text-align: center;
 }
 </style>
