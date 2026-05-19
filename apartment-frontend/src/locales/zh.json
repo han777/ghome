@@ -377,6 +377,7 @@
     "auth.PHONE_NOT_REGISTERED": "手机号未注册，请通过企业微信登录",
     "auth.PHONE_IN_USE": "该手机号已被其他用户使用",
     "auth.USER_NOT_FOUND": "用户不存在",
+    "user.EMAIL_REQUIRED": "人工添加的用户邮箱为必填项",
     "order.ROOM_EMPTY": "房间不能为空",
     "order.DATES_EMPTY": "入住和离开日期不能为空",
     "order.END_BEFORE_START": "离开时间必须晚于入住时间",

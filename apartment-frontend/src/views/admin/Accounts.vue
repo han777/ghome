@@ -201,8 +201,9 @@ const saveUser = async () => {
     await api.post('/sys/users', form);
     showModal.value = false;
     fetchUsers();
-  } catch (e) {
-    alert(t('accounts.saveFail'));
+  } catch (e: any) {
+    const errorMsg = e.response?.data?.message || t('accounts.saveFail');
+    alert(errorMsg);
   }
 };
 
@@ -211,8 +212,9 @@ const deleteUser = async (id: number) => {
   try {
     await api.delete(`/sys/users/${id}`);
     fetchUsers();
-  } catch (e) {
-    alert(t('accounts.saveFail'));
+  } catch (e: any) {
+    const errorMsg = e.response?.data?.message || t('accounts.saveFail');
+    alert(errorMsg);
   }
 };
 

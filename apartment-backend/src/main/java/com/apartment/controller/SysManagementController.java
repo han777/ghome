@@ -2,6 +2,8 @@ package com.apartment.controller;
 
 import com.apartment.entity.*;
 import com.apartment.repository.*;
+import com.apartment.exception.BusinessException;
+import com.apartment.exception.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -25,13 +27,27 @@ public class SysManagementController {
     }
     @PostMapping("/users")
     public SysUser saveUser(@RequestBody SysUser user) {
+        String source = user.getSource();
         if (user.getId() == null) {
             user.setPassword(passwordEncoder.encode("password123")); // Default password for new users
             user.setSource("0"); // Admin-created users are always manually added
+            source = "0";
         } else {
             SysUser existing = userRepository.findById(user.getId()).orElse(null);
-            if (existing != null && (user.getPassword() == null || user.getPassword().isEmpty())) {
-                user.setPassword(existing.getPassword()); // Keep existing password if not changed
+            if (existing != null) {
+                if (user.getPassword() == null || user.getPassword().isEmpty()) {
+                    user.setPassword(existing.getPassword()); // Keep existing password if not changed
+                }
+                if (source == null) {
+                    source = existing.getSource();
+                }
+            }
+        }
+
+        // Validate constraint: Manual added user ("0") must have non-blank email
+        if ("0".equals(source)) {
+            if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+                throw new BusinessException(ErrorCode.USER_EMAIL_REQUIRED);
             }
         }
         return userRepository.save(user);

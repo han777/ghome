@@ -377,6 +377,7 @@
     "auth.PHONE_NOT_REGISTERED": "Phone number not registered, please login via WeChat Work",
     "auth.PHONE_IN_USE": "This phone number is already used by another user",
     "auth.USER_NOT_FOUND": "User not found",
+    "user.EMAIL_REQUIRED": "Email is required for manually added users",
     "order.ROOM_EMPTY": "Room cannot be empty",
     "order.DATES_EMPTY": "Check-in and check-out dates cannot be empty",
     "order.END_BEFORE_START": "Check-out time must be after check-in time",

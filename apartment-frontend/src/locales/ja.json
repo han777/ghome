@@ -377,6 +377,7 @@
     "auth.PHONE_NOT_REGISTERED": "電話番号が登録されていません。企業WeChatでログインしてください",
     "auth.PHONE_IN_USE": "この電話番号は他のユーザーに使用されています",
     "auth.USER_NOT_FOUND": "ユーザーが見つかりません",
+    "user.EMAIL_REQUIRED": "手動で追加されたユーザーのメールアドレスは必須です",
     "order.ROOM_EMPTY": "部屋を選択してください",
     "order.DATES_EMPTY": "チェックインとチェックアウトの日付を入力してください",
     "order.END_BEFORE_START": "チェックアウト時間はチェックイン時間より後である必要があります",
