@@ -30,7 +30,7 @@ public class SysUser {
     private String locale = "zh";
 
     @Column(nullable = false)
-    private String source = "system"; // "system" or "wecom"
+    private String source = "0"; // "0" for manual, "1" for wecom
 
     private Integer status = 1;
 

@@ -27,7 +27,7 @@ public class SysManagementController {
     public SysUser saveUser(@RequestBody SysUser user) {
         if (user.getId() == null) {
             user.setPassword(passwordEncoder.encode("password123")); // Default password for new users
-            user.setSource("system"); // Admin-created users are always manually added
+            user.setSource("0"); // Admin-created users are always manually added
         } else {
             SysUser existing = userRepository.findById(user.getId()).orElse(null);
             if (existing != null && (user.getPassword() == null || user.getPassword().isEmpty())) {

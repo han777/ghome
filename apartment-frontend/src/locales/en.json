@@ -366,6 +366,10 @@
       "NORTH": "North-facing",
       "EAST": "East-facing",
       "WEST": "West-facing"
+    },
+    "USER_SOURCE": {
+      "Manual": "Manual",
+      "WeCom": "WeChat Work"
     }
   },
   "errors": {

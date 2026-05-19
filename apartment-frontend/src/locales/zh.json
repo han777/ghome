@@ -366,6 +366,10 @@
       "NORTH": "朝北",
       "EAST": "朝东",
       "WEST": "朝西"
+    },
+    "USER_SOURCE": {
+      "Manual": "人工",
+      "WeCom": "企业微信"
     }
   },
   "errors": {

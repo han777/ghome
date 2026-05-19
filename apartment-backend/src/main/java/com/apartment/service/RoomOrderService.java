@@ -197,7 +197,7 @@ public class RoomOrderService {
                 if (recipient == null) recipient = order.getBooker();
                 if (recipient == null) continue;
 
-                String channel = "wecom".equals(recipient.getSource()) ? "wecom" : "email";
+                String channel = "1".equals(recipient.getSource()) ? "wecom" : "email";
                 String roomNoVal = ro.getRoom() != null ? ro.getRoom().getRoomNo() : "";
                 LocalDateTime ciTime = ro.getCheckInTime() != null ? ro.getCheckInTime() : order.getStartDate();
                 LocalDateTime coTime = order.getEndDate();

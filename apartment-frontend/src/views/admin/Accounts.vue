@@ -145,6 +145,8 @@ const localeLabel = (locale: string) => {
 
 const sourceLabel = (source: string) => {
   const map: Record<string, string> = {
+    "0": t('accounts.sourceSystem'),
+    "1": t('accounts.sourceWecom'),
     system: t('accounts.sourceSystem'),
     wecom: t('accounts.sourceWecom')
   };

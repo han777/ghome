@@ -366,6 +366,10 @@
       "NORTH": "北向き",
       "EAST": "東向き",
       "WEST": "西向き"
+    },
+    "USER_SOURCE": {
+      "Manual": "手動追加",
+      "WeCom": "企業微信"
     }
   },
   "errors": {

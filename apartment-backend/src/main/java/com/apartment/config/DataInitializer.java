@@ -17,7 +17,8 @@ public class DataInitializer {
             SysRoleRepository roleRepository,
             SysDictRepository dictRepository,
             SysDictItemRepository dictItemRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         return args -> {
             // 1. Initialize Roles if not exists
             if (roleRepository.count() == 0) {
@@ -94,6 +95,20 @@ public class DataInitializer {
                     {"Short Rent", "1"},
                     {"Long Rent", "2"}
             });
+
+            initEnumDict(dictRepository, dictItemRepository, "USER_SOURCE", "User Source", new String[][]{
+                    {"Manual", "0"},
+                    {"WeCom", "1"}
+            });
+
+            // 4. Migrate user sources
+            try {
+                jdbcTemplate.update("UPDATE sys_user SET source = '0' WHERE source = 'system'");
+                jdbcTemplate.update("UPDATE sys_user SET source = '1' WHERE source = 'wecom'");
+                System.out.println("User source data migration completed successfully.");
+            } catch (Exception e) {
+                System.err.println("User source data migration failed: " + e.getMessage());
+            }
         };
     }
 
