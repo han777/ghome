@@ -16,6 +16,7 @@
             <th>{{ $t('accounts.phone') }}</th>
             <th>{{ $t('accounts.roles') }}</th>
             <th>{{ $t('accounts.locale') }}</th>
+            <th>{{ $t('accounts.source') }}</th>
             <th>{{ $t('accounts.status') }}</th>
             <th>{{ $t('accounts.actions') }}</th>
           </tr>
@@ -35,6 +36,7 @@
               </div>
             </td>
             <td>{{ localeLabel(user.locale) }}</td>
+            <td>{{ sourceLabel(user.source) }}</td>
             <td>
               <span class="status-badge" :class="{ active: user.status === 1 }">
                 {{ user.status === 1 ? $t('accounts.active') : $t('accounts.disabled') }}
@@ -139,6 +141,14 @@ const localeLabel = (locale: string) => {
     ja: t('accounts.localeJa')
   };
   return map[locale] || locale || '-';
+};
+
+const sourceLabel = (source: string) => {
+  const map: Record<string, string> = {
+    system: t('accounts.sourceSystem'),
+    wecom: t('accounts.sourceWecom')
+  };
+  return map[source] || source || '-';
 };
 
 const promptChangePassword = async (user: any) => {
