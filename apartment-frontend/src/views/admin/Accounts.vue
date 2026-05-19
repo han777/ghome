@@ -186,6 +186,7 @@ const openModal = (user?: any) => {
     Object.assign(form, user);
     selectedRoleIds.value = user.roles ? user.roles.map((r: any) => r.id) : [];
   } else {
+    delete form.source;
     Object.assign(form, { id: null, username: '', realName: '', email: '', phone: '', status: 1, locale: 'zh', roles: [] });
     selectedRoleIds.value = [];
   }
