@@ -1380,9 +1380,9 @@ const cancelEdit = async () => {
 onMounted(async () => {
   await fetchData();
   const queryOrderId = route.query.orderId;
-  const from = route.query.from as string | undefined;
-  if (from === 'dashboard') {
-    returnPath.value = '/admin/dashboard';
+  const returnPathQuery = route.query.returnPath as string | undefined;
+  if (returnPathQuery) {
+    returnPath.value = returnPathQuery;
   }
   if (queryOrderId) {
     const order = orders.value.find((o: any) => o.id.toString() === queryOrderId);

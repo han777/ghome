@@ -81,7 +81,7 @@
             class="room-card"
             :class="getRoomStatusClass(room.status)"
             :style="room.orderId ? 'cursor: pointer' : ''"
-            @click="room.orderId && router.push({ path: '/admin/orders', query: { orderId: room.orderId, from: 'dashboard' } })"
+            @click="room.orderId && navigateToOrder(room.orderId)"
           >
             <div class="room-header">
               <span class="room-no">{{ room.roomNo }}</span>
@@ -107,11 +107,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import api from '../../utils/api';
 
 const router = useRouter();
+const route = useRoute();
 
 const data = ref<any>({
   arrivingToday: 0,
@@ -126,6 +127,30 @@ const searchQuery = ref<string>('');
 const statusFilters = ref<number[]>([]);
 const typeFilters = ref<string[]>([]);
 const labelFilters = ref<string[]>([]);
+
+// 同步筛选条件到 URL
+const syncFiltersToUrl = () => {
+  const query: Record<string, string> = {};
+  if (selectedFloor.value) query.floor = selectedFloor.value;
+  if (searchQuery.value) query.search = searchQuery.value;
+  if (statusFilters.value.length > 0) query.status = statusFilters.value.join(',');
+  if (typeFilters.value.length > 0) query.type = typeFilters.value.join(',');
+  if (labelFilters.value.length > 0) query.label = labelFilters.value.join(',');
+  router.replace({ path: '/admin/dashboard', query });
+};
+
+// 从 URL 恢复筛选状态
+const restoreFiltersFromUrl = () => {
+  const q = route.query;
+  if (q.floor) selectedFloor.value = q.floor as string;
+  if (q.search) searchQuery.value = q.search as string;
+  if (q.status) statusFilters.value = (q.status as string).split(',').map(Number).filter(n => !isNaN(n));
+  if (q.type) typeFilters.value = (q.type as string).split(',');
+  if (q.label) labelFilters.value = (q.label as string).split(',');
+};
+
+// 监听筛选条件变化，同步到 URL
+watch([selectedFloor, searchQuery, statusFilters, typeFilters, labelFilters], syncFiltersToUrl, { deep: true });
 
 const fetchData = async () => {
   try {
@@ -246,7 +271,26 @@ const getRoomStatusClass = (status: number) => {
   return 'status-free';
 };
 
-onMounted(fetchData);
+// 导航到订单详情，携带当前筛选状态的返回路径
+const navigateToOrder = (orderId: number) => {
+  const returnQuery: Record<string, string> = {};
+  if (selectedFloor.value) returnQuery.floor = selectedFloor.value;
+  if (searchQuery.value) returnQuery.search = searchQuery.value;
+  if (statusFilters.value.length > 0) returnQuery.status = statusFilters.value.join(',');
+  if (typeFilters.value.length > 0) returnQuery.type = typeFilters.value.join(',');
+  if (labelFilters.value.length > 0) returnQuery.label = labelFilters.value.join(',');
+
+  const returnPath = Object.keys(returnQuery).length > 0
+    ? `/admin/dashboard?${new URLSearchParams(returnQuery).toString()}`
+    : '/admin/dashboard';
+
+  router.push({ path: '/admin/orders', query: { orderId, returnPath } });
+};
+
+onMounted(() => {
+  restoreFiltersFromUrl();
+  fetchData();
+});
 </script>
 
 <style scoped>
