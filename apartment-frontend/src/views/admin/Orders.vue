@@ -113,7 +113,7 @@
             <button class="maximize-btn" @click="isMaximized = !isMaximized">
               {{ isMaximized ? '🗗' : '🗖' }}
             </button>
-            <button class="close-btn" @click="showModal = false">&times;</button>
+            <button class="close-btn" @click="closeModal">&times;</button>
           </div>
         </div>
         <div class="modal-body scrollable">
@@ -386,7 +386,7 @@
             总计: <span class="price-highlight">¥{{ form.totalAmount }}</span>
           </div>
           <div class="footer-btns">
-            <button class="cancel-btn" @click="showModal = false">{{ isEditMode ? '不保存关闭' : '关闭' }}</button>
+            <button class="cancel-btn" @click="closeModal">{{ isEditMode ? '不保存关闭' : '关闭' }}</button>
             <button class="cancel-edit-btn" v-if="isEditMode && form.id" @click="cancelEdit">取消编辑</button>
             <button class="save-btn" v-if="isEditMode" @click="saveOrder">{{ form.id ? '保存更改' : '保存新建' }}</button>
           </div>
@@ -579,10 +579,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import api from '../../utils/api';
 
 const route = useRoute();
+const router = useRouter();
 
 const orders = ref<any[]>([]);
 const dicts = ref<any[]>([]);
@@ -620,6 +621,15 @@ const changeRoomDate = ref(new Date().toISOString().slice(0, 10));
 const pickerAvailableRooms = ref<any[]>([]);
 const availableRooms = ref<any[]>([]);
 const orderLogs = ref<any[]>([]);
+const returnPath = ref<string | null>(null);
+
+const closeModal = () => {
+  showModal.value = false;
+  if (returnPath.value) {
+    router.push(returnPath.value);
+    returnPath.value = null;
+  }
+};
 
 const form = reactive<any>({
   id: null,
@@ -1219,7 +1229,7 @@ const confirmSendCard = async () => {
     await api.post(`/orders/${sendCardOrderId.value}/send-card`, sendCardForm);
     showSendCardModal.value = false;
     fetchData();
-    if (showModal.value) showModal.value = false;
+    if (showModal.value) closeModal();
     alert('房卡发送成功，订单状态已更新为已入住');
   } catch (e: any) {
     alert('发送失败: ' + (e.response?.data?.message || e.response?.data || e.message));
@@ -1232,7 +1242,7 @@ const cancelOrderFromModal = async (id: number) => {
   if (!confirm('确定取消此订单？')) return;
   try {
     await api.post(`/orders/${id}/admin-cancel`, {});
-    showModal.value = false;
+    closeModal();
     fetchData();
     alert('订单已取消');
   } catch (e: any) {
@@ -1370,6 +1380,10 @@ const cancelEdit = async () => {
 onMounted(async () => {
   await fetchData();
   const queryOrderId = route.query.orderId;
+  const from = route.query.from as string | undefined;
+  if (from === 'dashboard') {
+    returnPath.value = '/admin/dashboard';
+  }
   if (queryOrderId) {
     const order = orders.value.find((o: any) => o.id.toString() === queryOrderId);
     if (order) openModal(order);

@@ -81,7 +81,7 @@
             class="room-card"
             :class="getRoomStatusClass(room.status)"
             :style="room.orderId ? 'cursor: pointer' : ''"
-            @click="room.orderId && router.push({ path: '/admin/orders', query: { orderId: room.orderId } })"
+            @click="room.orderId && router.push({ path: '/admin/orders', query: { orderId: room.orderId, from: 'dashboard' } })"
           >
             <div class="room-header">
               <span class="room-no">{{ room.roomNo }}</span>
