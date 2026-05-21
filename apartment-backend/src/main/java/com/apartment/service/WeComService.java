@@ -120,6 +120,10 @@ public class WeComService {
             userInfo.name = node.has("name") ? node.get("name").asText() : null;
             userInfo.mobile = node.has("mobile") ? node.get("mobile").asText() : null;
             userInfo.email = node.has("email") ? node.get("email").asText() : null;
+            // biz_mail (企业邮箱) 作为 email 的 fallback
+            if (userInfo.email == null && node.has("biz_mail")) {
+                userInfo.email = node.get("biz_mail").asText();
+            }
             userInfo.position = node.has("position") ? node.get("position").asText() : null;
             userInfo.avatar = node.has("avatar") ? node.get("avatar").asText() : null;
 
