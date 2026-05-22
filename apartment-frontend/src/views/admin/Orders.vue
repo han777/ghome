@@ -715,6 +715,28 @@ const fetchAvailableRooms = async () => {
 
 watch([() => form.startDate, () => form.endDate], fetchAvailableRooms);
 
+// 自动计算订单的入住日期（取所有房间的最小入住时间）
+const computedStartDate = computed(() => {
+  if (!form.roomOccupies || form.roomOccupies.length === 0) return '';
+  const dates = form.roomOccupies
+    .map((ro: any) => ro.checkInTime)
+    .filter(Boolean)
+    .map((d: string) => d.slice(0, 10));
+  if (dates.length === 0) return '';
+  return dates.sort()[0];
+});
+
+// 自动计算订单的退房日期（取所有房间的最大退房时间）
+const computedEndDate = computed(() => {
+  if (!form.roomOccupies || form.roomOccupies.length === 0) return '';
+  const dates = form.roomOccupies
+    .map((ro: any) => ro.checkOutTime)
+    .filter(Boolean)
+    .map((d: string) => d.slice(0, 10));
+  if (dates.length === 0) return '';
+  return dates.sort().reverse()[0];
+});
+
 // 监听计算属性并同步到 form
 watch([computedStartDate, computedEndDate], ([start, end]) => {
   if (start) form.startDate = start;
@@ -749,28 +771,6 @@ const filteredOrders = computed(() => {
 
     return matchSearch && matchStatus && matchArrival && matchDeparture;
   });
-});
-
-// 自动计算订单的入住日期（取所有房间的最小入住时间）
-const computedStartDate = computed(() => {
-  if (!form.roomOccupies || form.roomOccupies.length === 0) return '';
-  const dates = form.roomOccupies
-    .map((ro: any) => ro.checkInTime)
-    .filter(Boolean)
-    .map((d: string) => d.slice(0, 10));
-  if (dates.length === 0) return '';
-  return dates.sort()[0];
-});
-
-// 自动计算订单的退房日期（取所有房间的最大退房时间）
-const computedEndDate = computed(() => {
-  if (!form.roomOccupies || form.roomOccupies.length === 0) return '';
-  const dates = form.roomOccupies
-    .map((ro: any) => ro.checkOutTime)
-    .filter(Boolean)
-    .map((d: string) => d.slice(0, 10));
-  if (dates.length === 0) return '';
-  return dates.sort().reverse()[0];
 });
 
 // 后台管理固定显示中文
