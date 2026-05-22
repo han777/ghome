@@ -621,14 +621,14 @@ onUnmounted(() => {
 }
 
 .chip-free { background: #86efac; }
-.chip-occupied { background: #7dd3fc; }
+.chip-occupied { background: #d4a574; }
 .chip-locked { background: #94a3b8; color: #fff; }
 .chip-repair { background: #ef4444; color: #fff; }
 .chip-empty-dirty {
   background: repeating-linear-gradient(
     -45deg,
-    #fdba74,
-    #fdba74 6px,
+    #86efac,
+    #86efac 6px,
     #fff 6px,
     #fff 12px
   );
@@ -636,8 +636,8 @@ onUnmounted(() => {
 .chip-occupied-dirty {
   background: repeating-linear-gradient(
     -45deg,
-    #fde047,
-    #fde047 6px,
+    #d4a574,
+    #d4a574 6px,
     #fff 6px,
     #fff 12px
   );
@@ -725,14 +725,14 @@ onUnmounted(() => {
 
 /* Status header colors */
 .status-free .room-header { background: #86efac; }
-.status-occupied .room-header { background: #7dd3fc; }
+.status-occupied .room-header { background: #d4a574; }
 .status-locked .room-header { background: #64748b; }
 .status-repair .room-header { background: #ef4444; }
 .status-empty-dirty .room-header {
   background: repeating-linear-gradient(
     -45deg,
-    #fdba74,
-    #fdba74 8px,
+    #86efac,
+    #86efac 8px,
     #fff 8px,
     #fff 16px
   );
@@ -740,8 +740,8 @@ onUnmounted(() => {
 .status-occupied-dirty .room-header {
   background: repeating-linear-gradient(
     -45deg,
-    #fde047,
-    #fde047 8px,
+    #d4a574,
+    #d4a574 8px,
     #fff 8px,
     #fff 16px
   );
@@ -749,11 +749,11 @@ onUnmounted(() => {
 
 /* Status body border colors */
 .status-free .room-body { border: 2px solid #86efac; border-top: none; }
-.status-occupied .room-body { border: 2px solid #7dd3fc; border-top: none; }
+.status-occupied .room-body { border: 2px solid #d4a574; border-top: none; }
 .status-locked .room-body { border: 2px solid #64748b; border-top: none; }
 .status-repair .room-body { border: 2px solid #ef4444; border-top: none; }
-.status-empty-dirty .room-body { border: 2px solid #fdba74; border-top: none; }
-.status-occupied-dirty .room-body { border: 2px solid #fde047; border-top: none; }
+.status-empty-dirty .room-body { border: 2px solid #86efac; border-top: none; }
+.status-occupied-dirty .room-body { border: 2px solid #d4a574; border-top: none; }
 
 .room-header {
   display: flex;
