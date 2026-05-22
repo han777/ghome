@@ -20,10 +20,10 @@
         <div class="filter-title"><span>|</span> 按房态</div>
         <div class="status-grid">
           <div class="status-chip" :class="{ active: statusFilters.includes(0) }" @click="toggleStatusFilter(0)">
-            <span class="dot dot-free"></span>空闲 {{ data.statusCounts?.FREE || 0 }}
+            <span class="dot dot-free"></span>空净 {{ data.statusCounts?.FREE || 0 }}
           </div>
           <div class="status-chip" :class="{ active: statusFilters.includes(1) }" @click="toggleStatusFilter(1)">
-            <span class="dot dot-occupied"></span>在住 {{ data.statusCounts?.OCCUPIED || 0 }}
+            <span class="dot dot-occupied"></span>住净 {{ data.statusCounts?.OCCUPIED || 0 }}
           </div>
           <div class="status-chip" :class="{ active: statusFilters.includes(4) }" @click="toggleStatusFilter(4)">
             <span class="dot dot-empty-dirty"></span>空脏 {{ data.statusCounts?.EMPTY_DIRTY || 0 }}
@@ -104,52 +104,59 @@
           >
             <!-- 房间头部 -->
             <div class="room-header">
-              <span class="room-no">{{ room.roomNo }}</span>
-              <span class="room-type-tag">{{ room.roomTypeName }}</span>
-              <span v-if="room.status === 2" class="status-icon locked">锁</span>
-              <span v-if="room.status === 3" class="status-icon repair">修</span>
+              <div class="header-left">
+                <span class="room-no">{{ room.roomNo }}</span>
+                <span class="room-type-tag">{{ room.roomTypeName }}</span>
+              </div>
+              <div class="header-right">
+                <span v-if="room.status === 2" class="status-icon locked">锁</span>
+                <span v-if="room.status === 3" class="status-icon repair">修</span>
+              </div>
             </div>
 
-            <!-- 清扫任务条 -->
-            <div class="task-bar" :class="{ 'has-task': room.cleaningTask, 'task-completed': room.cleaningTask?.status === 2 }">
-              <div class="task-content">
-                <span class="task-icon">🧹</span>
-                <span v-if="room.cleaningTask" class="task-type">
-                  {{ room.cleaningTask.taskType === 1 ? '日常保洁' : '强打扫' }}
-                  <span v-if="room.cleaningTask.status === 1" class="task-canceled">(已取消)</span>
-                  <span v-if="room.cleaningTask.status === 2" class="task-done">(已完成)</span>
+            <!-- 内容区 -->
+            <div class="room-body">
+              <!-- 清扫任务条 -->
+              <div class="task-bar" :class="{ 'has-task': room.cleaningTask, 'task-completed': room.cleaningTask?.status === 2 }">
+                <div class="task-content">
+                  <span class="task-icon">🧹</span>
+                  <span v-if="room.cleaningTask" class="task-type">
+                    {{ room.cleaningTask.taskType === 1 ? '日常保洁' : '强打扫' }}
+                    <span v-if="room.cleaningTask.status === 1" class="task-canceled">(已取消)</span>
+                    <span v-if="room.cleaningTask.status === 2" class="task-done">(已完成)</span>
+                  </span>
+                  <span v-else class="task-type no-task">无清扫任务</span>
+                </div>
+                <div class="task-menu" @click.stop="toggleTaskMenu($event, room)">
+                  <span>•••</span>
+                </div>
+              </div>
+
+              <!-- 最近到达订单条 -->
+              <div class="order-bar arriving" v-if="room.nearestArriving" @click.stop="navigateToOrder(room.nearestArriving.orderId)">
+                <span class="order-icon">🛬</span>
+                <span class="order-info">
+                  <span class="guest-name">{{ room.nearestArriving.guestName }}</span>
+                  <span class="days-label">{{ formatDaysLabel(room.arrivingDays, true) }}</span>
                 </span>
-                <span v-else class="task-type no-task">无清扫任务</span>
               </div>
-              <div class="task-menu" @click.stop="toggleTaskMenu($event, room)">
-                <span>•••</span>
+              <div class="order-bar empty" v-else>
+                <span class="order-icon">🛬</span>
+                <span class="order-info no-order">暂无预订</span>
               </div>
-            </div>
 
-            <!-- 最近到达订单条 -->
-            <div class="order-bar arriving" v-if="room.nearestArriving" @click.stop="navigateToOrder(room.nearestArriving.orderId)">
-              <span class="order-icon">🛬</span>
-              <span class="order-info">
-                <span class="guest-name">{{ room.nearestArriving.guestName }}</span>
-                <span class="days-label">{{ formatDaysLabel(room.arrivingDays, true) }}</span>
-              </span>
-            </div>
-            <div class="order-bar empty" v-else>
-              <span class="order-icon">🛬</span>
-              <span class="order-info no-order">暂无预订</span>
-            </div>
-
-            <!-- 最近离开订单条 -->
-            <div class="order-bar departing" v-if="room.nearestDeparting" @click.stop="navigateToOrder(room.nearestDeparting.orderId)">
-              <span class="order-icon">🛫</span>
-              <span class="order-info">
-                <span class="guest-name">{{ room.nearestDeparting.guestName }}</span>
-                <span class="days-label">{{ formatDaysLabel(room.departingDays, false) }}</span>
-              </span>
-            </div>
-            <div class="order-bar empty" v-else>
-              <span class="order-icon">🛫</span>
-              <span class="order-info no-order">-</span>
+              <!-- 最近离开订单条 -->
+              <div class="order-bar departing" v-if="room.nearestDeparting" @click.stop="navigateToOrder(room.nearestDeparting.orderId)">
+                <span class="order-icon">🛫</span>
+                <span class="order-info">
+                  <span class="guest-name">{{ room.nearestDeparting.guestName }}</span>
+                  <span class="days-label">{{ formatDaysLabel(room.departingDays, false) }}</span>
+                </span>
+              </div>
+              <div class="order-bar empty" v-else>
+                <span class="order-icon">🛫</span>
+                <span class="order-info no-order">-</span>
+              </div>
             </div>
           </div>
         </div>
@@ -691,13 +698,13 @@ onUnmounted(() => {
 
 .room-card {
   border-radius: 6px;
-  padding: 8px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 4px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   transition: all 0.2s;
   min-height: 140px;
+  background: #fff;
 }
 
 .room-card:hover {
@@ -705,17 +712,53 @@ onUnmounted(() => {
   transform: translateY(-2px);
 }
 
-/* Status colors */
-.status-free { background: #86efac; color: #14532d; }
-.status-occupied { background: #7dd3fc; color: #0c4a6e; }
-.status-locked { background: #64748b; color: #ffffff; }
-.status-repair { background: #ef4444; color: #ffffff; }
-.status-empty-dirty { background: #fdba74; color: #7c2d12; }
-.status-occupied-dirty { background: #fde047; color: #713f12; }
+/* Status header colors */
+.status-free .room-header { background: #86efac; }
+.status-occupied .room-header { background: #7dd3fc; }
+.status-locked .room-header { background: #64748b; }
+.status-repair .room-header { background: #ef4444; }
+.status-empty-dirty .room-header {
+  background: repeating-linear-gradient(
+    -45deg,
+    #fdba74,
+    #fdba74 8px,
+    #fff 8px,
+    #fff 16px
+  );
+}
+.status-occupied-dirty .room-header {
+  background: repeating-linear-gradient(
+    -45deg,
+    #fde047,
+    #fde047 8px,
+    #fff 8px,
+    #fff 16px
+  );
+}
+
+/* Status body border colors */
+.status-free .room-body { border: 2px solid #86efac; border-top: none; }
+.status-occupied .room-body { border: 2px solid #7dd3fc; border-top: none; }
+.status-locked .room-body { border: 2px solid #64748b; border-top: none; }
+.status-repair .room-body { border: 2px solid #ef4444; border-top: none; }
+.status-empty-dirty .room-body { border: 2px solid #fdba74; border-top: none; }
+.status-occupied-dirty .room-body { border: 2px solid #fde047; border-top: none; }
 
 .room-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-right {
+  display: flex;
   align-items: center;
   gap: 4px;
 }
@@ -723,13 +766,15 @@ onUnmounted(() => {
 .room-no {
   font-size: 16px;
   font-weight: 800;
+  color: #1e293b;
 }
 
 .room-type-tag {
   font-size: 10px;
   padding: 1px 4px;
   border-radius: 3px;
-  background: rgba(0,0,0,0.1);
+  background: rgba(0,0,0,0.15);
+  color: #374151;
 }
 
 .status-icon {
@@ -740,6 +785,14 @@ onUnmounted(() => {
 }
 .status-icon.locked { background: #475569; color: white; }
 .status-icon.repair { background: #b91c1c; color: white; }
+
+.room-body {
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
 
 /* Task bar */
 .task-bar {
