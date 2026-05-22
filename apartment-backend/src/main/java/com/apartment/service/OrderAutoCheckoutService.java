@@ -30,7 +30,7 @@ public class OrderAutoCheckoutService {
     @Autowired
     private RoomRepository roomRepository;
 
-    @Scheduled(cron = "0 30 14 * * ?")
+    // @Scheduled(cron = "0 30 14 * * ?")  // 已禁用自动退房定时任务
     @Transactional
     public void autoCheckout() {
         LocalDateTime now = LocalDateTime.now();

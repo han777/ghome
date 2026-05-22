@@ -137,11 +137,11 @@
 
               <div class="form-item">
                 <label class="required">入住日期</label>
-                <input type="date" v-model="form.startDate" required :disabled="!isEditMode || !!form.id">
+                <input type="date" :value="computedStartDate || form.startDate" required disabled title="由房间入住时间自动计算">
               </div>
               <div class="form-item">
                 <label>退房日期</label>
-                <input type="date" v-model="form.endDate" required :disabled="!isEditMode || !!form.id">
+                <input type="date" :value="computedEndDate || form.endDate" required disabled title="由房间退房时间自动计算">
               </div>
 
               <div class="form-item">
@@ -715,6 +715,12 @@ const fetchAvailableRooms = async () => {
 
 watch([() => form.startDate, () => form.endDate], fetchAvailableRooms);
 
+// 监听计算属性并同步到 form
+watch([computedStartDate, computedEndDate], ([start, end]) => {
+  if (start) form.startDate = start;
+  if (end) form.endDate = end;
+});
+
 const filteredOrders = computed(() => {
   const today = new Date().toISOString().split('T')[0];
   if (!Array.isArray(orders.value)) return [];
@@ -723,26 +729,48 @@ const filteredOrders = computed(() => {
     const q = searchQuery.value.toLowerCase();
     const bookerName = o.booker?.realName?.toLowerCase() || '';
     const creatorName = o.createUser?.realName?.toLowerCase() || o.createUser?.username?.toLowerCase() || '';
-    const occupants = o.roomOccupies?.map((ro: any) => 
+    const occupants = o.roomOccupies?.map((ro: any) =>
       (ro.occupantUser?.realName || ro.coOccupants || '').toLowerCase()
     ).join(' ') || '';
-    
-    const matchSearch = !q || 
-      bookerName.includes(q) || 
-      creatorName.includes(q) || 
+
+    const matchSearch = !q ||
+      bookerName.includes(q) ||
+      creatorName.includes(q) ||
       occupants.includes(q);
-    
+
     // Status filter
     const matchStatus = statusFilter.value.length === 0 || statusFilter.value.includes(o.status);
-    
+
     // Today Arrival filter
     const matchArrival = !filterTodayArrival.value || o.startDate?.split('T')[0] === today;
-    
+
     // Today Departure filter
     const matchDeparture = !filterTodayDeparture.value || o.endDate?.split('T')[0] === today;
-    
+
     return matchSearch && matchStatus && matchArrival && matchDeparture;
   });
+});
+
+// 自动计算订单的入住日期（取所有房间的最小入住时间）
+const computedStartDate = computed(() => {
+  if (!form.roomOccupies || form.roomOccupies.length === 0) return '';
+  const dates = form.roomOccupies
+    .map((ro: any) => ro.checkInTime)
+    .filter(Boolean)
+    .map((d: string) => d.slice(0, 10));
+  if (dates.length === 0) return '';
+  return dates.sort()[0];
+});
+
+// 自动计算订单的退房日期（取所有房间的最大退房时间）
+const computedEndDate = computed(() => {
+  if (!form.roomOccupies || form.roomOccupies.length === 0) return '';
+  const dates = form.roomOccupies
+    .map((ro: any) => ro.checkOutTime)
+    .filter(Boolean)
+    .map((d: string) => d.slice(0, 10));
+  if (dates.length === 0) return '';
+  return dates.sort().reverse()[0];
 });
 
 // 后台管理固定显示中文
@@ -825,10 +853,11 @@ const getRoomTypeName = (id: number) => {
 
 
 const addRoomRow = () => {
-  // 入住/退房时间默认与订单主信息一致
-  const checkIn = form.startDate ? (form.startDate.length === 10 ? form.startDate + 'T14:00' : form.startDate) : null;
-  const checkOut = form.endDate ? (form.endDate.length === 10 ? form.endDate + 'T12:00' : form.endDate) : null;
-  const days = calculateDays(checkIn, checkOut);
+  // 默认使用今天和明天作为入住/退房时间
+  const today = new Date().toISOString().slice(0, 10);
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const checkIn = today + 'T14:00';
+  const checkOut = tomorrow + 'T12:00';
   form.roomOccupies.push({
     roomId: null,
     occupantUserId: form.customerType === 1 ? form.bookerId : null,
@@ -838,7 +867,7 @@ const addRoomRow = () => {
     checkInTime: checkIn,
     checkOutTime: checkOut,
     actualPrice: 0,
-    quantity: days
+    quantity: 1
   });
 };
 
