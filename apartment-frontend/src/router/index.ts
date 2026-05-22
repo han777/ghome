@@ -120,6 +120,16 @@ const router = createRouter({
                     path: 'notification-records',
                     name: 'NotificationRecords',
                     component: () => import('../views/admin/NotificationRecords.vue')
+                },
+                {
+                    path: 'cleaning-tasks',
+                    name: 'CleaningTasks',
+                    component: () => import('../views/admin/CleaningTasks.vue')
+                },
+                {
+                    path: 'global-settings',
+                    name: 'GlobalSettings',
+                    component: () => import('../views/admin/GlobalSettings.vue')
                 }
             ]
         },

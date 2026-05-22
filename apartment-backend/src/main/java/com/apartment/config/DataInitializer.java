@@ -101,6 +101,17 @@ public class DataInitializer {
                     {"WeCom", "1"}
             });
 
+            initEnumDict(dictRepository, dictItemRepository, "CLEANING_TASK_TYPE", "Cleaning Task Type", new String[][]{
+                    {"日常保洁", "1"},
+                    {"强打扫", "2"}
+            });
+
+            initEnumDict(dictRepository, dictItemRepository, "CLEANING_TASK_STATUS", "Cleaning Task Status", new String[][]{
+                    {"计划", "0"},
+                    {"取消", "1"},
+                    {"完成", "2"}
+            });
+
             // 4. Migrate user sources
             try {
                 jdbcTemplate.update("UPDATE sys_user SET source = '0' WHERE source = 'system'");

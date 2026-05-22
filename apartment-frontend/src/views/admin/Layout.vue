@@ -62,6 +62,7 @@ const menuGroups = [
     items: [
       { name: '房态仪表盘', path: '/admin/dashboard', icon: '📊' },
       { name: '入住管理', path: '/admin/orders', icon: '📝' },
+      { name: '清扫任务', path: '/admin/cleaning-tasks', icon: '🧹' },
       { name: '历史订单查询', path: '/admin/history-orders', icon: '📜' },
       { name: '维修管理', path: '/admin/maintenances', icon: '🔧' },
       { name: '线性房态', path: '/admin/gantt', icon: '📅' },
@@ -90,6 +91,7 @@ const menuGroups = [
       { name: '角色管理', path: '/admin/roles', icon: '🛡️' },
       { name: '字典管理', path: '/admin/dicts', icon: '📖' },
       { name: '部门管理', path: '/admin/depts', icon: '🏢' },
+      { name: '全局设置', path: '/admin/global-settings', icon: '🔧' },
     ]
   }
 ];
@@ -125,7 +127,9 @@ const titles: Record<string, string> = {
   'RoomFeeDetail': '房间费结算明细',
   'ServiceFeeDetail': '商品服务费结算明细',
   'ProductPrices': '商品服务价格',
-  'NotificationRecords': '通知记录'
+  'NotificationRecords': '通知记录',
+  'CleaningTasks': '清扫任务',
+  'GlobalSettings': '全局设置'
 };
 
 const currentTitle = computed(() => titles[route.name as string] || 'Dashboard');
