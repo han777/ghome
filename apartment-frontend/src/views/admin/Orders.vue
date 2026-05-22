@@ -222,11 +222,11 @@
                 <div class="card-grid">
                   <div class="card-item">
                     <label>实际入住</label>
-                    <input type="datetime-local" v-model="occupy.checkInTime" :disabled="!isEditMode || !!form.id">
+                    <input type="datetime-local" v-model="occupy.checkInTime" @input="updateRoomQuantity(occupy)" :disabled="!isEditMode || !!form.id">
                   </div>
                   <div class="card-item">
                     <label>实际退房</label>
-                    <input type="datetime-local" v-model="occupy.checkOutTime" :disabled="!isEditMode || !!form.id">
+                    <input type="datetime-local" v-model="occupy.checkOutTime" @input="updateRoomQuantity(occupy)" :disabled="!isEditMode || !!form.id">
                   </div>
                     <div class="card-item">
                       <label>房间</label>
@@ -815,6 +815,13 @@ const calculateDays = (start: string, end: string) => {
   const diffTime = e.getTime() - s.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   return diffDays > 0 ? diffDays : 1;
+};
+
+// 更新房间天数为入住和退房时间差
+const updateRoomQuantity = (occupy: any) => {
+  if (occupy.checkInTime && occupy.checkOutTime) {
+    occupy.quantity = calculateDays(occupy.checkInTime, occupy.checkOutTime);
+  }
 };
 
 watch([() => form.roomOccupies, () => form.startDate, () => form.endDate, () => form.bizType, () => form.productDetails], () => {
