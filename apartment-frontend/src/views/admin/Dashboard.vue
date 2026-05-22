@@ -19,23 +19,23 @@
       <div class="filter-group">
         <div class="filter-title"><span>|</span> 按房态</div>
         <div class="status-grid">
-          <div class="status-chip" :class="{ active: statusFilters.includes(0) }" @click="toggleStatusFilter(0)">
-            <span class="dot dot-free"></span>空净 {{ data.statusCounts?.FREE || 0 }}
+          <div class="status-chip chip-free" :class="{ active: statusFilters.includes(0) }" @click="toggleStatusFilter(0)">
+            空净 <span class="chip-count">{{ data.statusCounts?.FREE || 0 }}</span>
           </div>
-          <div class="status-chip" :class="{ active: statusFilters.includes(1) }" @click="toggleStatusFilter(1)">
-            <span class="dot dot-occupied"></span>住净 {{ data.statusCounts?.OCCUPIED || 0 }}
+          <div class="status-chip chip-occupied" :class="{ active: statusFilters.includes(1) }" @click="toggleStatusFilter(1)">
+            住净 <span class="chip-count">{{ data.statusCounts?.OCCUPIED || 0 }}</span>
           </div>
-          <div class="status-chip" :class="{ active: statusFilters.includes(4) }" @click="toggleStatusFilter(4)">
-            <span class="dot dot-empty-dirty"></span>空脏 {{ data.statusCounts?.EMPTY_DIRTY || 0 }}
+          <div class="status-chip chip-empty-dirty" :class="{ active: statusFilters.includes(4) }" @click="toggleStatusFilter(4)">
+            空脏 <span class="chip-count">{{ data.statusCounts?.EMPTY_DIRTY || 0 }}</span>
           </div>
-          <div class="status-chip" :class="{ active: statusFilters.includes(5) }" @click="toggleStatusFilter(5)">
-            <span class="dot dot-occupied-dirty"></span>住脏 {{ data.statusCounts?.OCCUPIED_DIRTY || 0 }}
+          <div class="status-chip chip-occupied-dirty" :class="{ active: statusFilters.includes(5) }" @click="toggleStatusFilter(5)">
+            住脏 <span class="chip-count">{{ data.statusCounts?.OCCUPIED_DIRTY || 0 }}</span>
           </div>
-          <div class="status-chip" :class="{ active: statusFilters.includes(3) }" @click="toggleStatusFilter(3)">
-            <span class="dot dot-repair"></span>维修 {{ data.statusCounts?.REPAIR || 0 }}
+          <div class="status-chip chip-repair" :class="{ active: statusFilters.includes(3) }" @click="toggleStatusFilter(3)">
+            维修 <span class="chip-count">{{ data.statusCounts?.REPAIR || 0 }}</span>
           </div>
-          <div class="status-chip" :class="{ active: statusFilters.includes(2) }" @click="toggleStatusFilter(2)">
-            <span class="dot dot-locked"></span>锁房 {{ data.statusCounts?.LOCKED || 0 }}
+          <div class="status-chip chip-locked" :class="{ active: statusFilters.includes(2) }" @click="toggleStatusFilter(2)">
+            锁房 <span class="chip-count">{{ data.statusCounts?.LOCKED || 0 }}</span>
           </div>
         </div>
       </div>
@@ -601,36 +601,47 @@ onUnmounted(() => {
 .status-chip {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 5px 6px;
-  background: #f8fafc;
   border-radius: 4px;
   font-size: 12px;
-  color: #64748b;
+  color: #1e293b;
   cursor: pointer;
-  border: 1px solid transparent;
+  border: 2px solid transparent;
+  font-weight: 500;
 }
 
 .status-chip.active {
-  background: #e0f2fe;
-  border-color: #7dd3fc;
-  color: #0284c7;
-  font-weight: 600;
+  border-color: #1e293b;
+  font-weight: 700;
 }
 
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 5px;
-  flex-shrink: 0;
+.chip-count {
+  font-weight: 700;
 }
 
-.dot-free { background: #22c55e; }
-.dot-occupied { background: #38bdf8; }
-.dot-repair { background: #ef4444; }
-.dot-locked { background: #94a3b8; }
-.dot-empty-dirty { background: #f97316; }
-.dot-occupied-dirty { background: #eab308; }
+.chip-free { background: #86efac; }
+.chip-occupied { background: #7dd3fc; }
+.chip-locked { background: #94a3b8; color: #fff; }
+.chip-repair { background: #ef4444; color: #fff; }
+.chip-empty-dirty {
+  background: repeating-linear-gradient(
+    -45deg,
+    #fdba74,
+    #fdba74 6px,
+    #fff 6px,
+    #fff 12px
+  );
+}
+.chip-occupied-dirty {
+  background: repeating-linear-gradient(
+    -45deg,
+    #fde047,
+    #fde047 6px,
+    #fff 6px,
+    #fff 12px
+  );
+}
 
 .type-list, .days-list {
   display: flex;
