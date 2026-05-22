@@ -100,30 +100,6 @@ public class RoomStatusService {
         // 今日清扫任务
         List<CleaningTask> todayTasks = cleaningTaskRepository.findByTaskDate(today);
 
-        // 按抵达天数聚合 (待确认订单 status=1)
-        Map<Integer, Integer> arrivingByDays = new HashMap<>();
-        for (RoomOrder order : pendingOrders) {
-            if (order.getStartDate() != null) {
-                int days = (int) ChronoUnit.DAYS.between(today, order.getStartDate().toLocalDate());
-                if (days >= 0 && days <= 30) {
-                    arrivingByDays.merge(days, 1, Integer::sum);
-                }
-            }
-        }
-        dto.setArrivingByDays(arrivingByDays);
-
-        // 按离开天数聚合 (已入住订单 status=2)
-        Map<Integer, Integer> departingByDays = new HashMap<>();
-        for (RoomOrder order : inOrders) {
-            if (order.getEndDate() != null) {
-                int days = (int) ChronoUnit.DAYS.between(today, order.getEndDate().toLocalDate());
-                if (days >= 0 && days <= 30) {
-                    departingByDays.merge(days, 1, Integer::sum);
-                }
-            }
-        }
-        dto.setDepartingByDays(departingByDays);
-
         dto.setArrivingToday(arrivingToday.size());
         dto.setDepartingToday(departingToday.size());
         dto.setArrivingInNDays(arrivingSoon.size());
@@ -274,6 +250,24 @@ public class RoomStatusService {
         counts.put("EMPTY_DIRTY", roomDetails.stream().filter(r -> r.getStatus() == 4).count());
         counts.put("OCCUPIED_DIRTY", roomDetails.stream().filter(r -> r.getStatus() == 5).count());
         dto.setStatusCounts(counts);
+
+        // 按抵达天数聚合（基于房间的 arrivingDays 字段）
+        Map<Integer, Integer> arrivingByDays = new HashMap<>();
+        for (RoomStatusDashboardDTO.RoomDetailDTO detail : roomDetails) {
+            if (detail.getArrivingDays() != null && detail.getArrivingDays() >= 0 && detail.getArrivingDays() <= 30) {
+                arrivingByDays.merge(detail.getArrivingDays(), 1, Integer::sum);
+            }
+        }
+        dto.setArrivingByDays(arrivingByDays);
+
+        // 按离开天数聚合（基于房间的 departingDays 字段）
+        Map<Integer, Integer> departingByDays = new HashMap<>();
+        for (RoomStatusDashboardDTO.RoomDetailDTO detail : roomDetails) {
+            if (detail.getDepartingDays() != null && detail.getDepartingDays() >= 0 && detail.getDepartingDays() <= 30) {
+                departingByDays.merge(detail.getDepartingDays(), 1, Integer::sum);
+            }
+        }
+        dto.setDepartingByDays(departingByDays);
 
         dto.setRooms(roomDetails);
         return dto;
