@@ -1032,8 +1032,11 @@ const selectRoomFromPicker = (room: any) => {
   const occupy = form.roomOccupies[pickingOccupyIndex.value];
   occupy.roomId = room.id;
   // Sync check-in/out times with the picker dates if they were changed
-  occupy.checkInTime = `${roomPickerFilters.startDate}T14:00`;
-  occupy.checkOutTime = `${roomPickerFilters.endDate}T12:00`;
+  // 确保日期不为空，使用默认值
+  const startDate = roomPickerFilters.startDate || new Date().toISOString().slice(0, 10);
+  const endDate = roomPickerFilters.endDate || new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  occupy.checkInTime = `${startDate}T14:00`;
+  occupy.checkOutTime = `${endDate}T12:00`;
   // Set default price and quantity
   const price = form.bizType === 2 ? room.roomType?.priceLongRent : room.roomType?.priceShortRent;
   occupy.actualPrice = price;
