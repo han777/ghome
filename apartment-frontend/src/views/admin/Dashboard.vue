@@ -133,12 +133,15 @@
               </div>
 
               <!-- 最近到达订单条 -->
-              <div class="order-bar arriving" v-if="room.nearestArriving" @click.stop="navigateToOrder(room.nearestArriving.orderId)">
+              <div class="order-bar arriving" v-if="room.nearestArriving">
                 <span class="order-icon">🛬</span>
                 <span class="order-info">
                   <span class="guest-name">{{ room.nearestArriving.guestName }}</span>
                   <span class="days-label">{{ formatDaysLabel(room.arrivingDays, true) }}</span>
                 </span>
+                <div class="order-menu" @click.stop="toggleOrderMenu($event, room, 'arriving')">
+                  <span>•••</span>
+                </div>
               </div>
               <div class="order-bar empty" v-else>
                 <span class="order-icon">🛬</span>
@@ -146,12 +149,15 @@
               </div>
 
               <!-- 最近离开订单条 -->
-              <div class="order-bar departing" v-if="room.nearestDeparting" @click.stop="navigateToOrder(room.nearestDeparting.orderId)">
+              <div class="order-bar departing" v-if="room.nearestDeparting">
                 <span class="order-icon">🛫</span>
                 <span class="order-info">
                   <span class="guest-name">{{ room.nearestDeparting.guestName }}</span>
                   <span class="days-label">{{ formatDaysLabel(room.departingDays, false) }}</span>
                 </span>
+                <div class="order-menu" @click.stop="toggleOrderMenu($event, room, 'departing')">
+                  <span>•••</span>
+                </div>
               </div>
               <div class="order-bar empty" v-else>
                 <span class="order-icon">🛫</span>
@@ -171,6 +177,11 @@
       <div v-if="selectedRoomForMenu?.cleaningTask && selectedRoomForMenu?.cleaningTask?.status === 0" @click="completeTask">完成清扫</div>
       <div v-if="selectedRoomForMenu?.cleaningTask" @click="editTask">编辑任务</div>
       <div @click="addTask">新增清扫</div>
+    </div>
+
+    <!-- 订单菜单弹窗 -->
+    <div v-if="showOrderMenu" class="task-menu-popup" :style="orderMenuStyle" @click.stop>
+      <div @click="viewOrderDetail">查看订单</div>
     </div>
 
     <!-- 清扫任务弹窗 -->
@@ -243,6 +254,11 @@ const departingDaysFilter = ref<number | null>(null);
 const showTaskMenu = ref(false);
 const taskMenuStyle = ref<Record<string, string>>({});
 const selectedRoomForMenu = ref<any>(null);
+
+// 订单菜单相关
+const showOrderMenu = ref(false);
+const orderMenuStyle = ref<Record<string, string>>({});
+const selectedOrderInfo = ref<{ room: any; type: 'arriving' | 'departing' } | null>(null);
 
 // 任务弹窗相关
 const showTaskModal = ref(false);
@@ -468,6 +484,35 @@ const closeTaskMenu = () => {
   showTaskMenu.value = false;
 };
 
+// 订单菜单相关
+const toggleOrderMenu = (event: MouseEvent, room: any, type: 'arriving' | 'departing') => {
+  event.stopPropagation();
+  selectedOrderInfo.value = { room, type };
+  showTaskMenu.value = false; // 关闭任务菜单
+
+  const rect = (event.target as HTMLElement).getBoundingClientRect();
+  orderMenuStyle.value = {
+    top: `${rect.bottom + 4}px`,
+    left: `${rect.left - 80}px`
+  };
+
+  showOrderMenu.value = true;
+};
+
+const closeOrderMenu = () => {
+  showOrderMenu.value = false;
+};
+
+const viewOrderDetail = () => {
+  if (!selectedOrderInfo.value) return;
+  const { room, type } = selectedOrderInfo.value;
+  const order = type === 'arriving' ? room.nearestArriving : room.nearestDeparting;
+  if (!order?.orderId) return;
+
+  showOrderMenu.value = false;
+  navigateToOrder(order.orderId);
+};
+
 const completeTask = async () => {
   if (!selectedRoomForMenu.value?.cleaningTask?.id) return;
   try {
@@ -527,10 +572,12 @@ onMounted(() => {
   restoreFiltersFromUrl();
   fetchData();
   document.addEventListener('click', closeTaskMenu);
+  document.addEventListener('click', closeOrderMenu);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', closeTaskMenu);
+  document.removeEventListener('click', closeOrderMenu);
 });
 </script>
 
@@ -858,6 +905,18 @@ onUnmounted(() => {
 }
 
 .task-menu:hover {
+  color: #1e293b;
+}
+
+.order-menu {
+  cursor: pointer;
+  padding: 0 4px;
+  font-weight: 700;
+  color: #64748b;
+  user-select: none;
+}
+
+.order-menu:hover {
   color: #1e293b;
 }
 

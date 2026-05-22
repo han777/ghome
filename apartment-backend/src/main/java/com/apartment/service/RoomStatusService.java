@@ -190,11 +190,13 @@ public class RoomStatusService {
                 detail.setCleaningTask(taskInfo);
             }
 
-            // 最近到达订单信息
+            // 最近到达订单信息（未抵达）
+            // 待确认订单(status=1): 无论时间早晚，都视为未抵达
+            // 已入住订单(status=2): 视为已抵达，不在此筛选
             RoomOrder nearestArriving = allOrders.stream()
-                .filter(o -> o.getStatus() != null && (o.getStatus() == 1 || o.getStatus() == 2))
+                .filter(o -> o.getStatus() != null && o.getStatus() == 1)
                 .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))
-                .filter(o -> o.getStartDate() != null && !o.getStartDate().isBefore(now))
+                .filter(o -> o.getStartDate() != null)
                 .min(Comparator.comparing(RoomOrder::getStartDate))
                 .orElse(null);
 
@@ -209,11 +211,12 @@ public class RoomStatusService {
                 detail.setArrivingDays(Math.max(0, arrivingDays));
             }
 
-            // 最近离开订单信息
+            // 最近离开订单信息（已抵达）
+            // 已入住订单(status=2): 无论时间早晚，都视为已抵达，按离开时间计算
             RoomOrder nearestDeparting = allOrders.stream()
                 .filter(o -> o.getStatus() != null && o.getStatus() == 2)
                 .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))
-                .filter(o -> o.getEndDate() != null && !o.getEndDate().isBefore(now))
+                .filter(o -> o.getEndDate() != null)
                 .min(Comparator.comparing(RoomOrder::getEndDate))
                 .orElse(null);
 
