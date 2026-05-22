@@ -30,6 +30,9 @@ public class NotificationRecord {
     @JsonIgnore
     private SysUser recipientUser;
 
+    @Column(name = "recipient_email")
+    private String recipientEmail; // 直接指定收件邮箱（用于通知邮箱等非系统用户）
+
     @Column(nullable = false)
     private String channel; // "wecom" or "email"
 

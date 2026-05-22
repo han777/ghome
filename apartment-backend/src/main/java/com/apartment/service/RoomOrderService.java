@@ -46,6 +46,9 @@ public class RoomOrderService {
     @Autowired
     private MessageTemplateService messageTemplateService;
 
+    @Autowired
+    private SysConfigService sysConfigService;
+
     public void validateOrder(RoomOrder order) {
         if (order.getRoomOccupies() == null || order.getRoomOccupies().isEmpty()) {
             throw new BusinessException(ErrorCode.ORDER_ROOM_EMPTY);
@@ -229,6 +232,48 @@ public class RoomOrderService {
                 nr.setRecipientName(recipientNameVal);
                 nr.setContent(content);
 
+                notificationRecordRepository.save(nr);
+            }
+        }
+
+        // Send notification to notification emails (system global setting)
+        java.util.List<String> notificationEmails = sysConfigService.getNotificationEmails();
+        if (!notificationEmails.isEmpty()) {
+            // Build room list for notification email
+            StringBuilder roomListBuilder = new StringBuilder();
+            for (RoomOccupy ro : order.getRoomOccupies()) {
+                if (ro.getStatus() != null && ro.getStatus() == 0) {
+                    if (roomListBuilder.length() > 0) roomListBuilder.append(", ");
+                    roomListBuilder.append(ro.getRoom() != null ? ro.getRoom().getRoomNo() : "");
+                }
+            }
+            String roomListStr = roomListBuilder.toString();
+            LocalDateTime ciTime = order.getStartDate();
+            LocalDateTime coTime = order.getEndDate();
+
+            String emailContent = "订单入住通知\n"
+                + "订单号: " + order.getOrderNo() + "\n"
+                + "房间: " + roomListStr + "\n"
+                + "房卡箱号: " + keyBoxNo + "\n"
+                + "箱密码: " + boxPassword + "\n"
+                + "入住时间: " + (ciTime != null ? ciTime.format(fmt) : "") + "\n"
+                + "离店时间: " + (coTime != null ? coTime.format(fmt) : "") + "\n"
+                + "预订人: " + (order.getBooker() != null ? order.getBooker().getRealName() : "-");
+
+            for (String email : notificationEmails) {
+                NotificationRecord nr = new NotificationRecord();
+                nr.setOrder(order);
+                nr.setChannel("email");
+                nr.setRecipientEmail(email);
+                nr.setOrderNo(order.getOrderNo());
+                nr.setRoomNo(roomListStr);
+                nr.setKeyBoxNo(keyBoxNo);
+                nr.setBoxPassword(boxPassword);
+                nr.setLocale("zh");
+                nr.setCheckInTime(ciTime);
+                nr.setCheckOutTime(coTime);
+                nr.setRecipientName(email);
+                nr.setContent(emailContent);
                 notificationRecordRepository.save(nr);
             }
         }
