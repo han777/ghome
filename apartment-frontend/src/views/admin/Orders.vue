@@ -581,6 +581,7 @@
 import { ref, onMounted, reactive, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../../utils/api';
+import { getErrorMessageZh } from '../../utils/errorTranslate';
 
 const route = useRoute();
 const router = useRouter();
@@ -943,7 +944,7 @@ const confirmChangeRoom = async () => {
     }
     fetchData();
   } catch (e: any) {
-    alert('换房失败: ' + (e.response?.data || e.message));
+    alert('换房失败: ' + getErrorMessageZh(e));
   }
 };
 
@@ -1183,8 +1184,7 @@ const confirmTimeAdjust = async () => {
     showTimeAdjustModal.value = false;
     fetchData(); // Refresh list background
   } catch (e: any) {
-    const msg = e.response?.data?.message || e.response?.data || e.message;
-    alert('调整失败: ' + (typeof msg === 'string' ? msg : JSON.stringify(msg)));
+    alert('调整失败: ' + getErrorMessageZh(e));
   }
 };
 
@@ -1271,7 +1271,7 @@ const confirmSendCard = async () => {
     if (showModal.value) closeModal();
     alert('房卡发送成功，订单状态已更新为已入住');
   } catch (e: any) {
-    alert('发送失败: ' + (e.response?.data?.message || e.response?.data || e.message));
+    alert('发送失败: ' + getErrorMessageZh(e));
   }
 };
 
@@ -1285,7 +1285,7 @@ const cancelOrderFromModal = async (id: number) => {
     fetchData();
     alert('订单已取消');
   } catch (e: any) {
-    alert('取消失败: ' + (e.response?.data || e.message));
+    alert('取消失败: ' + getErrorMessageZh(e));
   }
 };
 
@@ -1371,8 +1371,7 @@ const saveOrder = async () => {
     }
     fetchData(); // 后台刷新订单列表
   } catch (e: any) {
-    const msg = e.response?.data?.message || e.response?.data || e.message || 'Failed to save order';
-    alert('保存失败: ' + (typeof msg === 'string' ? msg : JSON.stringify(msg)));
+    alert('保存失败: ' + getErrorMessageZh(e));
   }
 };
 

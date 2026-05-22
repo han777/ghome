@@ -112,6 +112,7 @@ import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '../../utils/api';
+import { getErrorMessageI18n } from '../../utils/errorTranslate';
 
 const router = useRouter();
 const { t } = useI18n();
@@ -235,7 +236,7 @@ const submitOrder = async () => {
     alert(t('confirm.bookSuccess'));
     router.push('/m/records');
   } catch (e: any) {
-    alert(t('confirm.submitFail') + (e.response?.data?.message || e.message));
+    alert(t('confirm.submitFail') + getErrorMessageI18n(e));
   } finally {
     submitting.value = false;
   }

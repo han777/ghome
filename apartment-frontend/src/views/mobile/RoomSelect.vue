@@ -55,6 +55,7 @@ import { translateField } from '../../utils/lang';
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '../../utils/api';
+import { getErrorMessageI18n } from '../../utils/errorTranslate';
 
 const router = useRouter();
 const { t, locale } = useI18n();
@@ -155,7 +156,7 @@ const confirmSelection = async () => {
       query: { orderId: res.id.toString() }
     });
   } catch (e: any) {
-    alert(t('roomSelect.fail') + (e.response?.data?.message || e.message));
+    alert(t('roomSelect.fail') + getErrorMessageI18n(e));
   } finally {
     submitting.value = false;
   }

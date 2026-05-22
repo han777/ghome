@@ -193,6 +193,7 @@ import { translateField } from '../../utils/lang';
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '../../utils/api';
+import { getErrorMessageI18n } from '../../utils/errorTranslate';
 
 const router = useRouter();
 const { t, locale } = useI18n();
@@ -296,7 +297,7 @@ const cancelBooking = async () => {
       alert(t('orderDetail.cancelSuccess'));
       fetchOrder();
     } catch (e: any) {
-      alert(t('orderDetail.cancelFail') + (e.response?.data?.message || e.message));
+      alert(t('orderDetail.cancelFail') + getErrorMessageI18n(e));
     }
   }
 };
@@ -308,7 +309,7 @@ const earlyCheckOut = async () => {
       alert(t('orderDetail.checkoutSuccess'));
       fetchOrder();
     } catch (e: any) {
-      alert(t('orderDetail.checkoutFail') + (e.response?.data?.message || e.message));
+      alert(t('orderDetail.checkoutFail') + getErrorMessageI18n(e));
     }
   }
 };
@@ -321,7 +322,7 @@ const submitOrder = async () => {
     alert(t('orderDetail.submitSuccess'));
     fetchOrder();
   } catch (e: any) {
-    alert(t('confirm.submitFailed') + ': ' + (e.response?.data?.message || e.message));
+    alert(t('confirm.submitFailed') + ': ' + getErrorMessageI18n(e));
   }
 };
 
