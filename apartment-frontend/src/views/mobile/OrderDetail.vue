@@ -18,7 +18,10 @@
           <svg viewBox="0 0 24 24" width="16" height="16" fill="#1677ff"><path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z" /></svg>
           <span class="card-title-small">{{ $t('orderDetail.doorPassword') }}</span>
         </div>
-        <div class="key-display">box:{{ keyInfo?.boxNo || '-' }},password:{{ keyInfo?.password || '-' }}</div>
+        <div class="key-display">
+          <div class="key-row">箱号: {{ keyInfo?.boxNo || '-' }}</div>
+          <div class="key-row">密码: {{ keyInfo?.password || '-' }}</div>
+        </div>
         <div class="key-expiry">{{ $t('orderDetail.effectiveDate') }}{{ formatDate(order.startDate, true) }}</div>
       </div>
 
@@ -398,14 +401,21 @@ onMounted(fetchOrder);
 .key-display {
   background: #f0f7ff;
   color: #1677ff;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
   text-align: center;
-  padding: 20px;
+  padding: 16px 20px;
   border-radius: 12px;
   margin: 10px 0;
   letter-spacing: 1px;
-  display: block;
+}
+
+.key-row {
+  padding: 6px 0;
+}
+
+.key-row:first-child {
+  border-bottom: 1px dashed #b3d4ff;
 }
 
 .key-expiry {

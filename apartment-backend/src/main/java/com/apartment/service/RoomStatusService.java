@@ -67,9 +67,9 @@ public class RoomStatusService {
             .filter(o -> o.getStatus() != null && o.getStatus() == 2)
             .collect(Collectors.toList());
 
-        // 活跃订单 (status=1,2 且在当前时间范围内)
+        // 当前在住订单 (status=2 且在当前时间范围内) - 只有已入住才算占用房间
         List<RoomOrder> activeOrders = allOrders.stream()
-            .filter(o -> Arrays.asList(1, 2).contains(o.getStatus())
+            .filter(o -> o.getStatus() != null && o.getStatus() == 2
                 && !o.getStartDate().isAfter(now)
                 && !o.getEndDate().isBefore(now))
             .collect(Collectors.toList());
