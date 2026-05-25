@@ -111,6 +111,9 @@
               <div class="header-right">
                 <span v-if="room.status === 2" class="status-icon locked">锁</span>
                 <span v-if="room.status === 3" class="status-icon repair">修</span>
+                <div class="room-header-menu" @click.stop="toggleRoomMenu($event, room)">
+                  <span>•••</span>
+                </div>
               </div>
             </div>
 
@@ -182,6 +185,48 @@
     <!-- 订单菜单弹窗 -->
     <div v-if="showOrderMenu" class="task-menu-popup" :style="orderMenuStyle" @click.stop>
       <div @click="viewOrderDetail">查看订单</div>
+    </div>
+
+    <!-- 房间菜单弹窗 -->
+    <div v-if="showRoomMenu" class="task-menu-popup" :style="roomMenuStyle" @click.stop>
+      <div @click="openQuickMaintenance">生成维修单</div>
+      <div v-if="selectedRoomForMenu?.status === 3" @click="openEditMaintenance">修改维修单</div>
+    </div>
+
+    <!-- 维修单弹窗 -->
+    <div v-if="showMaintenanceModal" class="modal-overlay" @click="showMaintenanceModal = false">
+      <div class="modal-content" style="max-width: 450px;" @click.stop>
+        <div class="modal-header">
+          <h3>{{ maintenanceForm.id ? '修改维修单' : '生成维修单' }} - {{ selectedRoomForMenu?.roomNo }}</h3>
+          <button class="close-btn" @click="showMaintenanceModal = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-item">
+            <label>开始时间</label>
+            <input v-model="maintenanceForm.startTime" type="datetime-local">
+          </div>
+          <div class="form-item">
+            <label>结束时间</label>
+            <input v-model="maintenanceForm.endTime" type="datetime-local">
+          </div>
+          <div class="form-item">
+            <label>维修内容</label>
+            <textarea v-model="maintenanceForm.content" rows="2" placeholder="请输入维修详情..."></textarea>
+          </div>
+          <div class="form-item" v-if="maintenanceForm.id">
+            <label>状态</label>
+            <select v-model="maintenanceForm.status">
+              <option :value="0">维修中</option>
+              <option :value="1">已完成</option>
+              <option :value="2">已取消</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="cancel-btn" @click="showMaintenanceModal = false">取消</button>
+          <button class="save-btn" @click="saveMaintenance">{{ maintenanceForm.id ? '保存' : '确认生成' }}</button>
+        </div>
+      </div>
     </div>
 
     <!-- 清扫任务弹窗 -->
@@ -259,6 +304,20 @@ const selectedRoomForMenu = ref<any>(null);
 const showOrderMenu = ref(false);
 const orderMenuStyle = ref<Record<string, string>>({});
 const selectedOrderInfo = ref<{ room: any; type: 'arriving' | 'departing' } | null>(null);
+
+// 房间菜单相关
+const showRoomMenu = ref(false);
+const roomMenuStyle = ref<Record<string, string>>({});
+
+// 维修单弹窗相关
+const showMaintenanceModal = ref(false);
+const maintenanceForm = ref<any>({
+  id: null,
+  startTime: '',
+  endTime: '',
+  content: '',
+  status: 0
+});
 
 // 任务弹窗相关
 const showTaskModal = ref(false);
@@ -430,6 +489,16 @@ const filteredFloors = computed(() => {
     groups.get(fId).rooms.push(room);
   });
 
+  // Sort rooms within each floor by roomNo ascending
+  groups.forEach((floor) => {
+    floor.rooms.sort((a: any, b: any) => {
+      const numA = parseInt(a.roomNo);
+      const numB = parseInt(b.roomNo);
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+      return (a.roomNo || '').localeCompare(b.roomNo || '');
+    });
+  });
+
   return Array.from(groups.values()).sort((a, b) => {
     const numA = parseInt(a.name);
     const numB = parseInt(b.name);
@@ -503,6 +572,26 @@ const closeOrderMenu = () => {
   showOrderMenu.value = false;
 };
 
+// 房间菜单相关
+const toggleRoomMenu = (event: MouseEvent, room: any) => {
+  event.stopPropagation();
+  selectedRoomForMenu.value = room;
+  showTaskMenu.value = false;
+  showOrderMenu.value = false;
+
+  const rect = (event.target as HTMLElement).getBoundingClientRect();
+  roomMenuStyle.value = {
+    top: `${rect.bottom + 4}px`,
+    left: `${rect.left - 80}px`
+  };
+
+  showRoomMenu.value = true;
+};
+
+const closeRoomMenu = () => {
+  showRoomMenu.value = false;
+};
+
 const viewOrderDetail = () => {
   if (!selectedOrderInfo.value) return;
   const { room, type } = selectedOrderInfo.value;
@@ -568,16 +657,76 @@ const saveTask = async () => {
   }
 };
 
+// 维修单相关
+const openQuickMaintenance = () => {
+  if (!selectedRoomForMenu.value) return;
+  const now = new Date();
+  maintenanceForm.value = {
+    id: null,
+    startTime: new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16),
+    endTime: new Date(new Date(now.getTime() + 3 * 365 * 24 * 60 * 60 * 1000).getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16),
+    content: '',
+    status: 0
+  };
+  showRoomMenu.value = false;
+  showMaintenanceModal.value = true;
+};
+
+const openEditMaintenance = async () => {
+  if (!selectedRoomForMenu.value) return;
+  showRoomMenu.value = false;
+  try {
+    const res = await api.get(`/maintenances/room/${selectedRoomForMenu.value.roomId}`) as any[];
+    const activeMaintenance = res.find(m => m.status === 0);
+    if (!activeMaintenance) {
+      alert('未找到进行中的维修单');
+      return;
+    }
+    maintenanceForm.value = {
+      id: activeMaintenance.id,
+      startTime: activeMaintenance.startTime?.slice(0, 16) || '',
+      endTime: activeMaintenance.endTime?.slice(0, 16) || '',
+      content: activeMaintenance.content || '',
+      status: activeMaintenance.status
+    };
+    showMaintenanceModal.value = true;
+  } catch (e) {
+    console.error('Failed to fetch maintenance', e);
+    alert('获取维修单失败');
+  }
+};
+
+const saveMaintenance = async () => {
+  try {
+    const payload = {
+      id: maintenanceForm.value.id,
+      room: { id: selectedRoomForMenu.value?.roomId },
+      startTime: maintenanceForm.value.startTime,
+      endTime: maintenanceForm.value.endTime,
+      content: maintenanceForm.value.content,
+      status: maintenanceForm.value.status
+    };
+    await api.post('/maintenances', payload);
+    showMaintenanceModal.value = false;
+    fetchData();
+  } catch (e: any) {
+    console.error('Failed to save maintenance', e);
+    alert(e.response?.data || '保存维修单失败');
+  }
+};
+
 onMounted(() => {
   restoreFiltersFromUrl();
   fetchData();
   document.addEventListener('click', closeTaskMenu);
   document.addEventListener('click', closeOrderMenu);
+  document.addEventListener('click', closeRoomMenu);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', closeTaskMenu);
   document.removeEventListener('click', closeOrderMenu);
+  document.removeEventListener('click', closeRoomMenu);
 });
 </script>
 
@@ -821,6 +970,19 @@ onUnmounted(() => {
   gap: 4px;
 }
 
+.room-header-menu {
+  cursor: pointer;
+  padding: 2px 4px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.5);
+  user-select: none;
+  font-size: 12px;
+}
+
+.room-header-menu:hover {
+  color: rgba(0,0,0,0.8);
+}
+
 .room-no {
   font-size: 16px;
   font-weight: 800;
@@ -831,7 +993,9 @@ onUnmounted(() => {
   font-size: 10px;
   padding: 1px 4px;
   border-radius: 3px;
-  background: rgba(0,0,0,0.15);
+  text-decoration: underline;
+  text-decoration-color: rgba(0,0,0,0.3);
+  text-underline-offset: 2px;
   color: #374151;
 }
 
@@ -890,7 +1054,7 @@ onUnmounted(() => {
 }
 
 .task-type.no-task {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 .task-canceled { color: #94a3b8; }
@@ -977,7 +1141,7 @@ onUnmounted(() => {
 }
 
 .no-order {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 /* Task menu popup */
