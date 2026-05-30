@@ -19,10 +19,11 @@
           <tr>
             <th>ID</th>
             <th>房间号</th>
+            <th>类型</th>
             <th>开始时间</th>
             <th>结束时间</th>
             <th>状态</th>
-            <th>维修内容</th>
+            <th>维护内容</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -30,6 +31,11 @@
           <tr v-for="m in filteredMaintenances" :key="m.id">
             <td>{{ m.id }}</td>
             <td>{{ m.room?.roomNo }}</td>
+            <td>
+              <span class="type-badge" :class="m.maintenanceType === 2 ? 'type-locked' : 'type-repair'">
+                {{ m.maintenanceType === 2 ? '锁房' : '维修' }}
+              </span>
+            </td>
             <td>{{ formatDateTime(m.startTime) }}</td>
             <td>{{ formatDateTime(m.endTime) }}</td>
             <td>
@@ -63,6 +69,13 @@
                 <option v-for="room in rooms" :key="room.id" :value="room.id">
                   {{ room.roomNo }}
                 </option>
+              </select>
+            </div>
+            <div class="form-item">
+              <label>维护类型</label>
+              <select v-model="form.maintenanceType">
+                <option :value="1">维修</option>
+                <option :value="2">锁房</option>
               </select>
             </div>
             <div class="form-item">
@@ -111,6 +124,7 @@ const roomIdFilter = ref<string | number>(route.query.roomId ? Number(route.quer
 const form = reactive<any>({
   id: null,
   roomId: null,
+  maintenanceType: 1,
   startTime: '',
   endTime: '',
   status: 0,
@@ -169,6 +183,7 @@ const openModal = (m?: any) => {
   if (m) {
     form.id = m.id;
     form.roomId = m.room?.id;
+    form.maintenanceType = m.maintenanceType || 1;
     form.startTime = formatForInput(m.startTime);
     form.endTime = formatForInput(m.endTime);
     form.status = m.status;
@@ -176,6 +191,7 @@ const openModal = (m?: any) => {
   } else {
     form.id = null;
     form.roomId = roomIdFilter.value || null;
+    form.maintenanceType = 1;
     const now = new Date();
     // Default to +8 timezone simple hack or just use local ISO string
     form.startTime = formatForInput(new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString());
@@ -193,6 +209,7 @@ const saveMaintenance = async () => {
     const payload = {
       id: form.id,
       room: { id: form.roomId },
+      maintenanceType: form.maintenanceType,
       startTime: form.startTime,
       endTime: form.endTime,
       status: form.status,
@@ -240,4 +257,8 @@ onMounted(fetchData);
 .status-badge.active { background: #dcfce7; color: #166534; }
 .status-badge.occupied { background: #fef9c3; color: #854d0e; }
 .status-badge.repair { background: #fee2e2; color: #991b1b; }
+
+.type-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.type-badge.type-repair { background: #fee2e2; color: #991b1b; }
+.type-badge.type-locked { background: #e2e8f0; color: #475569; }
 </style>
