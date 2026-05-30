@@ -795,7 +795,7 @@ onUnmounted(() => {
 }
 
 .chip-free { background: #86efac; }
-.chip-occupied { background: #d4a574; }
+.chip-occupied { background: #bfdbfe; }
 .chip-repair { background: #ef4444; color: #fff; }
 .chip-locked { background: #94a3b8; color: #fff; }
 .chip-empty-dirty { background: #a3d9a3; }
@@ -882,19 +882,19 @@ onUnmounted(() => {
 
 /* Status header & body colors - solid fill */
 .status-free .room-header { background: #86efac; }
-.status-free .room-body { background: #dcfce7; }
+.status-free .room-body { background: #86efac; }
 
-.status-occupied .room-header { background: #d4a574; }
-.status-occupied .room-body { background: #f5e6d3; }
+.status-occupied .room-header { background: #bfdbfe; }
+.status-occupied .room-body { background: #bfdbfe; }
 
 .status-maintenance .room-header { background: #ef4444; }
-.status-maintenance .room-body { background: #fee2e2; }
+.status-maintenance .room-body { background: #ef4444; }
 
 .status-empty-dirty .room-header { background: #a3d9a3; }
-.status-empty-dirty .room-body { background: #e8f5e8; }
+.status-empty-dirty .room-body { background: #a3d9a3; }
 
 .status-occupied-dirty .room-header { background: #c4915a; }
-.status-occupied-dirty .room-body { background: #f5e6d3; }
+.status-occupied-dirty .room-body { background: #c4915a; }
 
 .room-header {
   display: flex;
