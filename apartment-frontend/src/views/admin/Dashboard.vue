@@ -154,8 +154,8 @@
                 <span v-if="room.labels?.includes('ARRIVING_TODAY') && !room.labels?.includes('OVERDUE_ARRIVING')" class="badge badge-arriving-today">今日抵</span>
                 <span v-if="room.labels?.includes('DEPARTING_TODAY') && !room.labels?.includes('OVERDUE_DEPARTING')" class="badge badge-departing-today">今日离</span>
                 <span v-if="room.labels?.includes('ARRIVING_SOON')" class="badge badge-arriving-soon">即将抵</span>
-                <span v-if="room.cleaningTask?.taskType === 2 && room.cleaningTask?.status !== 2" class="badge badge-deep-clean">强打扫</span>
-                <span v-if="room.cleaningTask?.taskType === 1 && room.cleaningTask?.status !== 2" class="badge badge-daily-clean">保洁</span>
+                <span v-if="room.cleaningTask?.taskType === 2" class="badge badge-deep-clean">强打扫</span>
+                <span v-if="room.cleaningTask?.taskType === 1" class="badge badge-daily-clean">保洁</span>
                 <span v-if="room.cleaningTask?.status === 1" class="badge badge-canceled">已取消</span>
               </div>
             </div>
