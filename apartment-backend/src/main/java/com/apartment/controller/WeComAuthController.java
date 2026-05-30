@@ -194,7 +194,7 @@ public class WeComAuthController {
                 user = new SysUser();
                 user.setWecomId(wecomUserId);
                 user.setSource("1");
-                user.setUsername("wecom_" + wecomUserId);
+                user.setUsername(wecomUserId);
                 user.setPassword(passwordEncoder.encode("wecom_" + System.currentTimeMillis()));
                 // Use name from WeChat Work directory as real_name
                 user.setRealName(wecomUserInfo.name != null ? wecomUserInfo.name : wecomUserId);
