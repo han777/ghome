@@ -11,8 +11,10 @@
     <div class="gantt-container">
       <div class="gantt-y-axis">
         <div class="y-header">房间</div>
-        <div v-for="room in rooms" :key="room.id" class="y-item">
-          {{ room.roomNo }}
+        <div class="y-scroll" ref="yScrollRef">
+          <div v-for="room in rooms" :key="room.id" class="y-item">
+            {{ room.roomNo }}
+          </div>
         </div>
       </div>
       <div class="gantt-grid" ref="gridRef">
@@ -21,27 +23,29 @@
             {{ day }}
           </div>
         </div>
-        <div class="gantt-body">
-          <div v-for="room in rooms" :key="room.id" class="room-row">
-            <div 
-              v-for="occ in getOccupiesForRoom(room.id)" 
-              :key="occ.id"
-              class="order-bar"
-              :style="getOccupyBarStyle(occ)"
-              :title="occ.occupantUser?.realName"
-            >
-              {{ occ.occupantUser?.realName }}
+        <div class="gantt-body-scroll" ref="bodyScrollRef">
+          <div class="gantt-body">
+            <div v-for="room in rooms" :key="room.id" class="room-row">
+              <div
+                v-for="occ in getOccupiesForRoom(room.id)"
+                :key="occ.id"
+                class="order-bar"
+                :style="getOccupyBarStyle(occ)"
+                :title="occ.occupantUser?.realName"
+              >
+                {{ occ.occupantUser?.realName }}
+              </div>
+              <div
+                v-for="m in getMaintenancesForRoom(room.id)"
+                :key="'m' + m.id"
+                class="order-bar maintenance-bar"
+                :style="getMaintenanceBarStyle(m)"
+                title="Maintenance"
+              >
+                维修
+              </div>
+              <div v-for="day in daysInMonth" :key="day" class="grid-cell"></div>
             </div>
-            <div 
-              v-for="m in getMaintenancesForRoom(room.id)" 
-              :key="'m' + m.id"
-              class="order-bar maintenance-bar"
-              :style="getMaintenanceBarStyle(m)"
-              title="Maintenance"
-            >
-              维修
-            </div>
-            <div v-for="day in daysInMonth" :key="day" class="grid-cell"></div>
           </div>
         </div>
       </div>
@@ -50,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
 import api from '../../utils/api';
 
 const rooms = ref<any[]>([]);
@@ -58,6 +62,22 @@ const occupies = ref<any[]>([]);
 const maintenances = ref<any[]>([]);
 const currentYear = ref(new Date().getFullYear());
 const currentMonth = ref(new Date().getMonth());
+
+const gridRef = ref<HTMLElement | null>(null);
+const yScrollRef = ref<HTMLElement | null>(null);
+const bodyScrollRef = ref<HTMLElement | null>(null);
+
+const onBodyScroll = () => {
+  if (bodyScrollRef.value && yScrollRef.value) {
+    yScrollRef.value.scrollTop = bodyScrollRef.value.scrollTop;
+  }
+};
+
+const onGridHorizontalScroll = () => {
+  if (gridRef.value && bodyScrollRef.value) {
+    bodyScrollRef.value.scrollLeft = gridRef.value.scrollLeft;
+  }
+};
 
 const daysInMonth = computed(() => {
   return new Date(currentYear.value, currentMonth.value + 1, 0).getDate();
@@ -174,7 +194,24 @@ const getMaintenanceBarStyle = (m: any) => {
   };
 };
 
-onMounted(fetchData);
+onMounted(() => {
+  fetchData();
+  if (bodyScrollRef.value) {
+    bodyScrollRef.value.addEventListener('scroll', onBodyScroll);
+  }
+  if (gridRef.value) {
+    gridRef.value.addEventListener('scroll', onGridHorizontalScroll);
+  }
+});
+
+onUnmounted(() => {
+  if (bodyScrollRef.value) {
+    bodyScrollRef.value.removeEventListener('scroll', onBodyScroll);
+  }
+  if (gridRef.value) {
+    gridRef.value.removeEventListener('scroll', onGridHorizontalScroll);
+  }
+});
 </script>
 
 <style scoped>
@@ -189,16 +226,25 @@ onMounted(fetchData);
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   overflow: hidden;
   border: 1px solid #e2e8f0;
+  height: calc(100vh - 160px);
 }
 
-.gantt-y-axis { width: 100px; border-right: 1px solid #e2e8f0; background: #f8fafc; }
-.y-header { height: 40px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.gantt-y-axis {
+  width: 100px;
+  border-right: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+.y-header { height: 40px; min-height: 40px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.y-scroll { flex: 1; overflow: hidden; }
 .y-item { height: 40px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; padding: 0 12px; font-size: 14px; }
 
-.gantt-grid { flex: 1; overflow-x: auto; position: relative; }
-.gantt-x-axis { display: flex; height: 40px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+.gantt-grid { flex: 1; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+.gantt-x-axis { display: flex; height: 40px; min-height: 40px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
 .x-item { min-width: 40px; width: 40px; border-right: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
 
+.gantt-body-scroll { flex: 1; overflow: auto; }
 .gantt-body { position: relative; }
 .room-row { height: 40px; border-bottom: 1px solid #e2e8f0; display: flex; position: relative; }
 .grid-cell { min-width: 40px; width: 40px; border-right: 1px solid #f1f5f9; }

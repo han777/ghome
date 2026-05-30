@@ -29,6 +29,11 @@ public class RoomStatusDashboardDTO {
         private String guestName;
         private Long orderId;
 
+        // 维护类型 (1=维修, 2=锁房), 仅当 status=2(维护) 时有值
+        private Integer maintenanceType;
+        private String maintenanceContent;
+        private Long maintenanceId;
+
         // 清扫任务信息
         private CleaningTaskInfo cleaningTask;
 

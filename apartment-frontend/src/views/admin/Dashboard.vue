@@ -31,11 +31,34 @@
           <div class="status-chip chip-occupied-dirty" :class="{ active: statusFilters.includes(5) }" @click="toggleStatusFilter(5)">
             住脏 <span class="chip-count">{{ data.statusCounts?.OCCUPIED_DIRTY || 0 }}</span>
           </div>
-          <div class="status-chip chip-repair" :class="{ active: statusFilters.includes(3) }" @click="toggleStatusFilter(3)">
-            维修 <span class="chip-count">{{ data.statusCounts?.REPAIR || 0 }}</span>
+          <div class="status-chip chip-repair" :class="{ active: maintTypeFilter === 1 }" @click="toggleMaintTypeFilter(1)">
+            维修 <span class="chip-count">{{ data.statusCounts?.MAINT_REPAIR || 0 }}</span>
           </div>
-          <div class="status-chip chip-locked" :class="{ active: statusFilters.includes(2) }" @click="toggleStatusFilter(2)">
-            锁房 <span class="chip-count">{{ data.statusCounts?.LOCKED || 0 }}</span>
+          <div class="status-chip chip-locked" :class="{ active: maintTypeFilter === 2 }" @click="toggleMaintTypeFilter(2)">
+            锁房 <span class="chip-count">{{ data.statusCounts?.MAINT_LOCKED || 0 }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Overdue Alert Filter -->
+      <div class="filter-group" v-if="(data.statusCounts?.OVERDUE_ARRIVING || 0) + (data.statusCounts?.OVERDUE_DEPARTING || 0) > 0">
+        <div class="filter-title"><span>|</span> 逾期异动</div>
+        <div class="overdue-list">
+          <div
+            class="overdue-item"
+            :class="{ active: overdueFilter === 'ARRIVING' }"
+            @click="toggleOverdueFilter('ARRIVING')"
+          >
+            <span class="overdue-tag overdue-arriving">逾期未抵</span>
+            <span class="count">{{ data.statusCounts?.OVERDUE_ARRIVING || 0 }}</span>
+          </div>
+          <div
+            class="overdue-item"
+            :class="{ active: overdueFilter === 'DEPARTING' }"
+            @click="toggleOverdueFilter('DEPARTING')"
+          >
+            <span class="overdue-tag overdue-departing">逾期未离</span>
+            <span class="count">{{ data.statusCounts?.OVERDUE_DEPARTING || 0 }}</span>
           </div>
         </div>
       </div>
@@ -106,65 +129,34 @@
             <div class="room-header">
               <div class="header-left">
                 <span class="room-no">{{ room.roomNo }}</span>
-                <span class="room-type-tag">{{ room.roomTypeName }}</span>
               </div>
               <div class="header-right">
-                <span v-if="room.status === 2" class="status-icon locked">锁</span>
-                <span v-if="room.status === 3" class="status-icon repair">修</span>
+                <span class="room-type-tag">{{ room.roomTypeName }}</span>
                 <div class="room-header-menu" @click.stop="toggleRoomMenu($event, room)">
-                  <span>•••</span>
+                  <span>⋯</span>
                 </div>
               </div>
             </div>
 
             <!-- 内容区 -->
             <div class="room-body">
-              <!-- 清扫任务条 -->
-              <div class="task-bar" :class="{ 'has-task': room.cleaningTask, 'task-completed': room.cleaningTask?.status === 2 }">
-                <div class="task-content">
-                  <span class="task-icon">🧹</span>
-                  <span v-if="room.cleaningTask" class="task-type">
-                    {{ room.cleaningTask.taskType === 1 ? '日常保洁' : '强打扫' }}
-                    <span v-if="room.cleaningTask.status === 1" class="task-canceled">(已取消)</span>
-                    <span v-if="room.cleaningTask.status === 2" class="task-done">(已完成)</span>
-                  </span>
-                  <span v-else class="task-type no-task">无清扫任务</span>
-                </div>
-                <div class="task-menu" @click.stop="toggleTaskMenu($event, room)">
-                  <span>•••</span>
-                </div>
+              <!-- 在住客人姓名（居中） -->
+              <div v-if="room.guestName && (room.status === 1 || room.status === 5)" class="guest-name-center">
+                {{ room.guestName }}
               </div>
 
-              <!-- 最近到达订单条 -->
-              <div class="order-bar arriving" v-if="room.nearestArriving">
-                <span class="order-icon">🛬</span>
-                <span class="order-info">
-                  <span class="guest-name">{{ room.nearestArriving.guestName }}</span>
-                  <span class="days-label">{{ formatDaysLabel(room.arrivingDays, true) }}</span>
-                </span>
-                <div class="order-menu" @click.stop="toggleOrderMenu($event, room, 'arriving')">
-                  <span>•••</span>
-                </div>
-              </div>
-              <div class="order-bar empty" v-else>
-                <span class="order-icon">🛬</span>
-                <span class="order-info no-order">暂无预订</span>
-              </div>
-
-              <!-- 最近离开订单条 -->
-              <div class="order-bar departing" v-if="room.nearestDeparting">
-                <span class="order-icon">🛫</span>
-                <span class="order-info">
-                  <span class="guest-name">{{ room.nearestDeparting.guestName }}</span>
-                  <span class="days-label">{{ formatDaysLabel(room.departingDays, false) }}</span>
-                </span>
-                <div class="order-menu" @click.stop="toggleOrderMenu($event, room, 'departing')">
-                  <span>•••</span>
-                </div>
-              </div>
-              <div class="order-bar empty" v-else>
-                <span class="order-icon">🛫</span>
-                <span class="order-info no-order">-</span>
+              <!-- 彩色标签区 -->
+              <div class="badge-area">
+                <span v-if="room.status === 2 && room.maintenanceType === 2" class="badge badge-locked">锁房</span>
+                <span v-if="room.status === 2 && room.maintenanceType === 1" class="badge badge-repair">维修</span>
+                <span v-if="room.labels?.includes('OVERDUE_ARRIVING')" class="badge badge-overdue-arriving">逾期{{ Math.abs(room.arrivingDays) }}日未抵</span>
+                <span v-if="room.labels?.includes('OVERDUE_DEPARTING')" class="badge badge-overdue-departing">逾期{{ Math.abs(room.departingDays) }}日未离</span>
+                <span v-if="room.labels?.includes('ARRIVING_TODAY') && !room.labels?.includes('OVERDUE_ARRIVING')" class="badge badge-arriving-today">今日抵</span>
+                <span v-if="room.labels?.includes('DEPARTING_TODAY') && !room.labels?.includes('OVERDUE_DEPARTING')" class="badge badge-departing-today">今日离</span>
+                <span v-if="room.labels?.includes('ARRIVING_SOON')" class="badge badge-arriving-soon">即将抵</span>
+                <span v-if="room.cleaningTask?.taskType === 2 && room.cleaningTask?.status !== 2" class="badge badge-deep-clean">强打扫</span>
+                <span v-if="room.cleaningTask?.taskType === 1 && room.cleaningTask?.status !== 2" class="badge badge-daily-clean">保洁</span>
+                <span v-if="room.cleaningTask?.status === 1" class="badge badge-canceled">已取消</span>
               </div>
             </div>
           </div>
@@ -175,32 +167,35 @@
       </div>
     </main>
 
-    <!-- 任务菜单弹窗 -->
-    <div v-if="showTaskMenu" class="task-menu-popup" :style="taskMenuStyle" @click.stop>
-      <div v-if="selectedRoomForMenu?.cleaningTask && selectedRoomForMenu?.cleaningTask?.status === 0" @click="completeTask">完成清扫</div>
-      <div v-if="selectedRoomForMenu?.cleaningTask" @click="editTask">编辑任务</div>
-      <div @click="addTask">新增清扫</div>
-    </div>
-
-    <!-- 订单菜单弹窗 -->
-    <div v-if="showOrderMenu" class="task-menu-popup" :style="orderMenuStyle" @click.stop>
-      <div @click="viewOrderDetail">查看订单</div>
-    </div>
-
-    <!-- 房间菜单弹窗 -->
+    <!-- 统一房间菜单弹窗 -->
     <div v-if="showRoomMenu" class="task-menu-popup" :style="roomMenuStyle" @click.stop>
-      <div @click="openQuickMaintenance">生成维修单</div>
-      <div v-if="selectedRoomForMenu?.status === 3" @click="openEditMaintenance">修改维修单</div>
+      <div v-if="selectedRoomForMenu?.guestName" @click="viewCurrentOrder">查看当前订单</div>
+      <div v-if="selectedRoomForMenu?.nearestArriving && !selectedRoomForMenu?.guestName" @click="viewArrivingOrder">查看预订订单</div>
+      <div v-if="selectedRoomForMenu?.nearestDeparting" @click="viewDepartingOrder">查看离店订单</div>
+      <div v-if="selectedRoomForMenu?.guestName || selectedRoomForMenu?.nearestArriving || selectedRoomForMenu?.nearestDeparting" class="menu-divider"></div>
+      <div v-if="selectedRoomForMenu?.cleaningTask && selectedRoomForMenu?.cleaningTask?.status === 0" @click="completeTask">完成清扫</div>
+      <div v-if="selectedRoomForMenu?.cleaningTask" @click="editTask">编辑清扫任务</div>
+      <div @click="addTask">新增清扫任务</div>
+      <div class="menu-divider"></div>
+      <div v-if="selectedRoomForMenu?.status !== 2" @click="openQuickMaintenance">房间维护</div>
+      <div v-if="selectedRoomForMenu?.status === 2" @click="openEditMaintenance">编辑维护</div>
     </div>
 
-    <!-- 维修单弹窗 -->
+    <!-- 维护弹窗 -->
     <div v-if="showMaintenanceModal" class="modal-overlay" @click="showMaintenanceModal = false">
       <div class="modal-content" style="max-width: 450px;" @click.stop>
         <div class="modal-header">
-          <h3>{{ maintenanceForm.id ? '修改维修单' : '生成维修单' }} - {{ selectedRoomForMenu?.roomNo }}</h3>
+          <h3>{{ maintenanceForm.id ? '编辑维护' : '房间维护' }} - {{ selectedRoomForMenu?.roomNo }}</h3>
           <button class="close-btn" @click="showMaintenanceModal = false">&times;</button>
         </div>
         <div class="modal-body">
+          <div class="form-item">
+            <label>维护类型</label>
+            <select v-model="maintenanceForm.maintenanceType">
+              <option :value="1">维修</option>
+              <option :value="2">锁房</option>
+            </select>
+          </div>
           <div class="form-item">
             <label>开始时间</label>
             <input v-model="maintenanceForm.startTime" type="datetime-local">
@@ -210,13 +205,13 @@
             <input v-model="maintenanceForm.endTime" type="datetime-local">
           </div>
           <div class="form-item">
-            <label>维修内容</label>
-            <textarea v-model="maintenanceForm.content" rows="2" placeholder="请输入维修详情..."></textarea>
+            <label>维护内容</label>
+            <textarea v-model="maintenanceForm.content" rows="2" placeholder="请输入维护详情..."></textarea>
           </div>
           <div class="form-item" v-if="maintenanceForm.id">
             <label>状态</label>
             <select v-model="maintenanceForm.status">
-              <option :value="0">维修中</option>
+              <option :value="0">进行中</option>
               <option :value="1">已完成</option>
               <option :value="2">已取消</option>
             </select>
@@ -224,7 +219,7 @@
         </div>
         <div class="modal-footer">
           <button class="cancel-btn" @click="showMaintenanceModal = false">取消</button>
-          <button class="save-btn" @click="saveMaintenance">{{ maintenanceForm.id ? '保存' : '确认生成' }}</button>
+          <button class="save-btn" @click="saveMaintenance">{{ maintenanceForm.id ? '保存' : '确认' }}</button>
         </div>
       </div>
     </div>
@@ -282,7 +277,7 @@ const data = ref<any>({
   arrivingToday: 0,
   departingToday: 0,
   arrivingInNDays: 0,
-  statusCounts: { FREE: 0, OCCUPIED: 0, REPAIR: 0, LOCKED: 0, EMPTY_DIRTY: 0, OCCUPIED_DIRTY: 0 },
+  statusCounts: { FREE: 0, OCCUPIED: 0, MAINTENANCE: 0, MAINT_REPAIR: 0, MAINT_LOCKED: 0, EMPTY_DIRTY: 0, OCCUPIED_DIRTY: 0, OVERDUE_ARRIVING: 0, OVERDUE_DEPARTING: 0 },
   rooms: [],
   arrivingByDays: {},
   departingByDays: {}
@@ -294,25 +289,19 @@ const statusFilters = ref<number[]>([]);
 const typeFilters = ref<string[]>([]);
 const arrivingDaysFilter = ref<number | null>(null);
 const departingDaysFilter = ref<number | null>(null);
-
-// 任务菜单相关
-const showTaskMenu = ref(false);
-const taskMenuStyle = ref<Record<string, string>>({});
-const selectedRoomForMenu = ref<any>(null);
-
-// 订单菜单相关
-const showOrderMenu = ref(false);
-const orderMenuStyle = ref<Record<string, string>>({});
-const selectedOrderInfo = ref<{ room: any; type: 'arriving' | 'departing' } | null>(null);
+const overdueFilter = ref<string | null>(null);
+const maintTypeFilter = ref<number | null>(null);
 
 // 房间菜单相关
 const showRoomMenu = ref(false);
 const roomMenuStyle = ref<Record<string, string>>({});
+const selectedRoomForMenu = ref<any>(null);
 
-// 维修单弹窗相关
+// 维护弹窗相关
 const showMaintenanceModal = ref(false);
 const maintenanceForm = ref<any>({
   id: null,
+  maintenanceType: 1,
   startTime: '',
   endTime: '',
   content: '',
@@ -339,6 +328,8 @@ const syncFiltersToUrl = () => {
   if (typeFilters.value.length > 0) query.type = typeFilters.value.join(',');
   if (arrivingDaysFilter.value !== null) query.arrDays = String(arrivingDaysFilter.value);
   if (departingDaysFilter.value !== null) query.depDays = String(departingDaysFilter.value);
+  if (overdueFilter.value) query.overdue = overdueFilter.value;
+  if (maintTypeFilter.value !== null) query.maintType = String(maintTypeFilter.value);
   router.replace({ path: '/admin/dashboard', query });
 };
 
@@ -351,10 +342,12 @@ const restoreFiltersFromUrl = () => {
   if (q.type) typeFilters.value = (q.type as string).split(',');
   if (q.arrDays) arrivingDaysFilter.value = parseInt(q.arrDays as string);
   if (q.depDays) departingDaysFilter.value = parseInt(q.depDays as string);
+  if (q.overdue) overdueFilter.value = q.overdue as string;
+  if (q.maintType) maintTypeFilter.value = parseInt(q.maintType as string);
 };
 
 // 监听筛选条件变化
-watch([selectedFloor, searchQuery, statusFilters, typeFilters, arrivingDaysFilter, departingDaysFilter], syncFiltersToUrl, { deep: true });
+watch([selectedFloor, searchQuery, statusFilters, typeFilters, arrivingDaysFilter, departingDaysFilter, overdueFilter, maintTypeFilter], syncFiltersToUrl, { deep: true });
 
 const fetchData = async () => {
   try {
@@ -421,6 +414,7 @@ const departingByDaysList = computed(() => {
 
 const formatDaysLabel = (days: number, isArriving: boolean) => {
   if (days === 0) return isArriving ? '今日达' : '今日离';
+  if (days < 0) return `逾期${Math.abs(days)}日${isArriving ? '未抵' : '未离'}`;
   return `${days}日${isArriving ? '达' : '离'}`;
 };
 
@@ -442,6 +436,14 @@ const toggleArrivingDaysFilter = (days: number) => {
 
 const toggleDepartingDaysFilter = (days: number) => {
   departingDaysFilter.value = departingDaysFilter.value === days ? null : days;
+};
+
+const toggleOverdueFilter = (type: string) => {
+  overdueFilter.value = overdueFilter.value === type ? null : type;
+};
+
+const toggleMaintTypeFilter = (type: number) => {
+  maintTypeFilter.value = maintTypeFilter.value === type ? null : type;
 };
 
 const filteredRooms = computed(() => {
@@ -471,6 +473,15 @@ const filteredRooms = computed(() => {
 
     // Departing days filter
     if (departingDaysFilter.value !== null && room.departingDays !== departingDaysFilter.value) return false;
+
+    // Overdue filter
+    if (overdueFilter.value === 'ARRIVING' && !(room.labels?.includes('OVERDUE_ARRIVING'))) return false;
+    if (overdueFilter.value === 'DEPARTING' && !(room.labels?.includes('OVERDUE_DEPARTING'))) return false;
+
+    // Maintenance type filter
+    if (maintTypeFilter.value !== null) {
+      if (room.status !== 2 || room.maintenanceType !== maintTypeFilter.value) return false;
+    }
 
     return true;
   });
@@ -510,8 +521,7 @@ const filteredFloors = computed(() => {
 const getRoomStatusClass = (status: number) => {
   if (status === 0) return 'status-free';
   if (status === 1) return 'status-occupied';
-  if (status === 2) return 'status-locked';
-  if (status === 3) return 'status-repair';
+  if (status === 2) return 'status-maintenance';
   if (status === 4) return 'status-empty-dirty';
   if (status === 5) return 'status-occupied-dirty';
   return 'status-free';
@@ -535,54 +545,15 @@ const navigateToOrder = (orderId: number) => {
   router.push({ path: '/admin/orders', query: { orderId, returnPath } });
 };
 
-// 任务菜单相关
-const toggleTaskMenu = (event: MouseEvent, room: any) => {
-  event.stopPropagation();
-  selectedRoomForMenu.value = room;
-
-  const rect = (event.target as HTMLElement).getBoundingClientRect();
-  taskMenuStyle.value = {
-    top: `${rect.bottom + 4}px`,
-    left: `${rect.left - 80}px`
-  };
-
-  showTaskMenu.value = true;
-};
-
-const closeTaskMenu = () => {
-  showTaskMenu.value = false;
-};
-
-// 订单菜单相关
-const toggleOrderMenu = (event: MouseEvent, room: any, type: 'arriving' | 'departing') => {
-  event.stopPropagation();
-  selectedOrderInfo.value = { room, type };
-  showTaskMenu.value = false; // 关闭任务菜单
-
-  const rect = (event.target as HTMLElement).getBoundingClientRect();
-  orderMenuStyle.value = {
-    top: `${rect.bottom + 4}px`,
-    left: `${rect.left - 80}px`
-  };
-
-  showOrderMenu.value = true;
-};
-
-const closeOrderMenu = () => {
-  showOrderMenu.value = false;
-};
-
 // 房间菜单相关
 const toggleRoomMenu = (event: MouseEvent, room: any) => {
   event.stopPropagation();
   selectedRoomForMenu.value = room;
-  showTaskMenu.value = false;
-  showOrderMenu.value = false;
 
   const rect = (event.target as HTMLElement).getBoundingClientRect();
   roomMenuStyle.value = {
     top: `${rect.bottom + 4}px`,
-    left: `${rect.left - 80}px`
+    left: `${rect.left - 100}px`
   };
 
   showRoomMenu.value = true;
@@ -592,21 +563,29 @@ const closeRoomMenu = () => {
   showRoomMenu.value = false;
 };
 
-const viewOrderDetail = () => {
-  if (!selectedOrderInfo.value) return;
-  const { room, type } = selectedOrderInfo.value;
-  const order = type === 'arriving' ? room.nearestArriving : room.nearestDeparting;
-  if (!order?.orderId) return;
+const viewCurrentOrder = () => {
+  if (!selectedRoomForMenu.value?.orderId) return;
+  showRoomMenu.value = false;
+  navigateToOrder(selectedRoomForMenu.value.orderId);
+};
 
-  showOrderMenu.value = false;
-  navigateToOrder(order.orderId);
+const viewArrivingOrder = () => {
+  if (!selectedRoomForMenu.value?.nearestArriving?.orderId) return;
+  showRoomMenu.value = false;
+  navigateToOrder(selectedRoomForMenu.value.nearestArriving.orderId);
+};
+
+const viewDepartingOrder = () => {
+  if (!selectedRoomForMenu.value?.nearestDeparting?.orderId) return;
+  showRoomMenu.value = false;
+  navigateToOrder(selectedRoomForMenu.value.nearestDeparting.orderId);
 };
 
 const completeTask = async () => {
   if (!selectedRoomForMenu.value?.cleaningTask?.id) return;
   try {
     await api.post(`/cleaning-tasks/${selectedRoomForMenu.value.cleaningTask.id}/complete`);
-    showTaskMenu.value = false;
+    showRoomMenu.value = false;
     fetchData();
   } catch (e) {
     console.error('Failed to complete task', e);
@@ -624,7 +603,7 @@ const editTask = () => {
     content: task.content || '',
     status: task.status
   };
-  showTaskMenu.value = false;
+  showRoomMenu.value = false;
   showTaskModal.value = true;
 };
 
@@ -638,7 +617,7 @@ const addTask = () => {
     content: '',
     status: 0
   };
-  showTaskMenu.value = false;
+  showRoomMenu.value = false;
   showTaskModal.value = true;
 };
 
@@ -657,12 +636,13 @@ const saveTask = async () => {
   }
 };
 
-// 维修单相关
+// 维护相关
 const openQuickMaintenance = () => {
   if (!selectedRoomForMenu.value) return;
   const now = new Date();
   maintenanceForm.value = {
     id: null,
+    maintenanceType: 1,
     startTime: new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16),
     endTime: new Date(new Date(now.getTime() + 3 * 365 * 24 * 60 * 60 * 1000).getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16),
     content: '',
@@ -679,11 +659,12 @@ const openEditMaintenance = async () => {
     const res = await api.get(`/maintenances/room/${selectedRoomForMenu.value.roomId}`) as any[];
     const activeMaintenance = res.find(m => m.status === 0);
     if (!activeMaintenance) {
-      alert('未找到进行中的维修单');
+      alert('未找到进行中的维护记录');
       return;
     }
     maintenanceForm.value = {
       id: activeMaintenance.id,
+      maintenanceType: activeMaintenance.maintenanceType || 1,
       startTime: activeMaintenance.startTime?.slice(0, 16) || '',
       endTime: activeMaintenance.endTime?.slice(0, 16) || '',
       content: activeMaintenance.content || '',
@@ -692,7 +673,7 @@ const openEditMaintenance = async () => {
     showMaintenanceModal.value = true;
   } catch (e) {
     console.error('Failed to fetch maintenance', e);
-    alert('获取维修单失败');
+    alert('获取维护记录失败');
   }
 };
 
@@ -701,6 +682,7 @@ const saveMaintenance = async () => {
     const payload = {
       id: maintenanceForm.value.id,
       room: { id: selectedRoomForMenu.value?.roomId },
+      maintenanceType: maintenanceForm.value.maintenanceType,
       startTime: maintenanceForm.value.startTime,
       endTime: maintenanceForm.value.endTime,
       content: maintenanceForm.value.content,
@@ -711,21 +693,17 @@ const saveMaintenance = async () => {
     fetchData();
   } catch (e: any) {
     console.error('Failed to save maintenance', e);
-    alert(e.response?.data || '保存维修单失败');
+    alert(e.response?.data || '保存维护记录失败');
   }
 };
 
 onMounted(() => {
   restoreFiltersFromUrl();
   fetchData();
-  document.addEventListener('click', closeTaskMenu);
-  document.addEventListener('click', closeOrderMenu);
   document.addEventListener('click', closeRoomMenu);
 });
 
 onUnmounted(() => {
-  document.removeEventListener('click', closeTaskMenu);
-  document.removeEventListener('click', closeOrderMenu);
   document.removeEventListener('click', closeRoomMenu);
 });
 </script>
@@ -818,26 +796,10 @@ onUnmounted(() => {
 
 .chip-free { background: #86efac; }
 .chip-occupied { background: #d4a574; }
-.chip-locked { background: #94a3b8; color: #fff; }
 .chip-repair { background: #ef4444; color: #fff; }
-.chip-empty-dirty {
-  background: repeating-linear-gradient(
-    -45deg,
-    #86efac,
-    #86efac 6px,
-    #fff 6px,
-    #fff 12px
-  );
-}
-.chip-occupied-dirty {
-  background: repeating-linear-gradient(
-    -45deg,
-    #d4a574,
-    #d4a574 6px,
-    #fff 6px,
-    #fff 12px
-  );
-}
+.chip-locked { background: #94a3b8; color: #fff; }
+.chip-empty-dirty { background: #a3d9a3; }
+.chip-occupied-dirty { background: #c4915a; }
 
 .type-list, .days-list {
   display: flex;
@@ -904,64 +866,47 @@ onUnmounted(() => {
 }
 
 .room-card {
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   transition: all 0.2s;
-  min-height: 140px;
-  background: #fff;
+  min-height: 120px;
 }
 
 .room-card:hover {
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
   transform: translateY(-2px);
 }
 
-/* Status header colors */
+/* Status header & body colors - solid fill */
 .status-free .room-header { background: #86efac; }
-.status-occupied .room-header { background: #d4a574; }
-.status-locked .room-header { background: #64748b; }
-.status-repair .room-header { background: #ef4444; }
-.status-empty-dirty .room-header {
-  background: repeating-linear-gradient(
-    -45deg,
-    #86efac,
-    #86efac 8px,
-    #fff 8px,
-    #fff 16px
-  );
-}
-.status-occupied-dirty .room-header {
-  background: repeating-linear-gradient(
-    -45deg,
-    #d4a574,
-    #d4a574 8px,
-    #fff 8px,
-    #fff 16px
-  );
-}
+.status-free .room-body { background: #dcfce7; }
 
-/* Status body border colors */
-.status-free .room-body { border: 2px solid #86efac; border-top: none; }
-.status-occupied .room-body { border: 2px solid #d4a574; border-top: none; }
-.status-locked .room-body { border: 2px solid #64748b; border-top: none; }
-.status-repair .room-body { border: 2px solid #ef4444; border-top: none; }
-.status-empty-dirty .room-body { border: 2px solid #86efac; border-top: none; }
-.status-occupied-dirty .room-body { border: 2px solid #d4a574; border-top: none; }
+.status-occupied .room-header { background: #d4a574; }
+.status-occupied .room-body { background: #f5e6d3; }
+
+.status-maintenance .room-header { background: #ef4444; }
+.status-maintenance .room-body { background: #fee2e2; }
+
+.status-empty-dirty .room-header { background: #a3d9a3; }
+.status-empty-dirty .room-body { background: #e8f5e8; }
+
+.status-occupied-dirty .room-header { background: #c4915a; }
+.status-occupied-dirty .room-body { background: #f5e6d3; }
 
 .room-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 8px;
+  padding: 8px 10px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .header-right {
@@ -972,198 +917,185 @@ onUnmounted(() => {
 
 .room-header-menu {
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 2px 6px;
   font-weight: 700;
   color: rgba(0,0,0,0.5);
   user-select: none;
-  font-size: 12px;
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 4px;
 }
 
 .room-header-menu:hover {
   color: rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.08);
 }
 
 .room-no {
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 26px;
+  font-weight: 900;
   color: #1e293b;
+  line-height: 1.1;
 }
 
 .room-type-tag {
   font-size: 10px;
-  padding: 1px 4px;
+  padding: 1px 5px;
   border-radius: 3px;
-  text-decoration: underline;
-  text-decoration-color: rgba(0,0,0,0.3);
-  text-underline-offset: 2px;
-  color: #374151;
+  background: rgba(0,0,0,0.1);
+  color: rgba(0,0,0,0.6);
+  white-space: nowrap;
 }
-
-.status-icon {
-  font-size: 10px;
-  padding: 2px 4px;
-  border-radius: 2px;
-  font-weight: 600;
-}
-.status-icon.locked { background: #475569; color: white; }
-.status-icon.repair { background: #b91c1c; color: white; }
 
 .room-body {
-  padding: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+}
+
+.guest-name-center {
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.badge-arriving-today {
+  background: #3b82f6;
+  color: #fff;
+}
+.badge-departing-today {
+  background: #ec4899;
+  color: #fff;
+}
+.badge-arriving-soon {
+  background: #93c5fd;
+  color: #1e40af;
+}
+.badge-deep-clean {
+  background: #f97316;
+  color: #fff;
+}
+.badge-daily-clean {
+  background: #94a3b8;
+  color: #fff;
+}
+.badge-canceled {
+  background: #e2e8f0;
+  color: #64748b;
+}
+.badge-repair {
+  background: #b91c1c;
+  color: #fff;
+}
+.badge-locked {
+  background: #64748b;
+  color: #fff;
+}
+.badge-overdue-arriving {
+  background: #dc2626;
+  color: #fff;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+.badge-overdue-departing {
+  background: #d97706;
+  color: #fff;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Overdue sidebar filter */
+.overdue-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 1;
 }
-
-/* Task bar */
-.task-bar {
+.overdue-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 6px;
+  padding: 6px 8px;
   border-radius: 4px;
-  background: rgba(0,0,0,0.05);
-  font-size: 11px;
-}
-
-.task-bar.has-task {
-  background: rgba(59, 130, 246, 0.2);
-}
-
-.task-bar.task-completed {
-  background: rgba(34, 197, 94, 0.2);
-}
-
-.task-content {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  overflow: hidden;
-}
-
-.task-icon {
-  font-size: 12px;
-}
-
-.task-type {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 500;
-}
-
-.task-type.no-task {
-  color: #cbd5e1;
-}
-
-.task-canceled { color: #94a3b8; }
-.task-done { color: #16a34a; }
-
-.task-menu {
+  font-size: 13px;
   cursor: pointer;
-  padding: 0 4px;
-  font-weight: 700;
   color: #64748b;
-  user-select: none;
 }
-
-.task-menu:hover {
-  color: #1e293b;
+.overdue-item:hover {
+  background: #fef2f2;
 }
-
-.order-menu {
-  cursor: pointer;
-  padding: 0 4px;
-  font-weight: 700;
-  color: #64748b;
-  user-select: none;
+.overdue-item.active {
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 600;
 }
-
-.order-menu:hover {
-  color: #1e293b;
-}
-
-/* Order bar */
-.order-bar {
-  display: flex;
-  align-items: center;
-  padding: 4px 6px;
-  border-radius: 4px;
-  font-size: 11px;
-  gap: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.order-bar:hover:not(.empty) {
-  background: rgba(0,0,0,0.1);
-}
-
-.order-bar.arriving {
-  background: rgba(59, 130, 246, 0.15);
-}
-
-.order-bar.departing {
-  background: rgba(236, 72, 153, 0.15);
-}
-
-.order-bar.empty {
-  background: rgba(0,0,0,0.03);
-  cursor: default;
-}
-
-.order-icon {
-  font-size: 12px;
-}
-
-.order-info {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  overflow: hidden;
-  flex: 1;
-}
-
-.guest-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 500;
-}
-
-.days-label {
-  font-size: 10px;
-  padding: 1px 4px;
+.overdue-tag {
+  padding: 1px 6px;
   border-radius: 3px;
-  background: rgba(0,0,0,0.1);
-  white-space: nowrap;
+  font-size: 12px;
 }
-
-.no-order {
-  color: #cbd5e1;
+.overdue-tag.overdue-arriving {
+  background: #fecaca;
+  color: #991b1b;
+  font-weight: 600;
+}
+.overdue-tag.overdue-departing {
+  background: #fde68a;
+  color: #92400e;
+  font-weight: 600;
 }
 
 /* Task menu popup */
 .task-menu-popup {
   position: fixed;
   background: white;
-  border-radius: 6px;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   padding: 4px 0;
   z-index: 1000;
-  min-width: 120px;
+  min-width: 140px;
 }
 
-.task-menu-popup div {
+.task-menu-popup div:not(.menu-divider) {
   padding: 8px 16px;
   cursor: pointer;
   font-size: 13px;
   color: #374151;
 }
 
-.task-menu-popup div:hover {
+.task-menu-popup div:not(.menu-divider):hover {
   background: #f3f4f6;
+}
+
+.menu-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px 8px;
 }
 
 /* Modal */

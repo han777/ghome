@@ -29,18 +29,19 @@
 
     <!-- Table -->
     <div class="table-card">
-      <table class="admin-table detail-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>订单号</th>
-            <th>订房人</th>
-            <th>入住 - 离开</th>
-            <th>房间费</th>
-            <th>商品服务费</th>
-            <th>订单总金额</th>
-          </tr>
-        </thead>
+      <div class="table-scroll">
+        <table class="admin-table detail-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>订单号</th>
+              <th>订房人</th>
+              <th>入住 - 离开</th>
+              <th>房间费</th>
+              <th>商品服务费</th>
+              <th>订单总金额</th>
+            </tr>
+          </thead>
         <tbody>
           <tr v-for="(row, idx) in orders" :key="row.id">
             <td>{{ rowNumber(idx) }}</td>
@@ -56,6 +57,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- Pagination -->
@@ -267,6 +269,18 @@ fetchData(0);
 .total-info { font-weight: 600; }
 
 .detail-table { font-size: 14px; }
+
+.table-scroll {
+  max-height: calc(100vh - 300px);
+  overflow-y: auto;
+}
+
+.detail-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8fafc;
+}
 
 .detail-table th,
 .detail-table td {

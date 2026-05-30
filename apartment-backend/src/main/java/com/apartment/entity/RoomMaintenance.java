@@ -21,6 +21,9 @@ public class RoomMaintenance {
 
     // 0: In Progress (维修中), 1: Completed (已完成), 2: Cancelled (已取消)
     private Integer status = 0;
-    
+
+    // 1: 维修, 2: 锁房
+    private Integer maintenanceType = 1;
+
     private String content; // 维修内容
 }

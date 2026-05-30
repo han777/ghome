@@ -62,16 +62,9 @@ public class RoomStatusService {
             .filter(o -> o.getStatus() != null && o.getStatus() == 1)
             .collect(Collectors.toList());
 
-        // 已入住订单 (status=2) - 用于按离开聚合
-        List<RoomOrder> inOrders = allOrders.stream()
-            .filter(o -> o.getStatus() != null && o.getStatus() == 2)
-            .collect(Collectors.toList());
-
-        // 当前在住订单 (status=2 且在当前时间范围内) - 只有已入住才算占用房间
+        // 已入住订单 (status=2) - 纯按订单状态判断，不用时间范围
         List<RoomOrder> activeOrders = allOrders.stream()
-            .filter(o -> o.getStatus() != null && o.getStatus() == 2
-                && !o.getStartDate().isAfter(now)
-                && !o.getEndDate().isBefore(now))
+            .filter(o -> o.getStatus() != null && o.getStatus() == 2)
             .collect(Collectors.toList());
 
         // 今日抵达/离开
@@ -117,7 +110,7 @@ public class RoomStatusService {
                 detail.setFloorName(room.getFloor().getName());
             }
 
-            // 标签
+            // 标签（先设基础标签，逾期标签在计算天数后追加）
             List<String> labels = new ArrayList<>();
             if (arrivingToday.stream().anyMatch(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))) {
                 labels.add("ARRIVING_TODAY");
@@ -128,11 +121,11 @@ public class RoomStatusService {
             if (arrivingSoon.stream().anyMatch(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))) {
                 labels.add("ARRIVING_SOON");
             }
-            detail.setLabels(labels);
 
-            // 维修状态
-            boolean isMaintenance = activeMaintenances.stream()
-                .anyMatch(m -> m.getRoom() != null && m.getRoom().getId().equals(room.getId()));
+            // 维护状态（维修+锁房合并）
+            RoomMaintenance activeMaintenance = activeMaintenances.stream()
+                .filter(m -> m.getRoom() != null && m.getRoom().getId().equals(room.getId()))
+                .findFirst().orElse(null);
 
             // 当前订单
             RoomOrder currentOrder = activeOrders.stream()
@@ -145,10 +138,11 @@ public class RoomStatusService {
                 .findFirst().orElse(null);
 
             // 状态判断
-            if (isMaintenance) {
-                detail.setStatus(3); // 维修
-            } else if (room.getStatus() != null && room.getStatus() == 1) {
-                detail.setStatus(2); // 锁定
+            if (activeMaintenance != null) {
+                detail.setStatus(2); // 维护（含维修和锁房）
+                detail.setMaintenanceType(activeMaintenance.getMaintenanceType() != null ? activeMaintenance.getMaintenanceType() : 1);
+                detail.setMaintenanceContent(activeMaintenance.getContent());
+                detail.setMaintenanceId(activeMaintenance.getId());
             } else if (currentOrder != null) {
                 // 有当前订单
                 detail.setGuestName(currentOrder.getBooker() != null ? currentOrder.getBooker().getRealName() : "-");
@@ -208,7 +202,10 @@ public class RoomStatusService {
                 detail.setNearestArriving(orderInfo);
 
                 int arrivingDays = (int) ChronoUnit.DAYS.between(today, nearestArriving.getStartDate().toLocalDate());
-                detail.setArrivingDays(Math.max(0, arrivingDays));
+                detail.setArrivingDays(arrivingDays);
+                if (arrivingDays < 0) {
+                    labels.add("OVERDUE_ARRIVING");
+                }
             }
 
             // 最近离开订单信息（已抵达）
@@ -228,7 +225,10 @@ public class RoomStatusService {
                 detail.setNearestDeparting(orderInfo);
 
                 int departingDays = (int) ChronoUnit.DAYS.between(today, nearestDeparting.getEndDate().toLocalDate());
-                detail.setDepartingDays(Math.max(0, departingDays));
+                detail.setDepartingDays(departingDays);
+                if (departingDays < 0) {
+                    labels.add("OVERDUE_DEPARTING");
+                }
             }
 
             // 确保 ARRIVING_TODAY 房间有 orderId
@@ -241,6 +241,7 @@ public class RoomStatusService {
                 }
             }
 
+            detail.setLabels(labels);
             return detail;
         }).collect(Collectors.toList());
 
@@ -248,25 +249,28 @@ public class RoomStatusService {
         Map<String, Long> counts = new HashMap<>();
         counts.put("FREE", roomDetails.stream().filter(r -> r.getStatus() == 0).count());
         counts.put("OCCUPIED", roomDetails.stream().filter(r -> r.getStatus() == 1).count());
-        counts.put("LOCKED", roomDetails.stream().filter(r -> r.getStatus() == 2).count());
-        counts.put("REPAIR", roomDetails.stream().filter(r -> r.getStatus() == 3).count());
+        counts.put("MAINTENANCE", roomDetails.stream().filter(r -> r.getStatus() == 2).count());
+        counts.put("MAINT_REPAIR", roomDetails.stream().filter(r -> r.getStatus() == 2 && r.getMaintenanceType() != null && r.getMaintenanceType() == 1).count());
+        counts.put("MAINT_LOCKED", roomDetails.stream().filter(r -> r.getStatus() == 2 && r.getMaintenanceType() != null && r.getMaintenanceType() == 2).count());
         counts.put("EMPTY_DIRTY", roomDetails.stream().filter(r -> r.getStatus() == 4).count());
         counts.put("OCCUPIED_DIRTY", roomDetails.stream().filter(r -> r.getStatus() == 5).count());
+        counts.put("OVERDUE_ARRIVING", roomDetails.stream().filter(r -> r.getLabels() != null && r.getLabels().contains("OVERDUE_ARRIVING")).count());
+        counts.put("OVERDUE_DEPARTING", roomDetails.stream().filter(r -> r.getLabels() != null && r.getLabels().contains("OVERDUE_DEPARTING")).count());
         dto.setStatusCounts(counts);
 
-        // 按抵达天数聚合（基于房间的 arrivingDays 字段）
+        // 按抵达天数聚合（基于房间的 arrivingDays 字段，含逾期负数天）
         Map<Integer, Integer> arrivingByDays = new HashMap<>();
         for (RoomStatusDashboardDTO.RoomDetailDTO detail : roomDetails) {
-            if (detail.getArrivingDays() != null && detail.getArrivingDays() >= 0 && detail.getArrivingDays() <= 30) {
+            if (detail.getArrivingDays() != null && detail.getArrivingDays() >= -7 && detail.getArrivingDays() <= 30) {
                 arrivingByDays.merge(detail.getArrivingDays(), 1, Integer::sum);
             }
         }
         dto.setArrivingByDays(arrivingByDays);
 
-        // 按离开天数聚合（基于房间的 departingDays 字段）
+        // 按离开天数聚合（基于房间的 departingDays 字段，含逾期负数天）
         Map<Integer, Integer> departingByDays = new HashMap<>();
         for (RoomStatusDashboardDTO.RoomDetailDTO detail : roomDetails) {
-            if (detail.getDepartingDays() != null && detail.getDepartingDays() >= 0 && detail.getDepartingDays() <= 30) {
+            if (detail.getDepartingDays() != null && detail.getDepartingDays() >= -7 && detail.getDepartingDays() <= 30) {
                 departingByDays.merge(detail.getDepartingDays(), 1, Integer::sum);
             }
         }
