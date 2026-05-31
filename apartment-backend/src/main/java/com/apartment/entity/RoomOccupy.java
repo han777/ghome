@@ -29,7 +29,8 @@ public class RoomOccupy {
     private LocalDateTime checkOutTime; // 实际离开时间
     private Integer occupantCount; // 入住人数
     private String coOccupants; // 同住人
-    
+    private String occupantName; // 入住人姓名（团体时=团体名称）
+
     private Integer status = 0; // 0: Current (当前), 1: Finish (完成)
     
     private java.math.BigDecimal actualPrice; // 实际单价

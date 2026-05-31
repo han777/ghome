@@ -44,6 +44,7 @@ const errorMessagesZh: Record<string, string> = {
   'notif.UNKNOWN_CHANNEL': '未知通知渠道',
 
   // General
+  'general.PARAM_ERROR': '{0}',
   'general.EXCEL_FAILED': 'Excel生成失败',
   'general.ORDER_NOT_FOUND': '订单未找到',
   'general.ROOM_NOT_FOUND': '房间未找到',

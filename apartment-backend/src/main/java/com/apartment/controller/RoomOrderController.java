@@ -159,6 +159,12 @@ public class RoomOrderController {
                         existing.setRoomFee(order.getRoomFee());
                         existing.setServiceFee(order.getServiceFee());
                         existing.setTotalAmount(order.getTotalAmount());
+                        existing.setCompany(order.getCompany());
+                        existing.setCostCenter(order.getCostCenter());
+                        existing.setGroupName(order.getGroupName());
+                        existing.setContactName(order.getContactName());
+                        existing.setContactPhone(order.getContactPhone());
+                        existing.setActivityCode(order.getActivityCode());
 
                         // Replace room occupies on the managed entity
                         if (order.getRoomOccupies() != null) {
@@ -198,10 +204,11 @@ public class RoomOrderController {
             if (order.getBookPhone() == null || order.getBookPhone().isBlank()) {
                 order.setBookPhone(u.getPhone());
             }
+            boolean isGroup = order.getCustomerType() != null && order.getCustomerType() == 2;
             if (order.getRoomOccupies() != null) {
                 order.getRoomOccupies().forEach(occupy -> {
                     occupy.setOrder(order);
-                    if (occupy.getOccupantUser() == null && order.getId() == null) {
+                    if (!isGroup && occupy.getOccupantUser() == null && order.getId() == null) {
                         occupy.setOccupantUser(u);
                     }
                 });
@@ -229,6 +236,12 @@ public class RoomOrderController {
         addChange(changes, "房费", oldValue(oldOrder.getRoomFee()), newValue(newOrder.getRoomFee()));
         addChange(changes, "服务费", oldValue(oldOrder.getServiceFee()), newValue(newOrder.getServiceFee()));
         addChange(changes, "总金额", oldValue(oldOrder.getTotalAmount()), newValue(newOrder.getTotalAmount()));
+        addChange(changes, "团体名称", oldValue(oldOrder.getGroupName()), newValue(newOrder.getGroupName()));
+        addChange(changes, "联系人姓名", oldValue(oldOrder.getContactName()), newValue(newOrder.getContactName()));
+        addChange(changes, "联系电话", oldValue(oldOrder.getContactPhone()), newValue(newOrder.getContactPhone()));
+        addChange(changes, "所属公司", oldValue(oldOrder.getCompany()), newValue(newOrder.getCompany()));
+        addChange(changes, "成本中心", oldValue(oldOrder.getCostCenter()), newValue(newOrder.getCostCenter()));
+        addChange(changes, "活动编码", oldValue(oldOrder.getActivityCode()), newValue(newOrder.getActivityCode()));
         if (changes.isEmpty()) return null;
         try {
             return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(changes);

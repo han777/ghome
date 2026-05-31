@@ -46,6 +46,18 @@ public class RoomStatusService {
         }
     }
 
+    /** Resolve guest display name: prefer occupantName (group orders), fallback to booker.realName */
+    private String resolveGuestName(RoomOrder order, Long roomId) {
+        if (order.getRoomOccupies() != null) {
+            for (RoomOccupy ro : order.getRoomOccupies()) {
+                if (ro.getRoom() != null && ro.getRoom().getId().equals(roomId) && ro.getOccupantName() != null && !ro.getOccupantName().isBlank()) {
+                    return ro.getOccupantName();
+                }
+            }
+        }
+        return order.getBooker() != null ? order.getBooker().getRealName() : "-";
+    }
+
     public RoomStatusDashboardDTO getDashboardData() {
         LocalDateTime now = LocalDateTime.now();
         LocalDate today = now.toLocalDate();
@@ -67,21 +79,24 @@ public class RoomStatusService {
             .filter(o -> o.getStatus() != null && o.getStatus() == 2)
             .collect(Collectors.toList());
 
-        // 今日抵达/离开
+        // 今日抵达/离开（仅统计未入住/未退房的订单）
         List<RoomOrder> arrivingToday = allOrders.stream()
+            .filter(o -> o.getStatus() != null && (o.getStatus() == 0 || o.getStatus() == 1))
             .filter(o -> o.getStartDate() != null
                 && !o.getStartDate().isBefore(startOfDay)
                 && !o.getStartDate().isAfter(endOfDay))
             .collect(Collectors.toList());
 
         List<RoomOrder> departingToday = allOrders.stream()
+            .filter(o -> o.getStatus() != null && (o.getStatus() == 1 || o.getStatus() == 2))
             .filter(o -> o.getEndDate() != null
                 && !o.getEndDate().isBefore(startOfDay)
                 && !o.getEndDate().isAfter(endOfDay))
             .collect(Collectors.toList());
 
-        // 未来3日抵达
+        // 未来3日抵达（仅统计未入住订单）
         List<RoomOrder> arrivingSoon = allOrders.stream()
+            .filter(o -> o.getStatus() != null && (o.getStatus() == 0 || o.getStatus() == 1))
             .filter(o -> o.getStartDate() != null
                 && !o.getStartDate().isBefore(today.plusDays(1).atStartOfDay())
                 && !o.getStartDate().isAfter(today.plusDays(3).atTime(23, 59, 59)))
@@ -145,7 +160,7 @@ public class RoomStatusService {
                 detail.setMaintenanceId(activeMaintenance.getId());
             } else if (currentOrder != null) {
                 // 有当前订单
-                detail.setGuestName(currentOrder.getBooker() != null ? currentOrder.getBooker().getRealName() : "-");
+                detail.setGuestName(resolveGuestName(currentOrder, room.getId()));
                 detail.setOrderId(currentOrder.getId());
 
                 // 判断住脏：已入住但有未完成的清扫任务
@@ -197,7 +212,7 @@ public class RoomStatusService {
             if (nearestArriving != null) {
                 RoomStatusDashboardDTO.OrderInfo orderInfo = new RoomStatusDashboardDTO.OrderInfo();
                 orderInfo.setOrderId(nearestArriving.getId());
-                orderInfo.setGuestName(nearestArriving.getBooker() != null ? nearestArriving.getBooker().getRealName() : "-");
+                orderInfo.setGuestName(resolveGuestName(nearestArriving, room.getId()));
                 orderInfo.setRoomNo(room.getRoomNo());
                 detail.setNearestArriving(orderInfo);
 
@@ -220,7 +235,7 @@ public class RoomStatusService {
             if (nearestDeparting != null) {
                 RoomStatusDashboardDTO.OrderInfo orderInfo = new RoomStatusDashboardDTO.OrderInfo();
                 orderInfo.setOrderId(nearestDeparting.getId());
-                orderInfo.setGuestName(nearestDeparting.getBooker() != null ? nearestDeparting.getBooker().getRealName() : "-");
+                orderInfo.setGuestName(resolveGuestName(nearestDeparting, room.getId()));
                 orderInfo.setRoomNo(room.getRoomNo());
                 detail.setNearestDeparting(orderInfo);
 

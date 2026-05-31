@@ -131,8 +131,8 @@
                 </select>
               </div>
               <div class="form-item">
-                <label>联系电话</label>
-                <input v-model="form.bookPhone" placeholder="预订电话" :disabled="!isEditMode">
+                <label>订房人电话</label>
+                <input v-model="form.bookPhone" placeholder="订房人电话" :disabled="!isEditMode">
               </div>
 
               <div class="form-item">
@@ -195,6 +195,44 @@
             </div>
           </section>
 
+          <!-- Group Info Section (only when customerType=2) -->
+          <section v-if="form.customerType === 2" class="form-section">
+            <h3 class="section-title">团体信息</h3>
+            <div class="form-grid-4">
+              <div class="form-item">
+                <label class="required">团体名称</label>
+                <input v-model="form.groupName" placeholder="如：市规划局参观团" :disabled="!isEditMode">
+              </div>
+              <div class="form-item">
+                <label class="required">联系人姓名</label>
+                <input v-model="form.contactName" placeholder="外部团体对接人" :disabled="!isEditMode">
+              </div>
+              <div class="form-item">
+                <label class="required">联系电话</label>
+                <input v-model="form.contactPhone" placeholder="联系人电话" :disabled="!isEditMode">
+              </div>
+            </div>
+          </section>
+
+          <!-- Finance Info Section (only when customerType=2) -->
+          <section v-if="form.customerType === 2" class="form-section">
+            <h3 class="section-title">财务信息</h3>
+            <div class="form-grid-4">
+              <div class="form-item">
+                <label class="required">所属公司</label>
+                <input v-model="form.company" placeholder="所属公司/单位" :disabled="!isEditMode">
+              </div>
+              <div class="form-item">
+                <label class="required">成本中心</label>
+                <input v-model="form.costCenter" placeholder="成本中心" :disabled="!isEditMode">
+              </div>
+              <div class="form-item">
+                <label class="required">活动编码</label>
+                <input v-model="form.activityCode" placeholder="活动编码" :disabled="!isEditMode">
+              </div>
+            </div>
+          </section>
+
           <!-- Room Occupancy Section -->
           <section id="section-rooms" class="form-section">
             <div class="section-header">
@@ -243,7 +281,10 @@
                     </div>
                   <div class="card-item">
                     <label>入住人</label>
-                    <select v-model="occupy.occupantUserId" :disabled="!isEditMode">
+                    <template v-if="form.customerType === 2">
+                      <input :value="form.groupName || '(团体名称)'" disabled style="background-color: #f3f4f6; cursor: not-allowed;">
+                    </template>
+                    <select v-else v-model="occupy.occupantUserId" :disabled="!isEditMode">
                       <option :value="null">-- 选择入住人 --</option>
                       <option v-for="u in users" :key="u.id" :value="u.id">
                         {{ u.realName }} ({{ u.username }})
@@ -649,6 +690,10 @@ const form = reactive<any>({
   remarks: '',
   company: '',
   costCenter: '',
+  groupName: '',
+  contactName: '',
+  contactPhone: '',
+  activityCode: '',
   keyBoxNo: '',
   boxPassword: '',
   roomOccupies: [],
@@ -715,6 +760,13 @@ const fetchAvailableRooms = async () => {
 };
 
 watch([() => form.startDate, () => form.endDate], fetchAvailableRooms);
+
+// 团体名称变更时，同步更新所有房间的入住人名
+watch(() => form.groupName, (val) => {
+  if (form.customerType === 2 && form.roomOccupies) {
+    form.roomOccupies.forEach((ro: any) => { ro.occupantName = val; });
+  }
+});
 
 // 自动计算订单的入住日期（取所有房间的最小入住时间）
 const computedStartDate = computed(() => {
@@ -869,6 +921,7 @@ const addRoomRow = () => {
   form.roomOccupies.push({
     roomId: null,
     occupantUserId: form.customerType === 1 ? form.bookerId : null,
+    occupantName: form.customerType === 2 ? form.groupName : null,
     occupantCount: 1,
     status: 0,
     coOccupants: '',
@@ -1110,23 +1163,27 @@ const openModal = (order?: any, tab: string = 'basic') => {
       form.productDetails = [];
     }
   } else {
-    Object.assign(form, { 
-      id: null, 
-      userId: null, 
-      bizType: 1, 
+    Object.assign(form, {
+      id: null,
+      userId: null,
+      bizType: 1,
       startDate: new Date().toISOString().slice(0, 10),
       endDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
       createdAt: new Date().toISOString().slice(0, 16),
       roomFee: 0,
       serviceFee: 0,
-      totalAmount: 0, 
-      status: 1, 
+      totalAmount: 0,
+      status: 1,
       customerType: 1,
       bookerId: null,
       bookPhone: '',
       remarks: '',
-      company: '', 
+      company: '',
       costCenter: '',
+      groupName: '',
+      contactName: '',
+      contactPhone: '',
+      activityCode: '',
       roomOccupies: [],
       productDetails: []
     });
@@ -1295,6 +1352,14 @@ const saveOrder = async () => {
       alert('⚠️ 请选择预订人');
       return;
     }
+    if (form.customerType === 2) {
+      if (!form.groupName?.trim()) { alert('⚠️ 请填写团体名称'); return; }
+      if (!form.contactName?.trim()) { alert('⚠️ 请填写联系人姓名'); return; }
+      if (!form.contactPhone?.trim()) { alert('⚠️ 请填写联系电话'); return; }
+      if (!form.company?.trim()) { alert('⚠️ 请填写所属公司'); return; }
+      if (!form.costCenter?.trim()) { alert('⚠️ 请填写成本中心'); return; }
+      if (!form.activityCode?.trim()) { alert('⚠️ 请填写活动编码'); return; }
+    }
     if (!form.roomOccupies || form.roomOccupies.length === 0) {
       alert('⚠️ 请添加至少一个房间');
       return;
@@ -1322,10 +1387,12 @@ const saveOrder = async () => {
 
     // Handle nested roomOccupies payload
     if (form.roomOccupies) {
+      const isGroup = form.customerType === 2;
       payload.roomOccupies = form.roomOccupies.map((ro: any) => ({
         ...ro,
         room: ro.roomId ? { id: ro.roomId } : null,
-        occupantUser: ro.occupantUserId ? { id: ro.occupantUserId } : null
+        occupantUser: !isGroup && ro.occupantUserId ? { id: ro.occupantUserId } : null,
+        occupantName: isGroup ? form.groupName : null
       })).filter((ro: any) => ro.room !== null);
     }
 

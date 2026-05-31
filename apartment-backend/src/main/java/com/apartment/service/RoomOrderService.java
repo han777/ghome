@@ -67,6 +67,34 @@ public class RoomOrderService {
             throw new BusinessException(ErrorCode.ORDER_END_BEFORE_START);
         }
 
+        // Group order validation & auto-fill
+        boolean isGroup = order.getCustomerType() != null && order.getCustomerType() == 2;
+        if (isGroup) {
+            if (isBlank(order.getGroupName())) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "团体名称不能为空");
+            }
+            if (isBlank(order.getContactName())) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "联系人姓名不能为空");
+            }
+            if (isBlank(order.getContactPhone())) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "联系电话不能为空");
+            }
+            if (isBlank(order.getCompany())) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "所属公司不能为空");
+            }
+            if (isBlank(order.getCostCenter())) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "成本中心不能为空");
+            }
+            if (isBlank(order.getActivityCode())) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "活动编码不能为空");
+            }
+            // Auto-fill occupantName for group orders
+            for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
+                occupy.setOccupantUser(null);
+                occupy.setOccupantName(order.getGroupName());
+            }
+        }
+
         java.util.List<Integer> activeStatuses = java.util.Arrays.asList(1, 2);
         int currentStatusCount = 0;
 
@@ -115,7 +143,7 @@ public class RoomOrderService {
         }
 
         // 4. Individual guest constraint: only one current occupy allowed
-        if (order.getCustomerType() != null && order.getCustomerType() == 1) {
+        if (!isGroup) {
             if (currentStatusCount > 1) {
                 throw new BusinessException(ErrorCode.ORDER_INDIVIDUAL_ONE_CURRENT);
             }
@@ -125,6 +153,10 @@ public class RoomOrderService {
         if (order.getTotalAmount() == null || order.getTotalAmount().compareTo(BigDecimal.ZERO) == 0) {
             calculatePrices(order);
         }
+    }
+
+    private boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 
     public void calculatePrices(RoomOrder order) {
@@ -372,6 +404,7 @@ public class RoomOrderService {
         newOccupy.setOrder(order);
         newOccupy.setRoom(newRoom);
         newOccupy.setOccupantUser(oldOccupy.getOccupantUser());
+        newOccupy.setOccupantName(oldOccupy.getOccupantName());
         newOccupy.setOccupantCount(oldOccupy.getOccupantCount());
         newOccupy.setCoOccupants(oldOccupy.getCoOccupants());
         newOccupy.setCheckInTime(switchDate);
@@ -431,7 +464,12 @@ public class RoomOrderService {
         occupy.setOrder(order);
         occupy.setRoom(room);
         occupy.setCheckInTime(LocalDateTime.now());
-        occupy.setOccupantUser(order.getBooker());
+        boolean isGroup = order.getCustomerType() != null && order.getCustomerType() == 2;
+        if (isGroup) {
+            occupy.setOccupantName(order.getGroupName());
+        } else {
+            occupy.setOccupantUser(order.getBooker());
+        }
         occupy.setStatus(0);
 
         room.setStatus(1);

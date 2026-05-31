@@ -43,6 +43,7 @@ public enum ErrorCode {
     NOTIF_UNKNOWN_CHANNEL("notif.UNKNOWN_CHANNEL"),
 
     // General
+    PARAM_ERROR("general.PARAM_ERROR"),
     GENERAL_EXCEL_FAILED("general.EXCEL_FAILED"),
     GENERAL_ORDER_NOT_FOUND("general.ORDER_NOT_FOUND"),
     GENERAL_ROOM_NOT_FOUND("general.ROOM_NOT_FOUND"),

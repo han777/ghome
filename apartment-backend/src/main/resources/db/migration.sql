@@ -23,3 +23,12 @@ ALTER TABLE room_occupy DROP COLUMN IF EXISTS door_code;
 
 -- #4: Anti-duplicate - unique partial index for one cooling-off order per user
 CREATE UNIQUE INDEX IF NOT EXISTS one_cooling_off_per_user ON room_order (book_user_id) WHERE status = 0;
+
+-- #6: External group booking - order-level fields
+ALTER TABLE room_order ADD COLUMN IF NOT EXISTS group_name VARCHAR(100);
+ALTER TABLE room_order ADD COLUMN IF NOT EXISTS contact_name VARCHAR(100);
+ALTER TABLE room_order ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(30);
+ALTER TABLE room_order ADD COLUMN IF NOT EXISTS activity_code VARCHAR(50);
+
+-- #6: External group booking - occupy-level occupant name (group name for group orders)
+ALTER TABLE room_occupy ADD COLUMN IF NOT EXISTS occupant_name VARCHAR(100);
