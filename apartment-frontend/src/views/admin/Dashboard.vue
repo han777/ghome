@@ -129,10 +129,14 @@
             <!-- 房间头部 -->
             <div class="room-header">
               <div class="header-left">
-                <span class="room-no">{{ room.roomNo }}</span>
+                <div class="room-no-row">
+                  <span class="room-no">{{ room.roomNo }}</span>
+                  <span v-if="room.status === 2 && room.maintenanceType === 1" class="header-badge badge-repair">维修</span>
+                  <span v-if="room.status === 2 && room.maintenanceType === 2" class="header-badge badge-locked">锁房</span>
+                </div>
+                <span class="room-type-tag">{{ room.roomTypeName }}</span>
               </div>
               <div class="header-right">
-                <span class="room-type-tag">{{ room.roomTypeName }}</span>
                 <div class="room-header-menu" @click.stop="toggleRoomMenu($event, room)">
                   <span>⋯</span>
                 </div>
@@ -148,21 +152,14 @@
 
               <!-- 彩色标签区 -->
               <div class="badge-area">
-                <span v-if="room.status === 0" class="badge badge-free">空净</span>
-                <span v-if="room.status === 1" class="badge badge-occupied">住净</span>
-                <span v-if="room.status === 4" class="badge badge-empty-dirty">空脏</span>
-                <span v-if="room.status === 5" class="badge badge-occupied-dirty">住脏</span>
-                <span v-if="room.status === 2 && room.maintenanceType === 2" class="badge badge-locked">锁房</span>
-                <span v-if="room.status === 2 && room.maintenanceType === 1" class="badge badge-repair">维修</span>
                 <span v-if="room.labels?.includes('OVERDUE_ARRIVING')" class="badge badge-overdue-arriving">逾期{{ Math.abs(room.arrivingDays) }}日未抵</span>
                 <span v-if="room.labels?.includes('OVERDUE_DEPARTING')" class="badge badge-overdue-departing">逾期{{ Math.abs(room.departingDays) }}日未离</span>
                 <span v-if="room.labels?.includes('ARRIVING_TODAY') && !room.labels?.includes('OVERDUE_ARRIVING')" class="badge badge-arriving-today">今日抵</span>
                 <span v-if="room.labels?.includes('DEPARTING_TODAY') && !room.labels?.includes('OVERDUE_DEPARTING')" class="badge badge-departing-today">今日离</span>
                 <span v-if="(room.status === 1 || room.status === 5) && room.departingDays != null && room.departingDays > 0 && !room.labels?.includes('OVERDUE_DEPARTING')" class="badge badge-departing">{{ room.departingDays }}日离</span>
                 <span v-if="room.labels?.includes('ARRIVING_SOON')" class="badge badge-arriving-soon">即将抵</span>
-                <span v-if="room.cleaningTask?.taskType === 2" class="badge badge-deep-clean">强打扫</span>
-                <span v-if="room.cleaningTask?.taskType === 1" class="badge badge-daily-clean">保洁</span>
-                <span v-if="room.cleaningTask?.status === 1" class="badge badge-canceled">已取消</span>
+                <span v-if="room.cleaningTask?.status === 0 && room.cleaningTask?.taskType === 2" class="badge badge-deep-clean">强打扫</span>
+                <span v-if="room.cleaningTask?.status === 0 && room.cleaningTask?.taskType === 1" class="badge badge-daily-clean">保洁</span>
               </div>
             </div>
           </div>
@@ -939,8 +936,8 @@ onUnmounted(() => {
 
 .header-left {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .header-right {
@@ -972,13 +969,27 @@ onUnmounted(() => {
   line-height: 1.1;
 }
 
+.room-no-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .room-type-tag {
   font-size: 10px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: rgba(0,0,0,0.1);
-  color: rgba(0,0,0,0.6);
+  color: rgba(0,0,0,0.5);
   white-space: nowrap;
+  line-height: 1;
+}
+
+.header-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  line-height: 1.4;
 }
 
 .room-body {
@@ -1048,22 +1059,6 @@ onUnmounted(() => {
 .badge-locked {
   background: #64748b;
   color: #fff;
-}
-.badge-free {
-  background: rgba(22, 163, 74, 0.2);
-  color: #15803d;
-}
-.badge-occupied {
-  background: rgba(37, 99, 235, 0.2);
-  color: #1d4ed8;
-}
-.badge-empty-dirty {
-  background: rgba(22, 163, 74, 0.35);
-  color: #166534;
-}
-.badge-occupied-dirty {
-  background: rgba(180, 83, 9, 0.25);
-  color: #92400e;
 }
 .badge-departing {
   background: rgba(236, 72, 153, 0.2);

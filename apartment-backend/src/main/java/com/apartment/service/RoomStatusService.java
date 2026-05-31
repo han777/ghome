@@ -190,7 +190,7 @@ public class RoomStatusService {
             }
 
             // 清扫任务信息 - 不返回已完成的任务，返回计划中和已取消的
-            if (todayTask != null && todayTask.getStatus() != 2) {
+            if (todayTask != null && todayTask.getStatus() == 0) {
                 RoomStatusDashboardDTO.CleaningTaskInfo taskInfo = new RoomStatusDashboardDTO.CleaningTaskInfo();
                 taskInfo.setId(todayTask.getId());
                 taskInfo.setTaskType(todayTask.getTaskType());
