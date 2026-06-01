@@ -276,7 +276,7 @@ public class RoomStatusService {
         // 按抵达天数聚合（基于房间的 arrivingDays 字段，含逾期负数天）
         Map<Integer, Integer> arrivingByDays = new HashMap<>();
         for (RoomStatusDashboardDTO.RoomDetailDTO detail : roomDetails) {
-            if (detail.getArrivingDays() != null && detail.getArrivingDays() >= -7 && detail.getArrivingDays() <= 30) {
+            if (detail.getArrivingDays() != null && detail.getArrivingDays() >= -30 && detail.getArrivingDays() <= 30) {
                 arrivingByDays.merge(detail.getArrivingDays(), 1, Integer::sum);
             }
         }
@@ -285,7 +285,7 @@ public class RoomStatusService {
         // 按离开天数聚合（基于房间的 departingDays 字段，含逾期负数天）
         Map<Integer, Integer> departingByDays = new HashMap<>();
         for (RoomStatusDashboardDTO.RoomDetailDTO detail : roomDetails) {
-            if (detail.getDepartingDays() != null && detail.getDepartingDays() >= -7 && detail.getDepartingDays() <= 30) {
+            if (detail.getDepartingDays() != null && detail.getDepartingDays() >= -30 && detail.getDepartingDays() <= 30) {
                 departingByDays.merge(detail.getDepartingDays(), 1, Integer::sum);
             }
         }

@@ -64,28 +64,6 @@
         </div>
       </div>
 
-      <!-- Overdue Alert Filter -->
-      <div class="filter-group" v-if="(data.statusCounts?.OVERDUE_ARRIVING || 0) + (data.statusCounts?.OVERDUE_DEPARTING || 0) > 0">
-        <div class="filter-title"><span>|</span> 逾期异动</div>
-        <div class="overdue-list">
-          <div
-            class="overdue-item"
-            :class="{ active: overdueFilter === 'ARRIVING' }"
-            @click="toggleOverdueFilter('ARRIVING')"
-          >
-            <span class="overdue-tag overdue-arriving">逾期未抵</span>
-            <span class="count">{{ data.statusCounts?.OVERDUE_ARRIVING || 0 }}</span>
-          </div>
-          <div
-            class="overdue-item"
-            :class="{ active: overdueFilter === 'DEPARTING' }"
-            @click="toggleOverdueFilter('DEPARTING')"
-          >
-            <span class="overdue-tag overdue-departing">逾期未离</span>
-            <span class="count">{{ data.statusCounts?.OVERDUE_DEPARTING || 0 }}</span>
-          </div>
-        </div>
-      </div>
 
       <!-- Room Type Filter -->
       <div class="filter-group">
@@ -175,12 +153,8 @@
 
               <!-- 彩色标签区 -->
               <div class="badge-area">
-                <span v-if="room.labels?.includes('OVERDUE_ARRIVING')" class="badge badge-overdue-arriving">逾期{{ Math.abs(room.arrivingDays) }}日未抵</span>
-                <span v-if="room.labels?.includes('OVERDUE_DEPARTING')" class="badge badge-overdue-departing">逾期{{ Math.abs(room.departingDays) }}日未离</span>
-                <span v-if="room.labels?.includes('ARRIVING_TODAY') && !room.labels?.includes('OVERDUE_ARRIVING')" class="badge badge-arriving-today">今日抵</span>
-                <span v-if="room.labels?.includes('DEPARTING_TODAY') && !room.labels?.includes('OVERDUE_DEPARTING')" class="badge badge-departing-today">今日离</span>
-                <span v-if="(room.status === 1 || room.status === 5) && room.departingDays != null && room.departingDays > 0 && !room.labels?.includes('OVERDUE_DEPARTING')" class="badge badge-departing">{{ room.departingDays }}日离</span>
-                <span v-if="room.labels?.includes('ARRIVING_SOON')" class="badge badge-arriving-soon">即将抵</span>
+                <span v-if="room.arrivingDays != null" class="badge" :class="arrivingBadgeClass(room.arrivingDays)">{{ formatArrivingDays(room.arrivingDays) }}</span>
+                <span v-if="room.departingDays != null && (room.status === 1 || room.status === 5)" class="badge" :class="departingBadgeClass(room.departingDays)">{{ formatDepartingDays(room.departingDays) }}</span>
                 <span v-if="room.cleaningTask?.status === 0 && room.cleaningTask?.taskType === 2" class="badge badge-deep-clean">强打扫</span>
                 <span v-if="room.cleaningTask?.status === 0 && room.cleaningTask?.taskType === 1" class="badge badge-daily-clean">保洁</span>
               </div>
@@ -315,7 +289,6 @@ const statusFilters = ref<number[]>([]);
 const typeFilters = ref<string[]>([]);
 const arrivingDaysFilter = ref<number | null>(null);
 const departingDaysFilter = ref<number | null>(null);
-const overdueFilter = ref<string | null>(null);
 const maintTypeFilter = ref<number | null>(null);
 const cleaningTypeFilter = ref<number | null>(null);
 
@@ -326,7 +299,6 @@ const resetFilters = () => {
   typeFilters.value = [];
   arrivingDaysFilter.value = null;
   departingDaysFilter.value = null;
-  overdueFilter.value = null;
   maintTypeFilter.value = null;
   cleaningTypeFilter.value = null;
 };
@@ -367,7 +339,6 @@ const syncFiltersToUrl = () => {
   if (typeFilters.value.length > 0) query.type = typeFilters.value.join(',');
   if (arrivingDaysFilter.value !== null) query.arrDays = String(arrivingDaysFilter.value);
   if (departingDaysFilter.value !== null) query.depDays = String(departingDaysFilter.value);
-  if (overdueFilter.value) query.overdue = overdueFilter.value;
   if (maintTypeFilter.value !== null) query.maintType = String(maintTypeFilter.value);
   if (cleaningTypeFilter.value !== null) query.cleanType = String(cleaningTypeFilter.value);
   router.replace({ path: '/admin/dashboard', query });
@@ -382,13 +353,12 @@ const restoreFiltersFromUrl = () => {
   if (q.type) typeFilters.value = (q.type as string).split(',');
   if (q.arrDays) arrivingDaysFilter.value = parseInt(q.arrDays as string);
   if (q.depDays) departingDaysFilter.value = parseInt(q.depDays as string);
-  if (q.overdue) overdueFilter.value = q.overdue as string;
   if (q.maintType) maintTypeFilter.value = parseInt(q.maintType as string);
   if (q.cleanType) cleaningTypeFilter.value = parseInt(q.cleanType as string);
 };
 
 // 监听筛选条件变化
-watch([selectedFloor, searchQuery, statusFilters, typeFilters, arrivingDaysFilter, departingDaysFilter, overdueFilter, maintTypeFilter, cleaningTypeFilter], syncFiltersToUrl, { deep: true });
+watch([selectedFloor, searchQuery, statusFilters, typeFilters, arrivingDaysFilter, departingDaysFilter, maintTypeFilter, cleaningTypeFilter], syncFiltersToUrl, { deep: true });
 
 const fetchData = async () => {
   try {
@@ -454,9 +424,32 @@ const departingByDaysList = computed(() => {
 });
 
 const formatDaysLabel = (days: number, isArriving: boolean) => {
-  if (days === 0) return isArriving ? '今日达' : '今日离';
-  if (days < 0) return `逾期${Math.abs(days)}日${isArriving ? '未抵' : '未离'}`;
-  return `${days}日${isArriving ? '达' : '离'}`;
+  if (days === 0) return isArriving ? '今日抵' : '今日离';
+  if (days < 0) return `${days}日${isArriving ? '抵' : '离'}`;
+  return `${days}日${isArriving ? '抵' : '离'}`;
+};
+
+const formatArrivingDays = (days: number) => {
+  if (days === 0) return '今日抵';
+  return `${days}日抵`;
+};
+
+const arrivingBadgeClass = (days: number) => {
+  if (days < 0) return 'badge-overdue-arriving';
+  if (days === 0) return 'badge-arriving-today';
+  if (days <= 3) return 'badge-arriving-soon';
+  return 'badge-arriving-future';
+};
+
+const formatDepartingDays = (days: number) => {
+  if (days === 0) return '今日离';
+  return `${days}日离`;
+};
+
+const departingBadgeClass = (days: number) => {
+  if (days < 0) return 'badge-overdue-departing';
+  if (days === 0) return 'badge-departing-today';
+  return 'badge-departing';
 };
 
 const toggleStatusFilter = (status: number) => {
@@ -477,10 +470,6 @@ const toggleArrivingDaysFilter = (days: number) => {
 
 const toggleDepartingDaysFilter = (days: number) => {
   departingDaysFilter.value = departingDaysFilter.value === days ? null : days;
-};
-
-const toggleOverdueFilter = (type: string) => {
-  overdueFilter.value = overdueFilter.value === type ? null : type;
 };
 
 const toggleMaintTypeFilter = (type: number) => {
@@ -532,10 +521,6 @@ const filteredRooms = computed(() => {
 
     // Departing days filter
     if (departingDaysFilter.value !== null && room.departingDays !== departingDaysFilter.value) return false;
-
-    // Overdue filter
-    if (overdueFilter.value === 'ARRIVING' && !(room.labels?.includes('OVERDUE_ARRIVING'))) return false;
-    if (overdueFilter.value === 'DEPARTING' && !(room.labels?.includes('OVERDUE_DEPARTING'))) return false;
 
     // Maintenance type filter
     if (maintTypeFilter.value !== null) {
@@ -1091,6 +1076,10 @@ onUnmounted(() => {
   background: #93c5fd;
   color: #1e40af;
 }
+.badge-arriving-future {
+  background: #dbeafe;
+  color: #3b82f6;
+}
 .badge-deep-clean {
   background: #f97316;
   color: #fff;
@@ -1167,46 +1156,6 @@ onUnmounted(() => {
 .cleaning-tag.tag-deep {
   background: #ffedd5;
   color: #9a3412;
-}
-
-/* Overdue sidebar filter */
-.overdue-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.overdue-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  color: #64748b;
-}
-.overdue-item:hover {
-  background: #fef2f2;
-}
-.overdue-item.active {
-  background: #fee2e2;
-  color: #991b1b;
-  font-weight: 600;
-}
-.overdue-tag {
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 12px;
-}
-.overdue-tag.overdue-arriving {
-  background: #fecaca;
-  color: #991b1b;
-  font-weight: 600;
-}
-.overdue-tag.overdue-departing {
-  background: #fde68a;
-  color: #92400e;
-  font-weight: 600;
 }
 
 /* Task menu popup */
