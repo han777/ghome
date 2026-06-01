@@ -29,6 +29,11 @@ public class RoomOrder {
 
     private Integer customerType = 1; // 1: Individual, 2: Group
     private Integer bizType; // 1: Short, 2: Long
+
+    @ManyToOne
+    @JoinColumn(name = "purpose_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private BookingPurpose purpose;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 

@@ -60,6 +60,15 @@
             <span class="info-time">{{ $t('orderDetail.before12') }}</span>
           </div>
         </div>
+        <div class="info-item" v-if="order.purpose">
+          <div class="info-label-row">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="#999"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" /></svg>
+            <span class="info-label">订房事由</span>
+          </div>
+          <div class="info-value-row">
+            <span>{{ order.purpose.name }}</span>
+          </div>
+        </div>
       </div>
 
       <!-- 2. Room Card List -->

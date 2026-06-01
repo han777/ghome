@@ -43,6 +43,7 @@
             <th>房数</th>
             <th>房间列表</th>
             <th>业务类型</th>
+            <th>订房事由</th>
             <th>入住周期</th>
             <th>状态</th>
             <th>操作</th>
@@ -72,6 +73,7 @@
                 {{ getDictLabel('BIZ_TYPE', order.bizType) }}
               </span>
             </td>
+            <td>{{ order.purpose?.name || '-' }}</td>
             <td>
               <div style="font-size: 12px; white-space: nowrap;">
                 📅 {{ order.startDate || '-' }}<br>
@@ -142,6 +144,16 @@
               <div class="form-item">
                 <label>退房日期</label>
                 <input type="date" :value="computedEndDate || form.endDate" required disabled title="由房间退房时间自动计算">
+              </div>
+
+              <div class="form-item">
+                <label>订房事由</label>
+                <select v-model="form.purposeId" @change="onPurposeChange" :disabled="!isEditMode">
+                  <option :value="null">-- 选择事由 --</option>
+                  <option v-for="p in purposes" :key="p.id" :value="p.id">
+                    {{ p.name }} ({{ p.bizType === 1 ? '短租' : '长租' }})
+                  </option>
+                </select>
               </div>
 
               <div class="form-item">
@@ -632,6 +644,7 @@ const dicts = ref<any[]>([]);
 const users = ref<any[]>([]);
 const rooms = ref<any[]>([]);
 const productPrices = ref<any[]>([]);
+const purposes = ref<any[]>([]);
 const activeTab = ref('basic');
 const showModal = ref(false);
 const showSendCardModal = ref(false);
@@ -688,6 +701,7 @@ const form = reactive<any>({
   bookerId: null,
   bookPhone: '',
   remarks: '',
+  purposeId: null as number | null,
   company: '',
   costCenter: '',
   groupName: '',
@@ -712,13 +726,14 @@ const parseNameIntl = (json: string, lang: string): string => {
 
 const fetchData = async () => {
   try {
-    const [orderRes, dictRes, userRes, roomRes, productRes, typeRes] = await Promise.all([
+    const [orderRes, dictRes, userRes, roomRes, productRes, typeRes, purposeRes] = await Promise.all([
       api.get('/orders/all'),
       api.get('/sys/dict/all'),
       api.get('/sys/users'),
       api.get('/rooms/all'),
       api.get('/product-prices/all'),
-      api.get('/room-types/all')
+      api.get('/room-types/all'),
+      api.get('/booking-purposes/all')
     ]) as any[];
     // Sort by latest first
     orders.value = (orderRes || []).sort((a: any, b: any) => 
@@ -729,6 +744,7 @@ const fetchData = async () => {
     rooms.value = roomRes;
     productPrices.value = productRes;
     roomTypes.value = typeRes;
+    purposes.value = purposeRes;
     // Initial fetch for available rooms if form dates are set
     if (form.startDate && form.endDate) fetchAvailableRooms();
   } catch (e) {
@@ -986,6 +1002,7 @@ const confirmChangeRoom = async () => {
         }));
       }
       form.bookerId = savedOrder.booker?.id || null;
+      form.purposeId = savedOrder.purpose?.id || null;
       if (savedOrder.productDetails) {
         form.productDetails = savedOrder.productDetails.map((d: any) => ({
           ...d,
@@ -1005,6 +1022,13 @@ const onBookerChange = () => {
   const user = users.value.find(u => u.id === form.bookerId);
   if (user) {
     form.bookPhone = user.phone;
+  }
+};
+
+const onPurposeChange = () => {
+  const purpose = purposes.value.find((p: any) => p.id === form.purposeId);
+  if (purpose) {
+    form.bizType = purpose.bizType;
   }
 };
 
@@ -1153,6 +1177,7 @@ const openModal = (order?: any, tab: string = 'basic') => {
       form.roomOccupies = [];
     }
     form.bookerId = order.booker?.id || null;
+    form.purposeId = order.purpose?.id || null;
     // Handle nested productDetails
     if (order.productDetails) {
       form.productDetails = order.productDetails.map((d: any) => ({
@@ -1177,6 +1202,7 @@ const openModal = (order?: any, tab: string = 'basic') => {
       customerType: 1,
       bookerId: null,
       bookPhone: '',
+      purposeId: null,
       remarks: '',
       company: '',
       costCenter: '',
@@ -1385,6 +1411,14 @@ const saveOrder = async () => {
     }
     delete payload.bookerId;
 
+    // Map purposeId to purpose object
+    if (form.purposeId) {
+      payload.purpose = { id: form.purposeId };
+    } else {
+      payload.purpose = null;
+    }
+    delete payload.purposeId;
+
     // Handle nested roomOccupies payload
     if (form.roomOccupies) {
       const isGroup = form.customerType === 2;
@@ -1426,6 +1460,7 @@ const saveOrder = async () => {
         form.roomOccupies = [];
       }
       form.bookerId = savedOrder.booker?.id || null;
+      form.purposeId = savedOrder.purpose?.id || null;
       if (savedOrder.productDetails) {
         form.productDetails = savedOrder.productDetails.map((d: any) => ({
           ...d,
@@ -1464,6 +1499,7 @@ const cancelEdit = async () => {
           form.roomOccupies = [];
         }
         form.bookerId = fresh.booker?.id || null;
+        form.purposeId = fresh.purpose?.id || null;
         if (fresh.productDetails) {
           form.productDetails = fresh.productDetails.map((d: any) => ({
             ...d,

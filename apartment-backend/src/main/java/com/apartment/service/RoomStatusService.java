@@ -162,6 +162,10 @@ public class RoomStatusService {
                 // 有当前订单
                 detail.setGuestName(resolveGuestName(currentOrder, room.getId()));
                 detail.setOrderId(currentOrder.getId());
+                if (currentOrder.getPurpose() != null) {
+                    detail.setPurposeId(currentOrder.getPurpose().getId());
+                    detail.setPurposeName(currentOrder.getPurpose().getName());
+                }
 
                 // 判断住脏：已入住但有未完成的清扫任务
                 if (todayTask != null) {
@@ -186,6 +190,10 @@ public class RoomStatusService {
                     .orElse(null);
                 if (futureOrder != null) {
                     detail.setOrderId(futureOrder.getId());
+                    if (futureOrder.getPurpose() != null) {
+                        detail.setPurposeId(futureOrder.getPurpose().getId());
+                        detail.setPurposeName(futureOrder.getPurpose().getName());
+                    }
                 }
             }
 
@@ -272,6 +280,16 @@ public class RoomStatusService {
         counts.put("OVERDUE_ARRIVING", roomDetails.stream().filter(r -> r.getLabels() != null && r.getLabels().contains("OVERDUE_ARRIVING")).count());
         counts.put("OVERDUE_DEPARTING", roomDetails.stream().filter(r -> r.getLabels() != null && r.getLabels().contains("OVERDUE_DEPARTING")).count());
         dto.setStatusCounts(counts);
+
+        // 事由计数
+        Map<String, Long> purposeCounts = new HashMap<>();
+        for (RoomStatusDashboardDTO.RoomDetailDTO detail : roomDetails) {
+            String pName = detail.getPurposeName();
+            if (pName != null) {
+                purposeCounts.merge(pName, 1L, Long::sum);
+            }
+        }
+        dto.setPurposeCounts(purposeCounts);
 
         // 按抵达天数聚合（基于房间的 arrivingDays 字段，含逾期负数天）
         Map<Integer, Integer> arrivingByDays = new HashMap<>();

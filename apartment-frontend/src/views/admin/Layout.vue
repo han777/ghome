@@ -81,6 +81,7 @@ const menuGroups = [
       { name: '房型价格', path: '/admin/room-types', icon: '🛌' },
       { name: '房间列表', path: '/admin/rooms', icon: '🏠' },
       { name: '商品服务价格', path: '/admin/product-prices', icon: '🏷️' },
+      { name: '订房事由', path: '/admin/booking-purposes', icon: '📋' },
     ]
   },
   {
@@ -127,6 +128,7 @@ const titles: Record<string, string> = {
   'RoomFeeDetail': '房间费结算明细',
   'ServiceFeeDetail': '商品服务费结算明细',
   'ProductPrices': '商品服务价格',
+  'BookingPurposes': '订房事由',
   'NotificationRecords': '通知记录',
   'CleaningTasks': '清扫任务',
   'GlobalSettings': '全局设置'

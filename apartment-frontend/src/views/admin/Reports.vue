@@ -11,6 +11,11 @@
         <input type="text" v-model="bookerName" placeholder="输入姓名搜索" class="text-input" />
         <label>订单号</label>
         <input type="text" v-model="orderNo" placeholder="输入订单号搜索" class="text-input" />
+        <label>订房事由</label>
+        <select v-model="purposeId" class="text-input">
+          <option :value="null">全部</option>
+          <option v-for="p in purposes" :key="p.id" :value="p.id">{{ p.name }}</option>
+        </select>
         <button class="admin-btn primary" @click="fetchData(0)">查询</button>
         <button class="admin-btn export" @click="exportExcel">导出Excel</button>
       </div>
@@ -36,6 +41,7 @@
               <th>#</th>
               <th>订单号</th>
               <th>订房人</th>
+              <th>订房事由</th>
               <th>入住 - 离开</th>
               <th>房间费</th>
               <th>商品服务费</th>
@@ -47,13 +53,14 @@
             <td>{{ rowNumber(idx) }}</td>
             <td>{{ row.orderNo }}</td>
             <td>{{ row.booker?.realName || '-' }}</td>
+            <td>{{ row.purpose?.name || '-' }}</td>
             <td>{{ formatDateRange(row.startDate, row.endDate) }}</td>
             <td>¥{{ formatMoney(row.roomFee) }}</td>
             <td>¥{{ formatMoney(row.serviceFee) }}</td>
             <td class="bold">¥{{ formatMoney(row.totalAmount) }}</td>
           </tr>
           <tr v-if="orders.length === 0">
-            <td colspan="7" class="empty-cell">暂无数据</td>
+            <td colspan="8" class="empty-cell">暂无数据</td>
           </tr>
         </tbody>
       </table>
@@ -97,6 +104,18 @@ const startDate = ref('');
 const endDate = ref('');
 const bookerName = ref('');
 const orderNo = ref('');
+const purposeId = ref<number | null>(null);
+const purposes = ref<any[]>([]);
+
+// Fetch purposes for filter
+const fetchPurposes = async () => {
+  try {
+    purposes.value = await api.get('/booking-purposes/all') as any;
+  } catch (e) {
+    console.error('Failed to fetch purposes', e);
+  }
+};
+fetchPurposes();
 
 const rowNumber = (idx: number) => currentPage.value * pageSize.value + idx + 1;
 
@@ -107,6 +126,7 @@ const fetchData = async (page: number) => {
   if (endDate.value) url += `&endDate=${endDate.value}T23:59:59`;
   if (bookerName.value) url += `&bookerName=${encodeURIComponent(bookerName.value)}`;
   if (orderNo.value) url += `&orderNo=${encodeURIComponent(orderNo.value)}`;
+  if (purposeId.value) url += `&purposeId=${purposeId.value}`;
   try {
     const res: any = await api.get(url);
     orders.value = res.content || [];
@@ -162,6 +182,7 @@ const exportExcel = () => {
   if (endDate.value) url += `endDate=${endDate.value}T23:59:59&`;
   if (bookerName.value) url += `bookerName=${encodeURIComponent(bookerName.value)}&`;
   if (orderNo.value) url += `orderNo=${encodeURIComponent(orderNo.value)}&`;
+  if (purposeId.value) url += `purposeId=${purposeId.value}&`;
   const token = localStorage.getItem('token');
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then(res => res.blob())

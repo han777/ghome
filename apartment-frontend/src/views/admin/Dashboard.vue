@@ -82,6 +82,23 @@
         </div>
       </div>
 
+      <!-- Purpose Filter - 按事由 -->
+      <div class="filter-group" v-if="purposes.length > 0">
+        <div class="filter-title"><span>|</span> 按事由</div>
+        <div class="type-list">
+          <div
+            v-for="p in purposes"
+            :key="p.id"
+            class="type-item"
+            :class="{ active: purposeFilter === p.id }"
+            @click="togglePurposeFilter(p.id)"
+          >
+            <span>{{ p.name }}</span>
+            <span class="count">{{ data.purposeCounts?.[p.name] || 0 }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Arriving Filter - 按抵达 -->
       <div class="filter-group">
         <div class="filter-title"><span>|</span> 按抵达</div>
@@ -291,6 +308,8 @@ const arrivingDaysFilter = ref<number | null>(null);
 const departingDaysFilter = ref<number | null>(null);
 const maintTypeFilter = ref<number | null>(null);
 const cleaningTypeFilter = ref<number | null>(null);
+const purposeFilter = ref<number | null>(null);
+const purposes = ref<any[]>([]);
 
 const resetFilters = () => {
   selectedFloor.value = '';
@@ -301,6 +320,7 @@ const resetFilters = () => {
   departingDaysFilter.value = null;
   maintTypeFilter.value = null;
   cleaningTypeFilter.value = null;
+  purposeFilter.value = null;
 };
 
 // 房间菜单相关
@@ -341,6 +361,7 @@ const syncFiltersToUrl = () => {
   if (departingDaysFilter.value !== null) query.depDays = String(departingDaysFilter.value);
   if (maintTypeFilter.value !== null) query.maintType = String(maintTypeFilter.value);
   if (cleaningTypeFilter.value !== null) query.cleanType = String(cleaningTypeFilter.value);
+  if (purposeFilter.value !== null) query.purpose = String(purposeFilter.value);
   router.replace({ path: '/admin/dashboard', query });
 };
 
@@ -355,15 +376,20 @@ const restoreFiltersFromUrl = () => {
   if (q.depDays) departingDaysFilter.value = parseInt(q.depDays as string);
   if (q.maintType) maintTypeFilter.value = parseInt(q.maintType as string);
   if (q.cleanType) cleaningTypeFilter.value = parseInt(q.cleanType as string);
+  if (q.purpose) purposeFilter.value = parseInt(q.purpose as string);
 };
 
 // 监听筛选条件变化
-watch([selectedFloor, searchQuery, statusFilters, typeFilters, arrivingDaysFilter, departingDaysFilter, maintTypeFilter, cleaningTypeFilter], syncFiltersToUrl, { deep: true });
+watch([selectedFloor, searchQuery, statusFilters, typeFilters, arrivingDaysFilter, departingDaysFilter, maintTypeFilter, cleaningTypeFilter, purposeFilter], syncFiltersToUrl, { deep: true });
 
 const fetchData = async () => {
   try {
-    const res = await api.get('/dashboard/room-status');
+    const [res, purposeRes] = await Promise.all([
+      api.get('/dashboard/room-status'),
+      api.get('/booking-purposes/all')
+    ]) as any[];
     data.value = res;
+    purposes.value = purposeRes || [];
   } catch (e) {
     console.error('Failed to fetch dashboard data', e);
   }
@@ -480,6 +506,10 @@ const toggleCleaningTypeFilter = (type: number) => {
   cleaningTypeFilter.value = cleaningTypeFilter.value === type ? null : type;
 };
 
+const togglePurposeFilter = (id: number) => {
+  purposeFilter.value = purposeFilter.value === id ? null : id;
+};
+
 const cleaningTypeCounts = computed(() => {
   let daily = 0;
   let deep = 0;
@@ -531,6 +561,9 @@ const filteredRooms = computed(() => {
     if (cleaningTypeFilter.value !== null) {
       if (!room.cleaningTask || room.cleaningTask.status !== 0 || room.cleaningTask.taskType !== cleaningTypeFilter.value) return false;
     }
+
+    // Purpose filter
+    if (purposeFilter.value !== null && room.purposeId !== purposeFilter.value) return false;
 
     return true;
   });

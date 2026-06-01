@@ -10,6 +10,7 @@ public class RoomStatusDashboardDTO {
     private long departingToday;
     private long arrivingInNDays;
     private Map<String, Long> statusCounts;
+    private Map<String, Long> purposeCounts;
     private List<RoomDetailDTO> rooms;
 
     // 按抵达天数聚合 (key: 天数0=今天, value: 订单数)
@@ -28,6 +29,10 @@ public class RoomStatusDashboardDTO {
         private List<String> labels;
         private String guestName;
         private Long orderId;
+
+        // 订房事由
+        private Long purposeId;
+        private String purposeName;
 
         // 维护类型 (1=维修, 2=锁房), 仅当 status=2(维护) 时有值
         private Integer maintenanceType;

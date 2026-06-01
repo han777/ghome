@@ -112,6 +112,11 @@ const router = createRouter({
                     component: () => import('../views/admin/ProductPrices.vue')
                 },
                 {
+                    path: 'booking-purposes',
+                    name: 'BookingPurposes',
+                    component: () => import('../views/admin/BookingPurposes.vue')
+                },
+                {
                     path: 'maintenances',
                     name: 'Maintenances',
                     component: () => import('../views/admin/Maintenances.vue')

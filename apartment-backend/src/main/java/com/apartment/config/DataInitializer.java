@@ -18,7 +18,8 @@ public class DataInitializer {
             SysDictRepository dictRepository,
             SysDictItemRepository dictItemRepository,
             PasswordEncoder passwordEncoder,
-            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
+            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate,
+            BookingPurposeRepository bookingPurposeRepository) {
         return args -> {
             // 1. Initialize Roles if not exists
             if (roleRepository.count() == 0) {
@@ -112,7 +113,22 @@ public class DataInitializer {
                     {"完成", "2"}
             });
 
-            // 4. Migrate user sources
+            // 4. Initialize Booking Purposes
+            if (bookingPurposeRepository.count() == 0) {
+                BookingPurpose p1 = new BookingPurpose();
+                p1.setName("差旅"); p1.setBizType(1); p1.setIsSystem(true); p1.setSortOrder(0);
+                bookingPurposeRepository.save(p1);
+
+                BookingPurpose p2 = new BookingPurpose();
+                p2.setName("活动"); p2.setBizType(1); p2.setIsSystem(true); p2.setSortOrder(1);
+                bookingPurposeRepository.save(p2);
+
+                BookingPurpose p3 = new BookingPurpose();
+                p3.setName("长租"); p3.setBizType(2); p3.setIsSystem(true); p3.setSortOrder(2);
+                bookingPurposeRepository.save(p3);
+            }
+
+            // 5. Migrate user sources
             try {
                 jdbcTemplate.update("UPDATE sys_user SET source = '0' WHERE source = 'system'");
                 jdbcTemplate.update("UPDATE sys_user SET source = '1' WHERE source = 'wecom'");
