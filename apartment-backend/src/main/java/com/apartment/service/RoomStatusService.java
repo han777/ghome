@@ -147,9 +147,9 @@ public class RoomStatusService {
                 .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))
                 .findFirst().orElse(null);
 
-            // 今日清扫任务
+            // 今日清扫任务（优先取计划中的任务，避免已完成任务遮挡计划中任务）
             CleaningTask todayTask = todayTasks.stream()
-                .filter(t -> t.getRoom() != null && t.getRoom().getId().equals(room.getId()))
+                .filter(t -> t.getRoom() != null && t.getRoom().getId().equals(room.getId()) && t.getStatus() == 0)
                 .findFirst().orElse(null);
 
             // 状态判断
@@ -164,7 +164,7 @@ public class RoomStatusService {
                 detail.setOrderId(currentOrder.getId());
 
                 // 判断住脏：已入住但有未完成的清扫任务
-                if (todayTask != null && todayTask.getStatus() == 0) {
+                if (todayTask != null) {
                     detail.setStatus(5); // 住脏
                 } else {
                     detail.setStatus(1); // 正常在住
@@ -172,7 +172,7 @@ public class RoomStatusService {
             } else {
                 // 无当前订单
                 // 判断空脏：已退房但有未完成的清扫任务
-                if (todayTask != null && todayTask.getStatus() == 0) {
+                if (todayTask != null) {
                     detail.setStatus(4); // 空脏
                 } else {
                     detail.setStatus(0); // 空闲
@@ -189,8 +189,8 @@ public class RoomStatusService {
                 }
             }
 
-            // 清扫任务信息 - 不返回已完成的任务，返回计划中和已取消的
-            if (todayTask != null && todayTask.getStatus() == 0) {
+            // 清扫任务信息
+            if (todayTask != null) {
                 RoomStatusDashboardDTO.CleaningTaskInfo taskInfo = new RoomStatusDashboardDTO.CleaningTaskInfo();
                 taskInfo.setId(todayTask.getId());
                 taskInfo.setTaskType(todayTask.getTaskType());
