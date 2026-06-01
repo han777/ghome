@@ -218,7 +218,19 @@ public class RoomOrderController {
         if (order.getProductDetails() != null) {
             order.getProductDetails().forEach(detail -> detail.setOrder(order));
         }
-        return orderRepository.save(order);
+        RoomOrder saved = orderRepository.save(order);
+
+        // Send order notification email for new orders with status 1 (Pending/Booked)
+        if (saved.getId() != null && saved.getStatus() != null && saved.getStatus() == 1) {
+            try {
+                orderService.sendOrderNotification(saved.getId());
+            } catch (Exception e) {
+                // Notification failure should not block order creation
+                org.slf4j.LoggerFactory.getLogger(getClass()).warn("Failed to send order notification for order {}", saved.getId(), e);
+            }
+        }
+
+        return saved;
     }
 
     /** Compare old and new order fields, return JSON array of changes */

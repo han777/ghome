@@ -9,8 +9,8 @@
         <h3 class="section-title">通知设置</h3>
 
         <div class="form-item">
-          <label>通知邮箱</label>
-          <p class="hint">多个邮箱请用逗号分隔，如：email1@example.com, email2@example.com</p>
+          <label>订单通知邮箱</label>
+          <p class="hint">订单生成后（待入住），系统将向这些邮箱发送订单通知邮件，包含订单号、订房人、入离日期、房间信息等。多个邮箱请用逗号分隔。</p>
           <textarea
             v-model="form.notificationEmails"
             rows="4"

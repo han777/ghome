@@ -268,49 +268,80 @@ public class RoomOrderService {
             }
         }
 
-        // Send notification to notification emails (system global setting)
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    public void sendOrderNotification(Long orderId) {
+        if (orderId == null) return;
+        RoomOrder order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) return;
+
         java.util.List<String> notificationEmails = sysConfigService.getNotificationEmails();
-        if (!notificationEmails.isEmpty()) {
-            // Build room list for notification email
-            StringBuilder roomListBuilder = new StringBuilder();
+        if (notificationEmails.isEmpty()) return;
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+        // Build room info list
+        StringBuilder roomListBuilder = new StringBuilder();
+        if (order.getRoomOccupies() != null) {
             for (RoomOccupy ro : order.getRoomOccupies()) {
-                if (ro.getStatus() != null && ro.getStatus() == 0) {
-                    if (roomListBuilder.length() > 0) roomListBuilder.append(", ");
-                    roomListBuilder.append(ro.getRoom() != null ? ro.getRoom().getRoomNo() : "");
+                if (roomListBuilder.length() > 0) roomListBuilder.append("\n");
+                String roomNo = ro.getRoom() != null ? ro.getRoom().getRoomNo() : "";
+                String occupant = ro.getOccupantName();
+                if (occupant == null && ro.getOccupantUser() != null) {
+                    occupant = ro.getOccupantUser().getRealName() != null ? ro.getOccupantUser().getRealName() : ro.getOccupantUser().getUsername();
                 }
-            }
-            String roomListStr = roomListBuilder.toString();
-            LocalDateTime ciTime = order.getStartDate();
-            LocalDateTime coTime = order.getEndDate();
-
-            String emailContent = "订单入住通知\n"
-                + "订单号: " + order.getOrderNo() + "\n"
-                + "房间: " + roomListStr + "\n"
-                + "房卡箱号: " + keyBoxNo + "\n"
-                + "箱密码: " + boxPassword + "\n"
-                + "入住时间: " + (ciTime != null ? ciTime.format(fmt) : "") + "\n"
-                + "离店时间: " + (coTime != null ? coTime.format(fmt) : "") + "\n"
-                + "预订人: " + (order.getBooker() != null ? order.getBooker().getRealName() : "-");
-
-            for (String email : notificationEmails) {
-                NotificationRecord nr = new NotificationRecord();
-                nr.setOrder(order);
-                nr.setChannel("email");
-                nr.setRecipientEmail(email);
-                nr.setOrderNo(order.getOrderNo());
-                nr.setRoomNo(roomListStr);
-                nr.setKeyBoxNo(keyBoxNo);
-                nr.setBoxPassword(boxPassword);
-                nr.setLocale("zh");
-                nr.setCheckInTime(ciTime);
-                nr.setCheckOutTime(coTime);
-                nr.setRecipientName(email);
-                nr.setContent(emailContent);
-                notificationRecordRepository.save(nr);
+                roomListBuilder.append("  - ").append(roomNo);
+                if (occupant != null && !occupant.isBlank()) {
+                    roomListBuilder.append(" (").append(occupant).append(")");
+                }
             }
         }
 
-        return orderRepository.save(order);
+        String bookerName = "-";
+        if (order.getBooker() != null) {
+            bookerName = order.getBooker().getRealName() != null ? order.getBooker().getRealName() : order.getBooker().getUsername();
+        }
+        String bookerPhone = order.getBookPhone() != null ? order.getBookPhone() : "-";
+
+        LocalDateTime ciTime = order.getStartDate();
+        LocalDateTime coTime = order.getEndDate();
+
+        String emailContent = "新订单通知\n"
+            + "\n订单号: " + order.getOrderNo()
+            + "\n订房人: " + bookerName
+            + "\n联系电话: " + bookerPhone
+            + "\n入住时间: " + (ciTime != null ? ciTime.format(fmt) : "")
+            + "\n离店时间: " + (coTime != null ? coTime.format(fmt) : "")
+            + "\n房间信息:\n" + roomListBuilder.toString()
+            + "\n\n订单金额: " + (order.getTotalAmount() != null ? order.getTotalAmount().toPlainString() : "0")
+            + "\n备注: " + (order.getRemarks() != null ? order.getRemarks() : "-");
+
+        String roomNoSummary = "";
+        if (order.getRoomOccupies() != null && !order.getRoomOccupies().isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (RoomOccupy ro : order.getRoomOccupies()) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(ro.getRoom() != null ? ro.getRoom().getRoomNo() : "");
+            }
+            roomNoSummary = sb.toString();
+        }
+
+        for (String email : notificationEmails) {
+            NotificationRecord nr = new NotificationRecord();
+            nr.setOrder(order);
+            nr.setChannel("email");
+            nr.setRecipientEmail(email);
+            nr.setOrderNo(order.getOrderNo());
+            nr.setRoomNo(roomNoSummary);
+            nr.setLocale("zh");
+            nr.setCheckInTime(ciTime);
+            nr.setCheckOutTime(coTime);
+            nr.setRecipientName(email);
+            nr.setContent(emailContent);
+            notificationRecordRepository.save(nr);
+        }
     }
 
     @Transactional

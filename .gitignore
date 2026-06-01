@@ -5,3 +5,13 @@ apartment-backend/uploads/
 .env.deploy
 deploy/*
 .claude/*
+node_modules/*
+
+backend_error.log
+gen_bcrypt.js
+login.json
+package-lock.json
+package.json
+reset_admin_pwd.sh
+.sisyphus/run-continuation/ses_1a0e07e0effeYiYpLoODAEBnDw.json
+.sisyphus/run-continuation/ses_1a106377cffe7rdqzQ7lWFxCsF.json

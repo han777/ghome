@@ -41,6 +41,29 @@
         </div>
       </div>
 
+      <!-- Cleaning Type Filter -->
+      <div class="filter-group" v-if="cleaningTypeCounts.daily + cleaningTypeCounts.deep > 0">
+        <div class="filter-title"><span>|</span> 按清扫</div>
+        <div class="cleaning-list">
+          <div
+            class="cleaning-item"
+            :class="{ active: cleaningTypeFilter === 1 }"
+            @click="toggleCleaningTypeFilter(1)"
+          >
+            <span class="cleaning-tag tag-daily">保洁</span>
+            <span class="count">{{ cleaningTypeCounts.daily }}</span>
+          </div>
+          <div
+            class="cleaning-item"
+            :class="{ active: cleaningTypeFilter === 2 }"
+            @click="toggleCleaningTypeFilter(2)"
+          >
+            <span class="cleaning-tag tag-deep">强打扫</span>
+            <span class="count">{{ cleaningTypeCounts.deep }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Overdue Alert Filter -->
       <div class="filter-group" v-if="(data.statusCounts?.OVERDUE_ARRIVING || 0) + (data.statusCounts?.OVERDUE_DEPARTING || 0) > 0">
         <div class="filter-title"><span>|</span> 逾期异动</div>
@@ -294,6 +317,7 @@ const arrivingDaysFilter = ref<number | null>(null);
 const departingDaysFilter = ref<number | null>(null);
 const overdueFilter = ref<string | null>(null);
 const maintTypeFilter = ref<number | null>(null);
+const cleaningTypeFilter = ref<number | null>(null);
 
 const resetFilters = () => {
   selectedFloor.value = '';
@@ -304,6 +328,7 @@ const resetFilters = () => {
   departingDaysFilter.value = null;
   overdueFilter.value = null;
   maintTypeFilter.value = null;
+  cleaningTypeFilter.value = null;
 };
 
 // 房间菜单相关
@@ -344,6 +369,7 @@ const syncFiltersToUrl = () => {
   if (departingDaysFilter.value !== null) query.depDays = String(departingDaysFilter.value);
   if (overdueFilter.value) query.overdue = overdueFilter.value;
   if (maintTypeFilter.value !== null) query.maintType = String(maintTypeFilter.value);
+  if (cleaningTypeFilter.value !== null) query.cleanType = String(cleaningTypeFilter.value);
   router.replace({ path: '/admin/dashboard', query });
 };
 
@@ -358,10 +384,11 @@ const restoreFiltersFromUrl = () => {
   if (q.depDays) departingDaysFilter.value = parseInt(q.depDays as string);
   if (q.overdue) overdueFilter.value = q.overdue as string;
   if (q.maintType) maintTypeFilter.value = parseInt(q.maintType as string);
+  if (q.cleanType) cleaningTypeFilter.value = parseInt(q.cleanType as string);
 };
 
 // 监听筛选条件变化
-watch([selectedFloor, searchQuery, statusFilters, typeFilters, arrivingDaysFilter, departingDaysFilter, overdueFilter, maintTypeFilter], syncFiltersToUrl, { deep: true });
+watch([selectedFloor, searchQuery, statusFilters, typeFilters, arrivingDaysFilter, departingDaysFilter, overdueFilter, maintTypeFilter, cleaningTypeFilter], syncFiltersToUrl, { deep: true });
 
 const fetchData = async () => {
   try {
@@ -460,6 +487,24 @@ const toggleMaintTypeFilter = (type: number) => {
   maintTypeFilter.value = maintTypeFilter.value === type ? null : type;
 };
 
+const toggleCleaningTypeFilter = (type: number) => {
+  cleaningTypeFilter.value = cleaningTypeFilter.value === type ? null : type;
+};
+
+const cleaningTypeCounts = computed(() => {
+  let daily = 0;
+  let deep = 0;
+  if (data.value.rooms) {
+    data.value.rooms.forEach((r: any) => {
+      if (r.cleaningTask?.status === 0) {
+        if (r.cleaningTask.taskType === 1) daily++;
+        else if (r.cleaningTask.taskType === 2) deep++;
+      }
+    });
+  }
+  return { daily, deep };
+});
+
 const filteredRooms = computed(() => {
   if (!data.value.rooms) return [];
   return data.value.rooms.filter((room: any) => {
@@ -495,6 +540,11 @@ const filteredRooms = computed(() => {
     // Maintenance type filter
     if (maintTypeFilter.value !== null) {
       if (room.status !== 2 || room.maintenanceType !== maintTypeFilter.value) return false;
+    }
+
+    // Cleaning type filter
+    if (cleaningTypeFilter.value !== null) {
+      if (!room.cleaningTask || room.cleaningTask.status !== 0 || room.cleaningTask.taskType !== cleaningTypeFilter.value) return false;
     }
 
     return true;
@@ -551,6 +601,7 @@ const navigateToOrder = (orderId: number) => {
   if (typeFilters.value.length > 0) returnQuery.type = typeFilters.value.join(',');
   if (arrivingDaysFilter.value !== null) returnQuery.arrDays = String(arrivingDaysFilter.value);
   if (departingDaysFilter.value !== null) returnQuery.depDays = String(departingDaysFilter.value);
+  if (cleaningTypeFilter.value !== null) returnQuery.cleanType = String(cleaningTypeFilter.value);
 
   const returnPath = Object.keys(returnQuery).length > 0
     ? `/admin/dashboard?${new URLSearchParams(returnQuery).toString()}`
@@ -1077,6 +1128,45 @@ onUnmounted(() => {
 @keyframes pulse-badge {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
+}
+
+/* Cleaning type sidebar filter */
+.cleaning-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cleaning-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #64748b;
+}
+.cleaning-item:hover {
+  background: #f8fafc;
+}
+.cleaning-item.active {
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 600;
+}
+.cleaning-tag {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.cleaning-tag.tag-daily {
+  background: #e2e8f0;
+  color: #475569;
+}
+.cleaning-tag.tag-deep {
+  background: #ffedd5;
+  color: #9a3412;
 }
 
 /* Overdue sidebar filter */
