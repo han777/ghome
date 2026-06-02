@@ -41,8 +41,12 @@
               <th>#</th>
               <th>订单号</th>
               <th>订房人</th>
+              <th>电话号码</th>
+              <th>所属公司</th>
+              <th>成本中心</th>
+              <th>活动编码</th>
               <th>订房事由</th>
-              <th>入住 - 离开</th>
+              <th>入住 - 退房</th>
               <th>房间费</th>
               <th>商品服务费</th>
               <th>订单总金额</th>
@@ -53,6 +57,10 @@
             <td>{{ rowNumber(idx) }}</td>
             <td>{{ row.orderNo }}</td>
             <td>{{ row.booker?.realName || '-' }}</td>
+            <td>{{ row.bookPhone || '-' }}</td>
+            <td>{{ row.company || '-' }}</td>
+            <td>{{ row.costCenter || '-' }}</td>
+            <td>{{ row.activityCode || '-' }}</td>
             <td>{{ row.purpose?.name || '-' }}</td>
             <td>{{ formatDateRange(row.startDate, row.endDate) }}</td>
             <td>¥{{ formatMoney(row.roomFee) }}</td>
@@ -60,7 +68,7 @@
             <td class="bold">¥{{ formatMoney(row.totalAmount) }}</td>
           </tr>
           <tr v-if="orders.length === 0">
-            <td colspan="8" class="empty-cell">暂无数据</td>
+            <td colspan="12" class="empty-cell">暂无数据</td>
           </tr>
         </tbody>
       </table>

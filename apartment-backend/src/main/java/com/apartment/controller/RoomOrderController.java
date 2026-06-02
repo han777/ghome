@@ -368,36 +368,34 @@ public class RoomOrderController {
 
         List<RoomOrder> allOrders = orderRepository.findAll();
 
-        // Filter
-        List<RoomOrder> filtered = allOrders;
-        if (startDate != null || endDate != null || bookerName != null || orderNo != null || purposeId != null) {
-            filtered = new java.util.ArrayList<>();
-            for (RoomOrder o : allOrders) {
-                // Date range filter: order startDate within range
-                if (startDate != null && o.getStartDate() != null && o.getStartDate().isBefore(startDate)) continue;
-                if (endDate != null && o.getStartDate() != null && o.getStartDate().isAfter(endDate)) continue;
-                // Booker name filter
-                if (bookerName != null && !bookerName.isBlank()) {
-                    String name = o.getBooker() != null ? o.getBooker().getRealName() : "";
-                    if (name == null || !name.contains(bookerName)) continue;
-                }
-                // Order number filter
-                if (orderNo != null && !orderNo.isBlank()) {
-                    String no = o.getOrderNo() != null ? o.getOrderNo() : "";
-                    if (!no.contains(orderNo)) continue;
-                }
-                // Purpose filter
-                if (purposeId != null) {
-                    if (o.getPurpose() == null || !o.getPurpose().getId().equals(purposeId)) continue;
-                }
-                filtered.add(o);
+        // Filter: only checked-out orders (status=3)
+        List<RoomOrder> filtered = new java.util.ArrayList<>();
+        for (RoomOrder o : allOrders) {
+            if (o.getStatus() == null || o.getStatus() != 3) continue;
+            // Date range filter: order endDate (checkout date) within range
+            if (startDate != null && o.getEndDate() != null && o.getEndDate().isBefore(startDate)) continue;
+            if (endDate != null && o.getEndDate() != null && o.getEndDate().isAfter(endDate)) continue;
+            // Booker name filter
+            if (bookerName != null && !bookerName.isBlank()) {
+                String name = o.getBooker() != null ? o.getBooker().getRealName() : "";
+                if (name == null || !name.contains(bookerName)) continue;
             }
+            // Order number filter
+            if (orderNo != null && !orderNo.isBlank()) {
+                String no = o.getOrderNo() != null ? o.getOrderNo() : "";
+                if (!no.contains(orderNo)) continue;
+            }
+            // Purpose filter
+            if (purposeId != null) {
+                if (o.getPurpose() == null || !o.getPurpose().getId().equals(purposeId)) continue;
+            }
+            filtered.add(o);
         }
 
-        // Sort by startDate descending
+        // Sort by checkout date (endDate) descending
         filtered.sort((a, b) -> {
-            LocalDateTime aTime = a.getStartDate() != null ? a.getStartDate() : LocalDateTime.MIN;
-            LocalDateTime bTime = b.getStartDate() != null ? b.getStartDate() : LocalDateTime.MIN;
+            LocalDateTime aTime = a.getEndDate() != null ? a.getEndDate() : LocalDateTime.MIN;
+            LocalDateTime bTime = b.getEndDate() != null ? b.getEndDate() : LocalDateTime.MIN;
             return bTime.compareTo(aTime);
         });
 
@@ -420,30 +418,31 @@ public class RoomOrderController {
 
         // Get all filtered data (same filter logic as paged endpoint)
         List<RoomOrder> allOrders = orderRepository.findAll();
-        List<RoomOrder> filtered = allOrders;
-        if (startDate != null || endDate != null || bookerName != null || orderNo != null || purposeId != null) {
-            filtered = new java.util.ArrayList<>();
-            for (RoomOrder o : allOrders) {
-                if (startDate != null && o.getStartDate() != null && o.getStartDate().isBefore(startDate)) continue;
-                if (endDate != null && o.getStartDate() != null && o.getStartDate().isAfter(endDate)) continue;
-                if (bookerName != null && !bookerName.isBlank()) {
-                    String name = o.getBooker() != null ? o.getBooker().getRealName() : "";
-                    if (name == null || !name.contains(bookerName)) continue;
-                }
-                if (orderNo != null && !orderNo.isBlank()) {
-                    String no = o.getOrderNo() != null ? o.getOrderNo() : "";
-                    if (!no.contains(orderNo)) continue;
-                }
-                if (purposeId != null) {
-                    if (o.getPurpose() == null || !o.getPurpose().getId().equals(purposeId)) continue;
-                }
-                filtered.add(o);
+        // Filter: only checked-out orders (status=3)
+        List<RoomOrder> filtered = new java.util.ArrayList<>();
+        for (RoomOrder o : allOrders) {
+            if (o.getStatus() == null || o.getStatus() != 3) continue;
+            // Date range filter: order endDate (checkout date) within range
+            if (startDate != null && o.getEndDate() != null && o.getEndDate().isBefore(startDate)) continue;
+            if (endDate != null && o.getEndDate() != null && o.getEndDate().isAfter(endDate)) continue;
+            if (bookerName != null && !bookerName.isBlank()) {
+                String name = o.getBooker() != null ? o.getBooker().getRealName() : "";
+                if (name == null || !name.contains(bookerName)) continue;
             }
+            if (orderNo != null && !orderNo.isBlank()) {
+                String no = o.getOrderNo() != null ? o.getOrderNo() : "";
+                if (!no.contains(orderNo)) continue;
+            }
+            if (purposeId != null) {
+                if (o.getPurpose() == null || !o.getPurpose().getId().equals(purposeId)) continue;
+            }
+            filtered.add(o);
         }
 
+        // Sort by checkout date (endDate) descending
         filtered.sort((a, b) -> {
-            LocalDateTime aTime = a.getStartDate() != null ? a.getStartDate() : LocalDateTime.MIN;
-            LocalDateTime bTime = b.getStartDate() != null ? b.getStartDate() : LocalDateTime.MIN;
+            LocalDateTime aTime = a.getEndDate() != null ? a.getEndDate() : LocalDateTime.MIN;
+            LocalDateTime bTime = b.getEndDate() != null ? b.getEndDate() : LocalDateTime.MIN;
             return bTime.compareTo(aTime);
         });
 
@@ -459,7 +458,7 @@ public class RoomOrderController {
             moneyStyle.setDataFormat(workbook.createDataFormat().getFormat("#,##0.00"));
 
             Row header = sheet.createRow(0);
-            String[] headers = {"#", "订单号", "订房人", "订房事由", "入住时间", "离开时间", "房间费", "商品服务费", "订单总金额"};
+            String[] headers = {"#", "订单号", "订房人", "电话号码", "所属公司", "成本中心", "活动编码", "订房事由", "入住时间", "退房时间", "房间费", "商品服务费", "订单总金额"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = header.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -473,16 +472,20 @@ public class RoomOrderController {
                 row.createCell(0).setCellValue(idx + 1);
                 row.createCell(1).setCellValue(o.getOrderNo() != null ? o.getOrderNo() : "");
                 row.createCell(2).setCellValue(o.getBooker() != null ? o.getBooker().getRealName() : "");
-                row.createCell(3).setCellValue(o.getPurpose() != null ? o.getPurpose().getName() : "");
-                row.createCell(4).setCellValue(o.getStartDate() != null ? o.getStartDate().format(REPORT_DT_FMT) : "");
-                row.createCell(5).setCellValue(o.getEndDate() != null ? o.getEndDate().format(REPORT_DT_FMT) : "");
-                Cell roomFeeCell = row.createCell(6);
+                row.createCell(3).setCellValue(o.getBookPhone() != null ? o.getBookPhone() : "");
+                row.createCell(4).setCellValue(o.getCompany() != null ? o.getCompany() : "");
+                row.createCell(5).setCellValue(o.getCostCenter() != null ? o.getCostCenter() : "");
+                row.createCell(6).setCellValue(o.getActivityCode() != null ? o.getActivityCode() : "");
+                row.createCell(7).setCellValue(o.getPurpose() != null ? o.getPurpose().getName() : "");
+                row.createCell(8).setCellValue(o.getStartDate() != null ? o.getStartDate().format(REPORT_DT_FMT) : "");
+                row.createCell(9).setCellValue(o.getEndDate() != null ? o.getEndDate().format(REPORT_DT_FMT) : "");
+                Cell roomFeeCell = row.createCell(10);
                 roomFeeCell.setCellValue(o.getRoomFee() != null ? o.getRoomFee().doubleValue() : 0);
                 roomFeeCell.setCellStyle(moneyStyle);
-                Cell serviceFeeCell = row.createCell(7);
+                Cell serviceFeeCell = row.createCell(11);
                 serviceFeeCell.setCellValue(o.getServiceFee() != null ? o.getServiceFee().doubleValue() : 0);
                 serviceFeeCell.setCellStyle(moneyStyle);
-                Cell totalCell = row.createCell(8);
+                Cell totalCell = row.createCell(12);
                 totalCell.setCellValue(o.getTotalAmount() != null ? o.getTotalAmount().doubleValue() : 0);
                 totalCell.setCellStyle(moneyStyle);
             }
