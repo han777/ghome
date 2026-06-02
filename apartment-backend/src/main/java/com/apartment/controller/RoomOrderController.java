@@ -40,6 +40,9 @@ public class RoomOrderController {
     private com.apartment.service.RoomOrderService orderService;
 
     @Autowired
+    private com.apartment.repository.BookingPurposeRepository bookingPurposeRepository;
+
+    @Autowired
     private SysUserRepository userRepository;
 
     @Autowired
@@ -134,6 +137,9 @@ public class RoomOrderController {
                 }
                 if (order.getBooker() == null) {
                     order.setBooker(u);
+                }
+                if (order.getPurpose() == null) {
+                    bookingPurposeRepository.findByName("差旅").ifPresent(order::setPurpose);
                 }
             } else {
                 // UPDATE ORDER - record field changes
