@@ -123,6 +123,20 @@ public class CleaningTaskService {
     }
 
     /**
+     * 完成某房间的全部未完成清扫任务
+     */
+    @Transactional
+    public List<CleaningTask> completeAllTasksByRoom(Long roomId) {
+        List<CleaningTask> pendingTasks = taskRepository.findByRoomIdAndStatus(roomId, 0);
+        LocalDateTime now = LocalDateTime.now();
+        for (CleaningTask task : pendingTasks) {
+            task.setStatus(2);  // 完成
+            task.setCompletedAt(now);
+        }
+        return taskRepository.saveAll(pendingTasks);
+    }
+
+    /**
      * 删除任务
      */
     @Transactional

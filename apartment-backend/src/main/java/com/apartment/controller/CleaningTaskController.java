@@ -44,6 +44,11 @@ public class CleaningTaskController {
         return taskService.completeTask(id);
     }
 
+    @PostMapping("/room/{roomId}/complete-all")
+    public List<CleaningTask> completeAllTasksByRoom(@PathVariable Long roomId) {
+        return taskService.completeAllTasksByRoom(roomId);
+    }
+
     @DeleteMapping("/{id}")
     public void deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);

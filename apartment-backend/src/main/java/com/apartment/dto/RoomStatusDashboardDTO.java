@@ -1,6 +1,7 @@
 package com.apartment.dto;
 
 import lombok.Data;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -39,8 +40,8 @@ public class RoomStatusDashboardDTO {
         private String maintenanceContent;
         private Long maintenanceId;
 
-        // 清扫任务信息
-        private CleaningTaskInfo cleaningTask;
+        // 清扫任务信息（可能有多个未完成任务，包括过期的）
+        private List<CleaningTaskInfo> cleaningTasks;
 
         // 最近到达订单信息
         private OrderInfo nearestArriving;
@@ -57,6 +58,7 @@ public class RoomStatusDashboardDTO {
         private Integer taskType;  // 1=日常保洁, 2=强打扫
         private Integer status;    // 0=计划, 1=取消, 2=完成
         private String content;
+        private LocalDate taskDate;  // 任务日期（用于判断是否过期）
     }
 
     @Data
