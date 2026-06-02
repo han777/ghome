@@ -64,7 +64,7 @@
         </button>
       </div>
       <div class="status-filters">
-        <label v-for="opt in getDictOptions('ORDER_STATUS')" :key="opt.value" class="filter-checkbox">
+        <label v-for="opt in getDictOptions('ORDER_STATUS').filter(o => parseInt(o.value) !== 0)" :key="opt.value" class="filter-checkbox">
           <input type="checkbox" :value="parseInt(opt.value)" v-model="statusFilter">
           {{ opt.label }}
         </label>
