@@ -226,20 +226,20 @@
             </div>
           </section>
 
-          <!-- Finance Info Section (only when customerType=2) -->
-          <section v-if="form.customerType === 2" class="form-section">
+          <!-- Finance Info Section -->
+          <section class="form-section">
             <h3 class="section-title">财务信息</h3>
             <div class="form-grid-4">
               <div class="form-item">
-                <label class="required">所属公司</label>
+                <label>所属公司</label>
                 <input v-model="form.company" placeholder="所属公司/单位" :disabled="!isEditMode">
               </div>
               <div class="form-item">
-                <label class="required">成本中心</label>
+                <label>成本中心</label>
                 <input v-model="form.costCenter" placeholder="成本中心" :disabled="!isEditMode">
               </div>
               <div class="form-item">
-                <label class="required">活动编码</label>
+                <label>活动编码</label>
                 <input v-model="form.activityCode" placeholder="活动编码" :disabled="!isEditMode">
               </div>
             </div>
