@@ -74,22 +74,22 @@ public class RoomOrderService {
         boolean isGroup = order.getCustomerType() != null && order.getCustomerType() == 2;
         if (isGroup) {
             if (isBlank(order.getGroupName())) {
-                throw new BusinessException(ErrorCode.PARAM_ERROR, "团体名称不能为空");
+                throw new BusinessException(ErrorCode.ORDER_GROUP_NAME_EMPTY);
             }
             if (isBlank(order.getContactName())) {
-                throw new BusinessException(ErrorCode.PARAM_ERROR, "联系人姓名不能为空");
+                throw new BusinessException(ErrorCode.ORDER_CONTACT_NAME_EMPTY);
             }
             if (isBlank(order.getContactPhone())) {
-                throw new BusinessException(ErrorCode.PARAM_ERROR, "联系电话不能为空");
+                throw new BusinessException(ErrorCode.ORDER_CONTACT_PHONE_EMPTY);
             }
             if (isBlank(order.getCompany())) {
-                throw new BusinessException(ErrorCode.PARAM_ERROR, "所属公司不能为空");
+                throw new BusinessException(ErrorCode.ORDER_COMPANY_EMPTY);
             }
             if (isBlank(order.getCostCenter())) {
-                throw new BusinessException(ErrorCode.PARAM_ERROR, "成本中心不能为空");
+                throw new BusinessException(ErrorCode.ORDER_COST_CENTER_EMPTY);
             }
             if (isBlank(order.getActivityCode())) {
-                throw new BusinessException(ErrorCode.PARAM_ERROR, "活动编码不能为空");
+                throw new BusinessException(ErrorCode.ORDER_ACTIVITY_CODE_EMPTY);
             }
             // Auto-fill occupantName for group orders
             for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
