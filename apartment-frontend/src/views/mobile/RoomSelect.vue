@@ -20,14 +20,6 @@
       <div class="legend-item"><span class="dot unavailable"></span> {{ $t('roomSelect.unavailable') }}</div>
     </div>
 
-    <div class="purpose-selector">
-      <label>订房事由</label>
-      <select v-model="selectedPurposeId" @change="onPurposeChange">
-        <option :value="null">-- 选择事由 --</option>
-        <option v-for="p in purposes" :key="p.id" :value="p.id">{{ p.name }}</option>
-      </select>
-    </div>
-
     <div class="content">
       <div v-for="floor in floors" :key="floor.name" class="floor-section">
         <div class="floor-title">{{ floor.name }}{{ $t('roomSelect.floor') }}</div>
@@ -77,16 +69,6 @@ const selectedRoomId = ref<number | null>(null);
 const roomTypeName = ref(t('booking.loading'));
 const floors = ref<any[]>([]);
 const submitting = ref(false);
-const purposes = ref<any[]>([]);
-const selectedPurposeId = ref<number | null>(null);
-const selectedBizType = ref(1);
-
-const onPurposeChange = () => {
-  const purpose = purposes.value.find((p: any) => p.id === selectedPurposeId.value);
-  if (purpose) {
-    selectedBizType.value = purpose.bizType;
-  }
-};
 
 const getDirectionLabel = (direction: string): string => {
   if (!direction) return '';
@@ -103,15 +85,13 @@ const fetchRooms = async () => {
     const startDT = startDate + 'T14:00:00';
     const endDT = endDate + 'T12:00:00';
     
-    const [roomsRes, typesRes, purposeRes] = await Promise.all([
+    const [roomsRes, typesRes] = await Promise.all([
       api.get(`/rooms/available?startDate=${startDT}&endDate=${endDT}`),
-      api.get('/room-types/all'),
-      api.get('/booking-purposes/all')
+      api.get('/room-types/all')
     ]) as any[];
 
     const roomType = typesRes.find((t: any) => t.id.toString() === typeId);
     roomTypeName.value = roomType ? (translateField(roomType.nameIntlJson, locale.value) || roomType.typeCode) : t('roomSelect.unknown') + t('booking.roomType');
-    purposes.value = purposeRes || [];
 
     // Filter rooms by type
     const filteredRooms = roomsRes.filter((r: any) => r.roomType?.id.toString() === typeId);
@@ -156,9 +136,8 @@ const confirmSelection = async () => {
     const orderData: any = {
       startDate: startDT,
       endDate: endDT,
-      bizType: selectedBizType.value,
+      bizType: 1,
       status: 0,  // Cooling-off (犹豫期)
-      purpose: selectedPurposeId.value ? { id: selectedPurposeId.value } : null,
       roomOccupies: [
         {
           room: { id: selectedRoomId.value },
@@ -209,30 +188,6 @@ const confirmSelection = async () => {
   padding: 16px;
   background: #fff;
   font-size: 12px;
-}
-
-.purpose-selector {
-  background: #fff;
-  padding: 8px 16px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.purpose-selector label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  white-space: nowrap;
-}
-
-.purpose-selector select {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 14px;
-  background: #f8fafc;
 }
 
 .legend-item {
