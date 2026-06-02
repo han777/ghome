@@ -42,6 +42,7 @@
               <th>订单号</th>
               <th>订房人</th>
               <th>电话号码</th>
+              <th>邮箱</th>
               <th>所属公司</th>
               <th>成本中心</th>
               <th>活动编码</th>
@@ -58,6 +59,7 @@
             <td>{{ row.orderNo }}</td>
             <td>{{ row.booker?.realName || '-' }}</td>
             <td>{{ row.bookPhone || '-' }}</td>
+            <td>{{ row.booker?.email || '-' }}</td>
             <td>{{ row.company || '-' }}</td>
             <td>{{ row.costCenter || '-' }}</td>
             <td>{{ row.activityCode || '-' }}</td>
@@ -68,7 +70,7 @@
             <td class="bold">¥{{ formatMoney(row.totalAmount) }}</td>
           </tr>
           <tr v-if="orders.length === 0">
-            <td colspan="12" class="empty-cell">暂无数据</td>
+            <td colspan="13" class="empty-cell">暂无数据</td>
           </tr>
         </tbody>
       </table>

@@ -458,7 +458,7 @@ public class RoomOrderController {
             moneyStyle.setDataFormat(workbook.createDataFormat().getFormat("#,##0.00"));
 
             Row header = sheet.createRow(0);
-            String[] headers = {"#", "订单号", "订房人", "电话号码", "所属公司", "成本中心", "活动编码", "订房事由", "入住时间", "退房时间", "房间费", "商品服务费", "订单总金额"};
+            String[] headers = {"#", "订单号", "订房人", "电话号码", "邮箱", "所属公司", "成本中心", "活动编码", "订房事由", "入住时间", "退房时间", "房间费", "商品服务费", "订单总金额"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = header.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -473,19 +473,20 @@ public class RoomOrderController {
                 row.createCell(1).setCellValue(o.getOrderNo() != null ? o.getOrderNo() : "");
                 row.createCell(2).setCellValue(o.getBooker() != null ? o.getBooker().getRealName() : "");
                 row.createCell(3).setCellValue(o.getBookPhone() != null ? o.getBookPhone() : "");
-                row.createCell(4).setCellValue(o.getCompany() != null ? o.getCompany() : "");
-                row.createCell(5).setCellValue(o.getCostCenter() != null ? o.getCostCenter() : "");
-                row.createCell(6).setCellValue(o.getActivityCode() != null ? o.getActivityCode() : "");
-                row.createCell(7).setCellValue(o.getPurpose() != null ? o.getPurpose().getName() : "");
-                row.createCell(8).setCellValue(o.getStartDate() != null ? o.getStartDate().format(REPORT_DT_FMT) : "");
-                row.createCell(9).setCellValue(o.getEndDate() != null ? o.getEndDate().format(REPORT_DT_FMT) : "");
-                Cell roomFeeCell = row.createCell(10);
+                row.createCell(4).setCellValue(o.getBooker() != null && o.getBooker().getEmail() != null ? o.getBooker().getEmail() : "");
+                row.createCell(5).setCellValue(o.getCompany() != null ? o.getCompany() : "");
+                row.createCell(6).setCellValue(o.getCostCenter() != null ? o.getCostCenter() : "");
+                row.createCell(7).setCellValue(o.getActivityCode() != null ? o.getActivityCode() : "");
+                row.createCell(8).setCellValue(o.getPurpose() != null ? o.getPurpose().getName() : "");
+                row.createCell(9).setCellValue(o.getStartDate() != null ? o.getStartDate().format(REPORT_DT_FMT) : "");
+                row.createCell(10).setCellValue(o.getEndDate() != null ? o.getEndDate().format(REPORT_DT_FMT) : "");
+                Cell roomFeeCell = row.createCell(11);
                 roomFeeCell.setCellValue(o.getRoomFee() != null ? o.getRoomFee().doubleValue() : 0);
                 roomFeeCell.setCellStyle(moneyStyle);
-                Cell serviceFeeCell = row.createCell(11);
+                Cell serviceFeeCell = row.createCell(12);
                 serviceFeeCell.setCellValue(o.getServiceFee() != null ? o.getServiceFee().doubleValue() : 0);
                 serviceFeeCell.setCellStyle(moneyStyle);
-                Cell totalCell = row.createCell(12);
+                Cell totalCell = row.createCell(13);
                 totalCell.setCellValue(o.getTotalAmount() != null ? o.getTotalAmount().doubleValue() : 0);
                 totalCell.setCellStyle(moneyStyle);
             }
