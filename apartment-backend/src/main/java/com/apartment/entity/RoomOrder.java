@@ -70,6 +70,14 @@ public class RoomOrder {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private java.util.List<OrderLog> orderLogs;
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<NotificationRecord> notificationRecords;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<OrderFee> orderFees;
+
     @Transient
     private Integer roomCount;
 

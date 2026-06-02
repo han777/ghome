@@ -52,6 +52,9 @@ public class RoomOrderService {
     @Autowired
     private SysConfigService sysConfigService;
 
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
+
     public void validateOrder(RoomOrder order) {
         if (order.getRoomOccupies() == null || order.getRoomOccupies().isEmpty()) {
             throw new BusinessException(ErrorCode.ORDER_ROOM_EMPTY);
@@ -288,6 +291,16 @@ public class RoomOrderService {
     @Transactional
     public void sendOrderNotification(Long orderId) {
         if (orderId == null) return;
+
+        // Flush and clear session cache to ensure we read fresh data from DB.
+        // When called right after save() in the same HTTP request (open-in-view enabled),
+        // findById would return the cached entity whose associations (room, occupantUser)
+        // may only contain the id from the frontend JSON payload, not the full DB record.
+        // Flushing ensures pending writes are committed; clearing forces subsequent
+        // findById to load a fresh entity graph from the database.
+        entityManager.flush();
+        entityManager.clear();
+
         RoomOrder order = orderRepository.findById(orderId).orElse(null);
         if (order == null) return;
 
