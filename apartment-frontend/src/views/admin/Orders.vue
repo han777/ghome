@@ -1,11 +1,49 @@
 <template>
   <div class="admin-page">
     <div class="page-header">
-      <div class="search-bar">
-        <input v-model="searchQuery" type="text" placeholder="搜索订房人、创建人、入住人...">
+      <h2>入住管理</h2>
+      <div class="header-actions">
+        <button class="refresh-btn" @click="fetchData" title="刷新">🔄 刷新</button>
+        <button class="add-btn" @click="openModal()">+ 新建订单</button>
       </div>
-      <button class="refresh-btn" @click="fetchData" title="刷新">🔄 刷新</button>
-      <button class="add-btn" @click="openModal()">+ 新建订单</button>
+    </div>
+
+    <!-- Search Panel -->
+    <div class="search-panel card">
+      <div class="search-grid">
+        <div class="search-item">
+          <label>入住期间</label>
+          <div class="range-input">
+            <input type="date" v-model="filters.startDateFrom">
+            <span>至</span>
+            <input type="date" v-model="filters.startDateTo">
+          </div>
+        </div>
+        <div class="search-item">
+          <label>离店期间</label>
+          <div class="range-input">
+            <input type="date" v-model="filters.endDateFrom">
+            <span>至</span>
+            <input type="date" v-model="filters.endDateTo">
+          </div>
+        </div>
+        <div class="search-item">
+          <label>订房人</label>
+          <input type="text" v-model="filters.bookerName" placeholder="搜索订房人姓名">
+        </div>
+        <div class="search-item">
+          <label>入住人</label>
+          <input type="text" v-model="filters.occupantName" placeholder="搜索入住人姓名">
+        </div>
+        <div class="search-item">
+          <label>创建人</label>
+          <input type="text" v-model="filters.creatorName" placeholder="搜索创建人姓名">
+        </div>
+      </div>
+      <div class="search-actions">
+        <button class="reset-btn" @click="resetFilters">重置</button>
+        <button class="search-btn" @click="page = 1">查询</button>
+      </div>
     </div>
 
     <div class="filter-row">
@@ -34,9 +72,29 @@
     </div>
     
     <div class="table-card">
+      <div class="table-toolbar">
+        <div class="toolbar-left">
+          <span>共 {{ filteredOrders.length }} 条记录</span>
+          <div class="page-size-selector">
+            每页显示:
+            <select v-model="pageSize" @change="page = 1">
+              <option :value="10">10</option>
+              <option :value="20">20</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+            </select>
+          </div>
+        </div>
+        <div class="pagination mini" v-if="totalPages > 1">
+          <button :disabled="page === 1" @click="page--">上一页</button>
+          <span class="page-info">第 {{ page }} / {{ totalPages }} 页</span>
+          <button :disabled="page === totalPages" @click="page++">下一页</button>
+        </div>
+      </div>
       <table class="admin-table">
         <thead>
           <tr>
+            <th>序号</th>
             <th>订单号</th>
             <th>预订人</th>
             <th>创建人</th>
@@ -50,7 +108,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="order in filteredOrders" :key="order.id">
+          <tr v-for="(order, index) in paginatedOrders" :key="order.id">
+            <td>{{ (page - 1) * pageSize + index + 1 }}</td>
             <td class="code">{{ order.orderNo }}</td>
             <td>
               <div style="font-size: 12px;">
@@ -87,10 +146,23 @@
             </td>
             <td class="actions">
               <button class="edit-btn" @click="openModal(order, 'basic')">详情</button>
+              <button class="delete-btn" @click="deleteOrder(order.id)" v-if="order.status === 4">删除</button>
             </td>
+          </tr>
+          <tr v-if="paginatedOrders.length === 0">
+            <td colspan="11" class="empty-row">暂无数据</td>
           </tr>
         </tbody>
       </table>
+
+      <div class="pagination" v-if="totalPages > 1">
+        <button :disabled="page === 1" @click="page--">上一页</button>
+        <span class="page-info">第 {{ page }} / {{ totalPages }} 页</span>
+        <button :disabled="page === totalPages" @click="page++">下一页</button>
+        <div class="jump-to">
+          跳转至: <input type="number" v-model.number="jumpPage" @keyup.enter="goToPage" min="1" :max="totalPages">
+        </div>
+      </div>
     </div>
 
     <!-- Order Modal -->
@@ -652,7 +724,6 @@ const sendCardOrderId = ref<number | null>(null);
 const sendCardForm = reactive({ keyBoxNo: '', boxPassword: '' });
 const isMaximized = ref(false);
 const isEditMode = ref(false);
-const searchQuery = ref('');
 const filterTodayArrival = ref(false);
 const filterTodayDeparture = ref(false);
 const statusFilter = ref<number[]>([1, 2]); // Default: Pending (1), In (2)
@@ -677,6 +748,30 @@ const pickerAvailableRooms = ref<any[]>([]);
 const availableRooms = ref<any[]>([]);
 const orderLogs = ref<any[]>([]);
 const returnPath = ref<string | null>(null);
+const page = ref(1);
+const pageSize = ref(20);
+const jumpPage = ref(1);
+
+const filters = reactive({
+  startDateFrom: '',
+  startDateTo: '',
+  endDateFrom: '',
+  endDateTo: '',
+  bookerName: '',
+  occupantName: '',
+  creatorName: ''
+});
+
+const resetFilters = () => {
+  filters.startDateFrom = '';
+  filters.startDateTo = '';
+  filters.endDateFrom = '';
+  filters.endDateTo = '';
+  filters.bookerName = '';
+  filters.occupantName = '';
+  filters.creatorName = '';
+  page.value = 1;
+};
 
 const closeModal = () => {
   showModal.value = false;
@@ -816,18 +911,30 @@ const filteredOrders = computed(() => {
   const today = new Date().toISOString().split('T')[0];
   if (!Array.isArray(orders.value)) return [];
   return orders.value.filter(o => {
-    // Search filter
-    const q = searchQuery.value.toLowerCase();
-    const bookerName = o.booker?.realName?.toLowerCase() || '';
-    const creatorName = o.createUser?.realName?.toLowerCase() || o.createUser?.username?.toLowerCase() || '';
-    const occupants = o.roomOccupies?.map((ro: any) =>
-      (ro.occupantUser?.realName || ro.coOccupants || '').toLowerCase()
-    ).join(' ') || '';
+    // 1. Stay Period Filter (Start Date)
+    if (filters.startDateFrom && o.startDate < filters.startDateFrom) return false;
+    if (filters.startDateTo && o.startDate > (filters.startDateTo + 'T23:59:59')) return false;
 
-    const matchSearch = !q ||
-      bookerName.includes(q) ||
-      creatorName.includes(q) ||
-      occupants.includes(q);
+    // 2. Departure Period Filter (End Date)
+    if (filters.endDateFrom && o.endDate < filters.endDateFrom) return false;
+    if (filters.endDateTo && o.endDate > (filters.endDateTo + 'T23:59:59')) return false;
+
+    // 3. Booker
+    if (filters.bookerName && !o.booker?.realName?.toLowerCase().includes(filters.bookerName.toLowerCase())) return false;
+
+    // 4. Occupant
+    if (filters.occupantName) {
+      const occupantsStr = o.roomOccupies?.map((ro: any) =>
+        (ro.occupantUser?.realName || ro.coOccupants || '')
+      ).join(',').toLowerCase() || '';
+      if (!occupantsStr.includes(filters.occupantName.toLowerCase())) return false;
+    }
+
+    // 5. Creator
+    if (filters.creatorName) {
+      const creatorName = o.createUser?.realName?.toLowerCase() || o.createUser?.username?.toLowerCase() || '';
+      if (!creatorName.includes(filters.creatorName.toLowerCase())) return false;
+    }
 
     // Status filter
     const matchStatus = statusFilter.value.length === 0 || statusFilter.value.includes(o.status);
@@ -838,9 +945,22 @@ const filteredOrders = computed(() => {
     // Today Departure filter
     const matchDeparture = !filterTodayDeparture.value || o.endDate?.split('T')[0] === today;
 
-    return matchSearch && matchStatus && matchArrival && matchDeparture;
+    return matchStatus && matchArrival && matchDeparture;
   });
 });
+
+const totalPages = computed(() => Math.ceil(filteredOrders.value.length / pageSize.value));
+
+const paginatedOrders = computed(() => {
+  const start = (page.value - 1) * pageSize.value;
+  return filteredOrders.value.slice(start, start + pageSize.value);
+});
+
+const goToPage = () => {
+  if (jumpPage.value >= 1 && jumpPage.value <= totalPages.value) {
+    page.value = jumpPage.value;
+  }
+};
 
 // 后台管理固定显示中文
 const dictLabelZh: Record<string, Record<string, string>> = {
@@ -1324,6 +1444,17 @@ const parseChanges = (jsonStr: string) => {
   }
 };
 
+const deleteOrder = async (id: number) => {
+  if (!confirm('确定要永久删除此作废订单吗？')) return;
+  try {
+    await api.delete(`/orders/${id}`);
+    fetchData();
+    alert('删除成功');
+  } catch (e: any) {
+    alert('删除失败: ' + (e.response?.data || e.message));
+  }
+};
+
 const scrollTo = (id: string) => {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -1519,6 +1650,7 @@ const cancelEdit = async () => {
 };
 
 onMounted(async () => {
+  resetFilters();
   await fetchData();
   const queryOrderId = route.query.orderId;
   const returnPathQuery = route.query.returnPath as string | undefined;
@@ -1758,6 +1890,149 @@ onMounted(async () => {
 .footer-btns { display: flex; gap: 10px; }
 .cancel-edit-btn { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 16px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s; }
 .cancel-edit-btn:hover { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+
+/* Search Panel Styles */
+.search-panel {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.search-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-item label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.search-item input[type="text"],
+.search-item input[type="date"] {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.range-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.range-input input {
+  flex: 1;
+}
+
+.search-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 20px;
+}
+
+.reset-btn, .search-btn {
+  padding: 8px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+.search-btn {
+  background: #38bdf8;
+  border: 1px solid #38bdf8;
+  color: #fff;
+}
+
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.page-size-selector select {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.pagination.mini {
+  padding: 10px;
+  background: #fff;
+  border-top: none;
+  border-bottom: 1px solid #e2e8f0;
+  justify-content: flex-end;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.pagination.mini button {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.pagination button {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.jump-to input {
+  width: 50px;
+  padding: 4px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+}
 
 /* Room Card Styles */
 .room-cards-container { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 15px; }
