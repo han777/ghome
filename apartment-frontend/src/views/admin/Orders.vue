@@ -342,13 +342,48 @@
                   </div>
                 </div>
                 <div class="card-grid">
-                  <div class="card-item">
+                  <div class="card-item" :class="{ 'calendar-active': showCheckInCalendar === index }">
                     <label>实际入住</label>
-                    <input type="datetime-local" v-model="occupy.checkInTime" @input="updateRoomQuantity(occupy)" :disabled="!isEditMode || !!form.id">
+                    <!-- 带日历的日期选择（房间已确定且有预订数据时） -->
+                    <template v-if="occupy.roomId && dashboardBookedPeriods.length > 0 && isEditMode && !form.id">
+                      <div class="date-field-with-calendar" @click="toggleCheckInCalendar(index, $event)">
+                        <span class="date-display">{{ occupy.checkInTime ? occupy.checkInTime.slice(0, 16).replace('T', ' ') : '选择入住日期' }}</span>
+                        <span class="calendar-icon">📅</span>
+                      </div>
+                      <div v-if="showCheckInCalendar === index" class="calendar-popup-wrapper" @click.stop>
+                        <CalendarPopup
+                          mode="checkin"
+                          :selectedDate="occupy.checkInTime ? occupy.checkInTime.slice(0, 10) : ''"
+                          :minDate="formatDateStr(new Date())"
+                          :isDateDisabled="(d: Date) => !isCheckInDateAvailable(d)"
+                          @select="(dateStr: string) => onCalendarCheckInSelect(occupy, dateStr)"
+                        />
+                      </div>
+                    </template>
+                    <!-- 原始 datetime-local 输入 -->
+                    <input v-else type="datetime-local" v-model="occupy.checkInTime" @input="updateRoomQuantity(occupy)" :disabled="!isEditMode || !!form.id">
                   </div>
-                  <div class="card-item">
+                  <div class="card-item" :class="{ 'calendar-active': showCheckOutCalendar === index }">
                     <label>实际退房</label>
-                    <input type="datetime-local" v-model="occupy.checkOutTime" @input="updateRoomQuantity(occupy)" :disabled="!isEditMode || !!form.id">
+                    <!-- 带日历的日期选择（房间已确定且有预订数据时） -->
+                    <template v-if="occupy.roomId && dashboardBookedPeriods.length > 0 && isEditMode && !form.id">
+                      <div class="date-field-with-calendar" @click="toggleCheckOutCalendar(index, $event)">
+                        <span class="date-display">{{ occupy.checkOutTime ? occupy.checkOutTime.slice(0, 16).replace('T', ' ') : '选择退房日期' }}</span>
+                        <span class="calendar-icon">📅</span>
+                      </div>
+                      <div v-if="showCheckOutCalendar === index" class="calendar-popup-wrapper" @click.stop>
+                        <CalendarPopup
+                          mode="checkout"
+                          :selectedDate="occupy.checkOutTime ? occupy.checkOutTime.slice(0, 10) : ''"
+                          :checkInDate="occupy.checkInTime ? occupy.checkInTime.slice(0, 10) : ''"
+                          :minDate="occupy.checkInTime ? occupy.checkInTime.slice(0, 10) : formatDateStr(new Date())"
+                          :isDateDisabled="(d: Date) => !isCheckOutDateValidForRoom(occupy.checkInTime?.slice(0, 10) || '', formatDateStr(d))"
+                          @select="(dateStr: string) => onCalendarCheckOutSelect(occupy, dateStr)"
+                        />
+                      </div>
+                    </template>
+                    <!-- 原始 datetime-local 输入 -->
+                    <input v-else type="datetime-local" v-model="occupy.checkOutTime" @input="updateRoomQuantity(occupy)" :disabled="!isEditMode || !!form.id">
                   </div>
                     <div class="card-item">
                       <label>房间</label>
@@ -703,10 +738,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed, watch } from 'vue';
+import { ref, onMounted, reactive, computed, watch, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../../utils/api';
 import { getErrorMessageZh } from '../../utils/errorTranslate';
+import CalendarPopup from '../../components/CalendarPopup.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -1010,6 +1046,50 @@ const calculateDays = (start: string, end: string) => {
 const updateRoomQuantity = (occupy: any) => {
   if (occupy.checkInTime && occupy.checkOutTime) {
     occupy.quantity = calculateDays(occupy.checkInTime, occupy.checkOutTime);
+  }
+  // 验证房间预订冲突（从房态仪表盘创建的订单）
+  validateOccupyDates(occupy);
+};
+
+// 验证入住/退房时间与房间预订是否冲突
+const validateOccupyDates = (occupy: any) => {
+  if (!occupy.roomId || dashboardBookedPeriods.value.length === 0 || form.id) return;
+
+  const checkInDateStr = occupy.checkInTime ? occupy.checkInTime.slice(0, 10) : '';
+  const checkOutDateStr = occupy.checkOutTime ? occupy.checkOutTime.slice(0, 10) : '';
+  if (!checkInDateStr || !checkOutDateStr) return;
+
+  // 验证入住日期：[入住日14:00, 次日12:00] 不能与现有预订重叠
+  const checkInDate = parseDatePart(checkInDateStr);
+  if (!isCheckInDateAvailable(checkInDate)) {
+    alert('该入住日期14:00至次日12:00与现有预订冲突，请选择其他日期');
+    // 自动跳到下一个可用入住日期
+    for (let i = 1; i <= 180; i++) {
+      const candidate = new Date(checkInDate);
+      candidate.setDate(candidate.getDate() + i);
+      if (isCheckInDateAvailable(candidate)) {
+        occupy.checkInTime = formatDateStr(candidate) + 'T14:00';
+        occupy.quantity = calculateDays(occupy.checkInTime, occupy.checkOutTime);
+        break;
+      }
+    }
+    return;
+  }
+
+  // 验证退房日期：[入住日14:00, 退房日12:00] 不能与现有预订重叠
+  if (!isCheckOutDateValidForRoom(checkInDateStr, checkOutDateStr)) {
+    alert('入住日14:00至退房日12:00期间存在预订冲突，请调整退房日期');
+    // 自动跳到下一个可用退房日期
+    for (let i = 1; i <= 180; i++) {
+      const candidate = new Date(checkInDate);
+      candidate.setDate(candidate.getDate() + i);
+      const candidateStr = formatDateStr(candidate);
+      if (isCheckOutDateValidForRoom(checkInDateStr, candidateStr)) {
+        occupy.checkOutTime = candidateStr + 'T12:00';
+        occupy.quantity = calculateDays(occupy.checkInTime, occupy.checkOutTime);
+        break;
+      }
+    }
   }
 };
 
@@ -1345,6 +1425,215 @@ const openModal = (order?: any, tab: string = 'basic') => {
   showModal.value = true;
 };
 
+// ===== 从房态仪表盘快速创建订单 =====
+
+const dashboardBookedPeriods = ref<any[]>([]);
+
+const showCheckInCalendar = ref<number | null>(null);
+const showCheckOutCalendar = ref<number | null>(null);
+
+const toggleCheckInCalendar = (index: number, event: MouseEvent) => {
+  event.stopPropagation();
+  showCheckOutCalendar.value = null;
+  showCheckInCalendar.value = showCheckInCalendar.value === index ? null : index;
+};
+
+const toggleCheckOutCalendar = (index: number, event: MouseEvent) => {
+  event.stopPropagation();
+  showCheckInCalendar.value = null;
+  showCheckOutCalendar.value = showCheckOutCalendar.value === index ? null : index;
+};
+
+const onCalendarCheckInSelect = (occupy: any, dateStr: string) => {
+  occupy.checkInTime = dateStr + 'T14:00';
+  showCheckInCalendar.value = null;
+
+  // 自动调整退房日期到入住日的第二天
+  const nextDay = new Date(parseDatePart(dateStr));
+  nextDay.setDate(nextDay.getDate() + 1);
+  let checkOutStr = formatDateStr(nextDay);
+
+  // 如果默认退房日期冲突，找到下一个可用日期
+  if (!isCheckOutDateValidForRoom(dateStr, checkOutStr)) {
+    for (let i = 2; i <= 180; i++) {
+      const candidate = new Date(parseDatePart(dateStr));
+      candidate.setDate(candidate.getDate() + i);
+      const candidateStr = formatDateStr(candidate);
+      if (isCheckOutDateValidForRoom(dateStr, candidateStr)) {
+        checkOutStr = candidateStr;
+        break;
+      }
+    }
+  }
+  occupy.checkOutTime = checkOutStr + 'T12:00';
+  occupy.quantity = calculateDays(occupy.checkInTime, occupy.checkOutTime);
+};
+
+const onCalendarCheckOutSelect = (occupy: any, dateStr: string) => {
+  occupy.checkOutTime = dateStr + 'T12:00';
+  showCheckOutCalendar.value = null;
+  occupy.quantity = calculateDays(occupy.checkInTime, occupy.checkOutTime);
+};
+
+const parseDatePart = (dateStr: string): Date => {
+  if (!dateStr) return new Date(0);
+  const parts = dateStr.slice(0, 10).split('-');
+  return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+};
+
+const formatDateStr = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+// 检查指定时段 [start, end) 是否与任何现有预订重叠
+const hasOverlapWithBookings = (start: Date, end: Date): boolean => {
+  for (const period of dashboardBookedPeriods.value) {
+    const pStart = new Date(period.start);
+    const pEnd = new Date(period.end);
+    // 重叠条件: 预订开始 < 时段结束 AND 预订结束 > 时段开始
+    if (pStart.getTime() < end.getTime() && pEnd.getTime() > start.getTime()) {
+      return true;
+    }
+  }
+  return false;
+};
+
+// 入住日期 D 是否可用：[D 14:00, D+1 12:00] 无任何预订重叠
+const isCheckInDateAvailable = (date: Date): boolean => {
+  const checkInAt14 = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 14, 0, 0);
+  const nextDayAt12 = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, 12, 0, 0);
+  return !hasOverlapWithBookings(checkInAt14, nextDayAt12);
+};
+
+// 从今天起找到第一个可用的入住日期
+const findFirstAvailableDate = (): Date => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (isCheckInDateAvailable(today)) {
+    return today;
+  }
+
+  for (let i = 1; i <= 180; i++) {
+    const candidate = new Date(today);
+    candidate.setDate(candidate.getDate() + i);
+    if (isCheckInDateAvailable(candidate)) {
+      return candidate;
+    }
+  }
+
+  return today;
+};
+
+// 退房日期是否可用：[入住日 14:00, 退房日 12:00] 无任何预订重叠，且不超过入住日+30天
+const isCheckOutDateValidForRoom = (checkInDateStr: string, checkOutDateStr: string): boolean => {
+  const checkInDate = parseDatePart(checkInDateStr);
+  const checkOutDate = parseDatePart(checkOutDateStr);
+
+  if (checkOutDate <= checkInDate) return false;
+
+  // 不超过入住日+30天
+  const maxCheckOut = new Date(checkInDate);
+  maxCheckOut.setDate(maxCheckOut.getDate() + 31); // 退房日最大 = 入住日+30天（第31天退房）
+  if (checkOutDate > maxCheckOut) return false;
+
+  const checkInAt14 = new Date(checkInDate.getFullYear(), checkInDate.getMonth(), checkInDate.getDate(), 14, 0, 0);
+  const checkOutAt12 = new Date(checkOutDate.getFullYear(), checkOutDate.getMonth(), checkOutDate.getDate(), 12, 0, 0);
+
+  return !hasOverlapWithBookings(checkInAt14, checkOutAt12);
+};
+
+const openModalWithRoom = async (roomId: number, roomNo: string) => {
+  isEditMode.value = true;
+  isMaximized.value = false;
+
+  // Find "差旅" purpose as default
+  const businessPurpose = purposes.value.find((p: any) => p.name === '差旅');
+
+  // Fetch booked periods for this room to calculate smart dates
+  try {
+    const bookedRes = await api.get(`/rooms/${roomId}/occupy-periods`) as any[];
+    dashboardBookedPeriods.value = bookedRes || [];
+  } catch (e) {
+    console.error('Failed to fetch room booked periods', e);
+    dashboardBookedPeriods.value = [];
+  }
+
+  // Find the current room info
+  const currentRoom = rooms.value.find((r: any) => r.id === roomId);
+  const roomPrice = currentRoom?.roomType?.priceShortRent || 0;
+
+  // Calculate first available check-in date
+  const checkInDate = findFirstAvailableDate();
+  const checkOutDate = new Date(checkInDate);
+  checkOutDate.setDate(checkOutDate.getDate() + 1);
+
+  let checkInDateStr = formatDateStr(checkInDate);
+  let checkOutDateStr = formatDateStr(checkOutDate);
+
+  // Validate default check-out; if invalid, find next valid
+  if (!isCheckOutDateValidForRoom(checkInDateStr, checkOutDateStr)) {
+    for (let i = 2; i <= 90; i++) {
+      const candidate = new Date(checkInDate);
+      candidate.setDate(candidate.getDate() + i);
+      const candidateStr = formatDateStr(candidate);
+      if (isCheckOutDateValidForRoom(checkInDateStr, candidateStr)) {
+        checkOutDateStr = candidateStr;
+        break;
+      }
+    }
+  }
+
+  const checkInTime = checkInDateStr + 'T14:00';
+  const checkOutTime = checkOutDateStr + 'T12:00';
+
+  Object.assign(form, {
+    id: null,
+    userId: null,
+    bizType: businessPurpose?.bizType || 1,
+    startDate: checkInDateStr,
+    endDate: checkOutDateStr,
+    createdAt: new Date().toISOString().slice(0, 16),
+    roomFee: 0,
+    serviceFee: 0,
+    totalAmount: 0,
+    status: 1,
+    customerType: 1,
+    bookerId: null,
+    bookPhone: '',
+    purposeId: businessPurpose?.id || null,
+    remarks: '',
+    company: '',
+    costCenter: '',
+    groupName: '',
+    contactName: '',
+    contactPhone: '',
+    activityCode: '',
+    keyBoxNo: '',
+    boxPassword: '',
+    roomOccupies: [{
+      roomId: roomId,
+      occupantUserId: null,
+      occupantCount: 1,
+      status: 0,
+      coOccupants: '',
+      checkInTime: checkInTime,
+      checkOutTime: checkOutTime,
+      actualPrice: roomPrice,
+      quantity: calculateDays(checkInTime, checkOutTime)
+    }],
+    productDetails: []
+  });
+
+  fetchAvailableRooms();
+  orderLogs.value = [];
+  activeTab.value = 'basic';
+  showModal.value = true;
+};
+
 const openTimeAdjustModal = async (occupy: any) => {
   adjustingOccupy.value = occupy;
   adjustingDates.start = occupy.checkInTime ? occupy.checkInTime.slice(0, 16) : (form.startDate.length === 10 ? form.startDate + 'T14:00' : form.startDate);
@@ -1649,18 +1938,33 @@ const cancelEdit = async () => {
   }
 };
 
+const closeCalendars = () => {
+  showCheckInCalendar.value = null;
+  showCheckOutCalendar.value = null;
+};
+
 onMounted(async () => {
   resetFilters();
   await fetchData();
   const queryOrderId = route.query.orderId;
+  const autoCreate = route.query.autoCreate;
+  const queryRoomId = route.query.roomId;
   const returnPathQuery = route.query.returnPath as string | undefined;
   if (returnPathQuery) {
     returnPath.value = returnPathQuery;
   }
-  if (queryOrderId) {
+  if (autoCreate === 'true' && queryRoomId) {
+    openModalWithRoom(Number(queryRoomId), (route.query.roomNo as string) || '');
+  } else if (queryOrderId) {
     const order = orders.value.find((o: any) => o.id.toString() === queryOrderId);
     if (order) openModal(order);
   }
+  // 点击外部关闭日历弹窗
+  document.addEventListener('click', closeCalendars);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeCalendars);
 });
 </script>
 
@@ -2099,4 +2403,41 @@ onMounted(async () => {
 .log-arrow { color: #94a3b8; }
 .log-new { color: #10b981; font-weight: 600; }
 .empty-log { text-align: center; padding: 30px; color: #94a3b8; font-size: 13px; }
+
+/* Calendar date field */
+.date-field-with-calendar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  cursor: pointer;
+  min-height: 34px;
+  transition: all 0.15s;
+}
+.date-field-with-calendar:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+.calendar-active .date-field-with-calendar {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+.date-display {
+  font-size: 13px;
+  color: #1e293b;
+  font-weight: 500;
+}
+.calendar-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.calendar-popup-wrapper {
+  position: relative;
+  z-index: 100;
+  margin-top: 4px;
+}
 </style>
