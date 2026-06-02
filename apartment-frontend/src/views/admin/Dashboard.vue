@@ -194,6 +194,7 @@
       <div v-if="selectedRoomForMenu?.cleaningTask" @click="editTask">编辑清扫任务</div>
       <div @click="addTask">新增清扫任务</div>
       <div class="menu-divider"></div>
+      <div @click="navigateToCreateOrder">创建订单</div>
       <div v-if="selectedRoomForMenu?.status !== 2" @click="openQuickMaintenance">房间维护</div>
       <div v-if="selectedRoomForMenu?.status === 2" @click="openEditMaintenance">编辑维护</div>
     </div>
@@ -778,6 +779,35 @@ const saveMaintenance = async () => {
     console.error('Failed to save maintenance', e);
     alert(e.response?.data || '保存维护记录失败');
   }
+};
+
+// 快速创建订单 - 导航到入住管理页面
+const navigateToCreateOrder = () => {
+  if (!selectedRoomForMenu.value) return;
+  showRoomMenu.value = false;
+
+  const returnQuery: Record<string, string> = {};
+  if (selectedFloor.value) returnQuery.floor = selectedFloor.value;
+  if (searchQuery.value) returnQuery.search = searchQuery.value;
+  if (statusFilters.value.length > 0) returnQuery.status = statusFilters.value.join(',');
+  if (typeFilters.value.length > 0) returnQuery.type = typeFilters.value.join(',');
+  if (arrivingDaysFilter.value !== null) returnQuery.arrDays = String(arrivingDaysFilter.value);
+  if (departingDaysFilter.value !== null) returnQuery.depDays = String(departingDaysFilter.value);
+  if (cleaningTypeFilter.value !== null) returnQuery.cleanType = String(cleaningTypeFilter.value);
+
+  const returnPathValue = Object.keys(returnQuery).length > 0
+    ? `/admin/dashboard?${new URLSearchParams(returnQuery).toString()}`
+    : '/admin/dashboard';
+
+  router.push({
+    path: '/admin/orders',
+    query: {
+      autoCreate: 'true',
+      roomId: String(selectedRoomForMenu.value.roomId),
+      roomNo: selectedRoomForMenu.value.roomNo || '',
+      returnPath: returnPathValue
+    }
+  });
 };
 
 onMounted(() => {
