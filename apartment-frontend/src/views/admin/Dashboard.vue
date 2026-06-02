@@ -172,8 +172,9 @@
               <div class="badge-area">
                 <span v-if="room.arrivingDays != null" class="badge" :class="arrivingBadgeClass(room.arrivingDays)">{{ formatArrivingDays(room.arrivingDays) }}</span>
                 <span v-if="room.departingDays != null && (room.status === 1 || room.status === 5)" class="badge" :class="departingBadgeClass(room.departingDays)">{{ formatDepartingDays(room.departingDays) }}</span>
-                <span v-if="room.cleaningTask?.status === 0 && room.cleaningTask?.taskType === 2" class="badge badge-deep-clean">强打扫</span>
-                <span v-if="room.cleaningTask?.status === 0 && room.cleaningTask?.taskType === 1" class="badge badge-daily-clean">保洁</span>
+                <template v-for="task in getPendingCleaningTasks(room)" :key="task.id">
+                  <span class="badge" :class="task.taskType === 2 ? 'badge-deep-clean' : 'badge-daily-clean'">{{ task.taskType === 2 ? '强打扫' : '保洁' }}<span v-if="isTaskOverdue(task)" class="overdue-mark">!</span></span>
+                </template>
               </div>
             </div>
           </div>
@@ -190,8 +191,8 @@
       <div v-if="selectedRoomForMenu?.nearestArriving && !selectedRoomForMenu?.guestName" @click="viewArrivingOrder">查看预订订单</div>
       <div v-if="selectedRoomForMenu?.nearestDeparting" @click="viewDepartingOrder">查看离店订单</div>
       <div v-if="selectedRoomForMenu?.guestName || selectedRoomForMenu?.nearestArriving || selectedRoomForMenu?.nearestDeparting" class="menu-divider"></div>
-      <div v-if="selectedRoomForMenu?.cleaningTask && selectedRoomForMenu?.cleaningTask?.status === 0" @click="completeTask">完成清扫</div>
-      <div v-if="selectedRoomForMenu?.cleaningTask" @click="editTask">编辑清扫任务</div>
+      <div v-if="hasPendingCleaningTasks(selectedRoomForMenu)" @click="completeAllTasks">完成清扫</div>
+      <div v-if="selectedRoomForMenu?.cleaningTasks?.length > 0" @click="editTask">编辑清扫任务</div>
       <div @click="addTask">新增清扫任务</div>
       <div class="menu-divider"></div>
       <div @click="navigateToCreateOrder">创建订单</div>
@@ -516,10 +517,10 @@ const cleaningTypeCounts = computed(() => {
   let deep = 0;
   if (data.value.rooms) {
     data.value.rooms.forEach((r: any) => {
-      if (r.cleaningTask?.status === 0) {
-        if (r.cleaningTask.taskType === 1) daily++;
-        else if (r.cleaningTask.taskType === 2) deep++;
-      }
+      const pending = getPendingCleaningTasks(r);
+      // 每个房间只计一次最高优先级类型（强打扫 > 保洁）
+      if (pending.some((t: any) => t.taskType === 2)) deep++;
+      else if (pending.some((t: any) => t.taskType === 1)) daily++;
     });
   }
   return { daily, deep };
@@ -560,7 +561,8 @@ const filteredRooms = computed(() => {
 
     // Cleaning type filter
     if (cleaningTypeFilter.value !== null) {
-      if (!room.cleaningTask || room.cleaningTask.status !== 0 || room.cleaningTask.taskType !== cleaningTypeFilter.value) return false;
+      const pending = getPendingCleaningTasks(room);
+      if (!pending.some((t: any) => t.taskType === cleaningTypeFilter.value)) return false;
     }
 
     // Purpose filter
@@ -665,25 +667,43 @@ const viewDepartingOrder = () => {
   navigateToOrder(selectedRoomForMenu.value.nearestDeparting.orderId);
 };
 
-const completeTask = async () => {
-  if (!selectedRoomForMenu.value?.cleaningTask?.id) return;
+const todayStr = new Date().toISOString().slice(0, 10);
+
+const getPendingCleaningTasks = (room: any) => {
+  if (!room?.cleaningTasks) return [];
+  return room.cleaningTasks.filter((t: any) => t.status === 0);
+};
+
+const hasPendingCleaningTasks = (room: any) => {
+  return getPendingCleaningTasks(room).length > 0;
+};
+
+const isTaskOverdue = (task: any) => {
+  return task.taskDate && task.taskDate < todayStr;
+};
+
+const completeAllTasks = async () => {
+  if (!selectedRoomForMenu.value?.roomId) return;
   try {
-    await api.post(`/cleaning-tasks/${selectedRoomForMenu.value.cleaningTask.id}/complete`);
+    await api.post(`/cleaning-tasks/room/${selectedRoomForMenu.value.roomId}/complete-all`);
     showRoomMenu.value = false;
     fetchData();
   } catch (e) {
-    console.error('Failed to complete task', e);
+    console.error('Failed to complete tasks', e);
   }
 };
 
 const editTask = () => {
   if (!selectedRoomForMenu.value) return;
-  const task = selectedRoomForMenu.value.cleaningTask;
+  // 优先编辑第一条未完成任务，如果没有则编辑第一条任务
+  const tasks = selectedRoomForMenu.value.cleaningTasks || [];
+  const task = tasks.find((t: any) => t.status === 0) || tasks[0];
+  if (!task) return;
   taskForm.value = {
     id: task.id,
     roomId: selectedRoomForMenu.value.roomId,
     taskType: task.taskType,
-    taskDate: selectedRoomForMenu.value.taskDate || new Date().toISOString().slice(0, 10),
+    taskDate: task.taskDate || new Date().toISOString().slice(0, 10),
     content: task.content || '',
     status: task.status
   };
@@ -1150,6 +1170,11 @@ onUnmounted(() => {
 .badge-daily-clean {
   background: #94a3b8;
   color: #fff;
+}
+.overdue-mark {
+  margin-left: 2px;
+  font-weight: 900;
+  color: #dc2626;
 }
 .badge-canceled {
   background: #e2e8f0;
