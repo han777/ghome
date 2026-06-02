@@ -10,11 +10,13 @@ public interface CleaningTaskRepository extends JpaRepository<CleaningTask, Long
 
     boolean existsByRoomIdAndTaskDate(Long roomId, LocalDate taskDate);
 
-    List<CleaningTask> findByTaskDate(LocalDate taskDate);
+    List<CleaningTask> findByTaskDate(LocalDate date);
 
     Optional<CleaningTask> findByRoomIdAndTaskDate(Long roomId, LocalDate taskDate);
 
-    List<CleaningTask> findByTaskDateOrderByCreatedAtDesc(LocalDate taskDate);
+    List<CleaningTask> findByTaskDateOrderByCreatedAtDesc(LocalDate date);
 
     List<CleaningTask> findAllByOrderByTaskDateDescCreatedAtDesc();
+
+    List<CleaningTask> findByRoomIdAndStatus(Long roomId, Integer status);
 }

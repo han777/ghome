@@ -30,6 +30,7 @@ const errorMessagesZh: Record<string, string> = {
   'order.OCCUPANT_TIME_CONFLICT': '该入住人在所选时段已有其他预约，存在冲突',
   'order.KEY_BOX_NO_EMPTY': '房卡箱号不能为空',
   'order.BOX_PASSWORD_EMPTY': '箱密码不能为空',
+  'order.ROOM_DIRTY': '房间等待清扫！',
 
   // Maintenance
   'maint.START_AFTER_END': '开始时间不能晚于结束时间',

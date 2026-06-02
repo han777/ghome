@@ -44,6 +44,9 @@ public class RoomOrderService {
     private NotificationRecordRepository notificationRecordRepository;
 
     @Autowired
+    private com.apartment.repository.CleaningTaskRepository cleaningTaskRepository;
+
+    @Autowired
     private MessageTemplateService messageTemplateService;
 
     @Autowired
@@ -209,6 +212,17 @@ public class RoomOrderService {
         }
         if (boxPassword == null || boxPassword.isBlank()) {
             throw new BusinessException(ErrorCode.ORDER_BOX_PASSWORD_EMPTY);
+        }
+
+        // Check if any room has an uncompleted cleaning task (脏房拦截)
+        for (RoomOccupy ro : order.getRoomOccupies()) {
+            if (ro.getRoom() != null && ro.getRoom().getId() != null) {
+                List<com.apartment.entity.CleaningTask> pendingTasks = cleaningTaskRepository
+                    .findByRoomIdAndStatus(ro.getRoom().getId(), 0);
+                if (!pendingTasks.isEmpty()) {
+                    throw new BusinessException(ErrorCode.ORDER_ROOM_DIRTY);
+                }
+            }
         }
 
         // Write key box info to order
