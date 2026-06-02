@@ -302,12 +302,14 @@ public class RoomOrderService {
             for (RoomOccupy ro : order.getRoomOccupies()) {
                 if (roomListBuilder.length() > 0) roomListBuilder.append("\n");
                 String roomNo = ro.getRoom() != null ? ro.getRoom().getRoomNo() : "";
+                if (roomNo == null) roomNo = "";
                 String occupant = ro.getOccupantName();
                 if (occupant == null && ro.getOccupantUser() != null) {
                     occupant = ro.getOccupantUser().getRealName() != null ? ro.getOccupantUser().getRealName() : ro.getOccupantUser().getUsername();
                 }
+                if (occupant == null) occupant = "";
                 roomListBuilder.append("  - ").append(roomNo);
-                if (occupant != null && !occupant.isBlank()) {
+                if (!occupant.isBlank()) {
                     roomListBuilder.append(" (").append(occupant).append(")");
                 }
             }
@@ -315,7 +317,9 @@ public class RoomOrderService {
 
         String bookerName = "-";
         if (order.getBooker() != null) {
-            bookerName = order.getBooker().getRealName() != null ? order.getBooker().getRealName() : order.getBooker().getUsername();
+            String rn = order.getBooker().getRealName();
+            String un = order.getBooker().getUsername();
+            bookerName = (rn != null) ? rn : ((un != null) ? un : "-");
         }
         String bookerPhone = order.getBookPhone() != null ? order.getBookPhone() : "-";
 
@@ -337,7 +341,8 @@ public class RoomOrderService {
             StringBuilder sb = new StringBuilder();
             for (RoomOccupy ro : order.getRoomOccupies()) {
                 if (sb.length() > 0) sb.append(", ");
-                sb.append(ro.getRoom() != null ? ro.getRoom().getRoomNo() : "");
+                String rn = ro.getRoom() != null ? ro.getRoom().getRoomNo() : "";
+                sb.append(rn != null ? rn : "");
             }
             roomNoSummary = sb.toString();
         }
