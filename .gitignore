@@ -13,5 +13,4 @@ login.json
 package-lock.json
 package.json
 reset_admin_pwd.sh
-.sisyphus/run-continuation/ses_1a0e07e0effeYiYpLoODAEBnDw.json
-.sisyphus/run-continuation/ses_1a106377cffe7rdqzQ7lWFxCsF.json
+.sisyphus/run-continuation/*
