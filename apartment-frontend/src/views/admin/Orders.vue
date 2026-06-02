@@ -158,7 +158,7 @@
 
               <div class="form-item">
                 <label>业务类型</label>
-                <select v-model="form.bizType" :disabled="!isEditMode">
+                <select v-model="form.bizType" disabled>
                   <option v-for="opt in getDictOptions('BIZ_TYPE')" :key="opt.value" :value="parseInt(opt.value)">
                     {{ opt.label }}
                   </option>
