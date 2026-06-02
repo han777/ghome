@@ -18,6 +18,9 @@ public class RoomController {
     @Autowired
     private com.apartment.repository.RoomOrderRepository orderRepository;
 
+    @Autowired
+    private com.apartment.repository.RoomOccupyRepository occupyRepository;
+
     @GetMapping("/available")
     public List<Room> getAvailableRooms(@RequestParam String startDate, @RequestParam String endDate) {
         java.time.LocalDateTime start = parseDateTime(startDate);
@@ -86,6 +89,38 @@ public class RoomController {
             periods.add(period);
         }
         
+        return periods;
+    }
+
+    @GetMapping("/{id}/occupy-periods")
+    public List<java.util.Map<String, Object>> getRoomOccupyPeriods(@PathVariable Long id) {
+        java.util.List<java.util.Map<String, Object>> periods = new java.util.ArrayList<>();
+
+        // 1. Add maintenance periods
+        java.util.List<com.apartment.entity.RoomMaintenance> maintenances = maintenanceRepository.findByRoomId(id);
+        for (com.apartment.entity.RoomMaintenance m : maintenances) {
+            if (m.getStatus() != 2) {
+                java.util.Map<String, Object> period = new java.util.HashMap<>();
+                period.put("start", m.getStartTime());
+                period.put("end", m.getEndTime());
+                period.put("type", "maintenance");
+                periods.add(period);
+            }
+        }
+
+        // 2. Add room-specific occupancy periods from RoomOccupy (for active orders: status 1 or 2)
+        java.util.List<com.apartment.entity.RoomOccupy> occupies = occupyRepository.findByRoomIdAndStatus(id, 0);
+        for (com.apartment.entity.RoomOccupy o : occupies) {
+            if (o.getOrder() != null && (o.getOrder().getStatus() == 1 || o.getOrder().getStatus() == 2)) {
+                java.util.Map<String, Object> period = new java.util.HashMap<>();
+                period.put("start", o.getCheckInTime());
+                period.put("end", o.getCheckOutTime());
+                period.put("type", "order");
+                period.put("orderId", o.getOrder().getId());
+                periods.add(period);
+            }
+        }
+
         return periods;
     }
 
