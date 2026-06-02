@@ -30,7 +30,13 @@ const errorMessagesZh: Record<string, string> = {
   'order.OCCUPANT_TIME_CONFLICT': '该入住人在所选时段已有其他预约，存在冲突',
   'order.KEY_BOX_NO_EMPTY': '房卡箱号不能为空',
   'order.BOX_PASSWORD_EMPTY': '箱密码不能为空',
-  'order.ROOM_DIRTY': '房间等待清扫！',
+  'order.ROOM_DIRTY': '房间尚未清扫！',
+  'order.GROUP_NAME_EMPTY': '团体名称不能为空',
+  'order.CONTACT_NAME_EMPTY': '联系人姓名不能为空',
+  'order.CONTACT_PHONE_EMPTY': '联系电话不能为空',
+  'order.COMPANY_EMPTY': '所属公司不能为空',
+  'order.COST_CENTER_EMPTY': '成本中心不能为空',
+  'order.ACTIVITY_CODE_EMPTY': '活动编码不能为空',
 
   // Maintenance
   'maint.START_AFTER_END': '开始时间不能晚于结束时间',

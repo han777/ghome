@@ -31,6 +31,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
 import api from '../../utils/api';
+import { getErrorMessageZh } from '../../utils/errorTranslate';
 
 const form = reactive({
   id: null as number | null,
@@ -61,7 +62,7 @@ const saveConfig = async () => {
     alert('设置保存成功');
     fetchConfig();
   } catch (e: any) {
-    alert('保存失败: ' + (e.response?.data?.message || e.message));
+    alert('保存失败: ' + getErrorMessageZh(e));
   } finally {
     saving.value = false;
   }

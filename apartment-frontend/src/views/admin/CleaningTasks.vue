@@ -124,6 +124,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import api from '../../utils/api';
+import { getErrorMessageZh } from '../../utils/errorTranslate';
 
 const tasks = ref<any[]>([]);
 const rooms = ref<any[]>([]);
@@ -226,7 +227,7 @@ const saveTask = async () => {
     showModal.value = false;
     fetchData();
   } catch (e: any) {
-    alert('保存失败: ' + (e.response?.data?.message || e.message));
+    alert('保存失败: ' + getErrorMessageZh(e));
   }
 };
 
@@ -236,7 +237,7 @@ const completeTask = async (id: number) => {
     await api.post(`/cleaning-tasks/${id}/complete`);
     fetchData();
   } catch (e: any) {
-    alert('操作失败: ' + (e.response?.data?.message || e.message));
+    alert('操作失败: ' + getErrorMessageZh(e));
   }
 };
 
@@ -246,7 +247,7 @@ const deleteTask = async (id: number) => {
     await api.delete(`/cleaning-tasks/${id}`);
     fetchData();
   } catch (e: any) {
-    alert('删除失败: ' + (e.response?.data?.message || e.message));
+    alert('删除失败: ' + getErrorMessageZh(e));
   }
 };
 
@@ -257,7 +258,7 @@ const generateTasks = async () => {
     alert(`成功生成 ${count} 个任务`);
     fetchData();
   } catch (e: any) {
-    alert('生成失败: ' + (e.response?.data?.message || e.message));
+    alert('生成失败: ' + getErrorMessageZh(e));
   }
 };
 

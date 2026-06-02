@@ -147,6 +147,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue';
 import api from '../../utils/api';
+import { getErrorMessageZh } from '../../utils/errorTranslate';
 
 const users = ref<any[]>([]);
 const dicts = ref<any[]>([]);
@@ -273,8 +274,7 @@ const saveUser = async () => {
     showModal.value = false;
     fetchUsers(currentPage.value);
   } catch (e: any) {
-    const errorMsg = e.response?.data?.message || '保存失败';
-    alert(errorMsg);
+    alert('保存失败: ' + getErrorMessageZh(e));
   }
 };
 
@@ -284,8 +284,7 @@ const deleteUser = async (id: number) => {
     await api.delete(`/sys/users/${id}`);
     fetchUsers(currentPage.value);
   } catch (e: any) {
-    const errorMsg = e.response?.data?.message || '保存失败';
-    alert(errorMsg);
+    alert('删除失败: ' + getErrorMessageZh(e));
   }
 };
 
