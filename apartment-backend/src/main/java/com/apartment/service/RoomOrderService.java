@@ -241,48 +241,64 @@ public class RoomOrderService {
             }
         }
 
-        // Create notification records
+        // Check if room card notification already sent for this order (one per order)
+        if (notificationRecordRepository.existsByOrderIdAndKeyBoxNoIsNotNull(order.getId())) {
+            return orderRepository.save(order);
+        }
+
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        for (RoomOccupy ro : order.getRoomOccupies()) {
-            if (ro.getStatus() != null && ro.getStatus() == 0) {
-                SysUser recipient = ro.getOccupantUser();
-                if (recipient == null) recipient = order.getBooker();
-                if (recipient == null) continue;
 
-                String channel = "1".equals(recipient.getSource()) ? "wecom" : "email";
-                String roomNoVal = ro.getRoom() != null ? ro.getRoom().getRoomNo() : "";
-                LocalDateTime ciTime = ro.getCheckInTime() != null ? ro.getCheckInTime() : order.getStartDate();
-                LocalDateTime coTime = order.getEndDate();
-                String recipientNameVal = recipient.getRealName() != null ? recipient.getRealName() : recipient.getUsername();
-                String userLocale = recipient.getLocale() != null ? recipient.getLocale() : "zh";
-
-                String content = messageTemplateService.buildCheckInNotification(
-                    userLocale,
-                    order.getOrderNo(),
-                    roomNoVal,
-                    keyBoxNo,
-                    boxPassword,
-                    ciTime != null ? ciTime.format(fmt) : "",
-                    coTime != null ? coTime.format(fmt) : ""
-                );
-
-                NotificationRecord nr = new NotificationRecord();
-                nr.setOrder(order);
-                nr.setOccupy(ro);
-                nr.setRecipientUser(recipient);
-                nr.setChannel(channel);
-                nr.setOrderNo(order.getOrderNo());
-                nr.setRoomNo(roomNoVal);
-                nr.setKeyBoxNo(keyBoxNo);
-                nr.setBoxPassword(boxPassword);
-                nr.setLocale(userLocale);
-                nr.setCheckInTime(ciTime);
-                nr.setCheckOutTime(coTime);
-                nr.setRecipientName(recipientNameVal);
-                nr.setContent(content);
-
-                notificationRecordRepository.save(nr);
+        // Collect all room numbers (comma-separated)
+        StringBuilder roomNosBuilder = new StringBuilder();
+        LocalDateTime earliestCheckIn = null;
+        if (order.getRoomOccupies() != null) {
+            for (RoomOccupy ro : order.getRoomOccupies()) {
+                if (ro.getStatus() != null && ro.getStatus() == 0 && ro.getRoom() != null) {
+                    if (roomNosBuilder.length() > 0) roomNosBuilder.append(", ");
+                    roomNosBuilder.append(ro.getRoom().getRoomNo());
+                    LocalDateTime ciTime = ro.getCheckInTime() != null ? ro.getCheckInTime() : order.getStartDate();
+                    if (earliestCheckIn == null || ciTime.isBefore(earliestCheckIn)) {
+                        earliestCheckIn = ciTime;
+                    }
+                }
             }
+        }
+
+        // Determine recipient (booker)
+        SysUser recipient = order.getBooker();
+        if (recipient != null) {
+            String channel = "1".equals(recipient.getSource()) ? "wecom" : "email";
+            String roomNosVal = roomNosBuilder.toString();
+            LocalDateTime ciTime = earliestCheckIn != null ? earliestCheckIn : order.getStartDate();
+            LocalDateTime coTime = order.getEndDate();
+            String recipientNameVal = recipient.getRealName() != null ? recipient.getRealName() : recipient.getUsername();
+            String userLocale = recipient.getLocale() != null ? recipient.getLocale() : "zh";
+
+            String content = messageTemplateService.buildCheckInNotification(
+                userLocale,
+                order.getOrderNo(),
+                roomNosVal,
+                keyBoxNo,
+                boxPassword,
+                ciTime != null ? ciTime.format(fmt) : "",
+                coTime != null ? coTime.format(fmt) : ""
+            );
+
+            NotificationRecord nr = new NotificationRecord();
+            nr.setOrder(order);
+            nr.setRecipientUser(recipient);
+            nr.setChannel(channel);
+            nr.setOrderNo(order.getOrderNo());
+            nr.setRoomNo(roomNosVal);
+            nr.setKeyBoxNo(keyBoxNo);
+            nr.setBoxPassword(boxPassword);
+            nr.setLocale(userLocale);
+            nr.setCheckInTime(ciTime);
+            nr.setCheckOutTime(coTime);
+            nr.setRecipientName(recipientNameVal);
+            nr.setContent(content);
+
+            notificationRecordRepository.save(nr);
         }
 
         return orderRepository.save(order);
@@ -291,6 +307,11 @@ public class RoomOrderService {
     @Transactional
     public void sendOrderNotification(Long orderId) {
         if (orderId == null) return;
+
+        // Check if notification already sent for this order (one notification per order)
+        if (notificationRecordRepository.existsByOrderId(orderId)) {
+            return;
+        }
 
         // Flush and clear session cache to ensure we read fresh data from DB.
         // When called right after save() in the same HTTP request (open-in-view enabled),

@@ -948,7 +948,7 @@ onUnmounted(() => {
 .chip-occupied { background: #bfdbfe; }
 .chip-repair { background: #ef4444; color: #fff; }
 .chip-locked { background: #94a3b8; color: #fff; }
-.chip-empty-dirty { background: #a3d9a3; }
+.chip-empty-dirty { background: #B027F5; color: #fff; }
 .chip-occupied-dirty { background: #c4915a; }
 
 .type-list, .days-list {
@@ -1040,8 +1040,8 @@ onUnmounted(() => {
 .status-maintenance .room-header { background: #ef4444; }
 .status-maintenance .room-body { background: #ef4444; }
 
-.status-empty-dirty .room-header { background: #a3d9a3; }
-.status-empty-dirty .room-body { background: #a3d9a3; }
+.status-empty-dirty .room-header { background: #B027F5; color: #fff; }
+.status-empty-dirty .room-body { background: #B027F5; color: #fff; }
 
 .status-occupied-dirty .room-header { background: #c4915a; }
 .status-occupied-dirty .room-body { background: #c4915a; }

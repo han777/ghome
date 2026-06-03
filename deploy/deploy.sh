@@ -65,9 +65,11 @@ else
 fi
 
 # Update application.yml with production values using sed
+# NOTE: Use range addresses (/^  datasource:/,/^  [a-z]/) to avoid overwriting
+# spring.mail.username / spring.mail.password with DB credentials
 sed -i "s|url: jdbc:postgresql://.*|url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}|g" BOOT-INF/classes/application.yml
-sed -i "s|username: .*|username: ${DB_USER}|g" BOOT-INF/classes/application.yml
-sed -i "s|password: .*|password: ${DB_PASSWORD}|g" BOOT-INF/classes/application.yml
+sed -i "/^  datasource:/,/^  [a-z]/s|username: .*|username: ${DB_USER}|" BOOT-INF/classes/application.yml
+sed -i "/^  datasource:/,/^  [a-z]/s|password: .*|password: ${DB_PASSWORD}|" BOOT-INF/classes/application.yml
 sed -i "s|corpid: .*|corpid: ${WECOM_CORPID}|g" BOOT-INF/classes/application.yml
 sed -i "s|secret: .*|secret: ${WECOM_SECRET}|g" BOOT-INF/classes/application.yml
 sed -i "s|agentid: .*|agentid: ${WECOM_AGENTID}|g" BOOT-INF/classes/application.yml

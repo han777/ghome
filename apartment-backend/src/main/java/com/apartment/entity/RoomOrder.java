@@ -55,6 +55,7 @@ public class RoomOrder {
     private String contactName;     // 联系人姓名（团体时必填）
     private String contactPhone;    // 联系电话（团体时必填，区别于 bookPhone）
     private String activityCode;    // 活动编码（财务对账用）
+    private String projectCode;     // 项目编码（财务对账用）
     private LocalDateTime createdAt;
     private LocalDateTime expiresAt;
 

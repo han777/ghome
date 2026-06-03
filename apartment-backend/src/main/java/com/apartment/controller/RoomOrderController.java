@@ -171,6 +171,7 @@ public class RoomOrderController {
                         existing.setContactName(order.getContactName());
                         existing.setContactPhone(order.getContactPhone());
                         existing.setActivityCode(order.getActivityCode());
+                        existing.setProjectCode(order.getProjectCode());
                         existing.setPurpose(order.getPurpose());
 
                         // Replace room occupies on the managed entity
@@ -264,6 +265,7 @@ public class RoomOrderController {
         addChange(changes, "所属公司", oldValue(oldOrder.getCompany()), newValue(newOrder.getCompany()));
         addChange(changes, "成本中心", oldValue(oldOrder.getCostCenter()), newValue(newOrder.getCostCenter()));
         addChange(changes, "活动编码", oldValue(oldOrder.getActivityCode()), newValue(newOrder.getActivityCode()));
+        addChange(changes, "项目编码", oldValue(oldOrder.getProjectCode()), newValue(newOrder.getProjectCode()));
         if (changes.isEmpty()) return null;
         try {
             return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(changes);
@@ -458,7 +460,7 @@ public class RoomOrderController {
             moneyStyle.setDataFormat(workbook.createDataFormat().getFormat("#,##0.00"));
 
             Row header = sheet.createRow(0);
-            String[] headers = {"#", "订单号", "订房人", "用户名", "电话号码", "邮箱", "所属公司", "成本中心", "活动编码", "订房事由", "入住时间", "退房时间", "房间费", "商品服务费", "订单总金额"};
+            String[] headers = {"#", "订单号", "订房人", "用户名", "电话号码", "邮箱", "所属公司", "成本中心", "活动编码", "项目编码", "订房事由", "入住时间", "退房时间", "房间费", "商品服务费", "订单总金额"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = header.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -478,16 +480,17 @@ public class RoomOrderController {
                 row.createCell(6).setCellValue(o.getCompany() != null ? o.getCompany() : "");
                 row.createCell(7).setCellValue(o.getCostCenter() != null ? o.getCostCenter() : "");
                 row.createCell(8).setCellValue(o.getActivityCode() != null ? o.getActivityCode() : "");
-                row.createCell(9).setCellValue(o.getPurpose() != null ? o.getPurpose().getName() : "");
-                row.createCell(10).setCellValue(o.getStartDate() != null ? o.getStartDate().format(REPORT_DT_FMT) : "");
-                row.createCell(11).setCellValue(o.getEndDate() != null ? o.getEndDate().format(REPORT_DT_FMT) : "");
-                Cell roomFeeCell = row.createCell(12);
+                row.createCell(9).setCellValue(o.getProjectCode() != null ? o.getProjectCode() : "");
+                row.createCell(10).setCellValue(o.getPurpose() != null ? o.getPurpose().getName() : "");
+                row.createCell(11).setCellValue(o.getStartDate() != null ? o.getStartDate().format(REPORT_DT_FMT) : "");
+                row.createCell(12).setCellValue(o.getEndDate() != null ? o.getEndDate().format(REPORT_DT_FMT) : "");
+                Cell roomFeeCell = row.createCell(13);
                 roomFeeCell.setCellValue(o.getRoomFee() != null ? o.getRoomFee().doubleValue() : 0);
                 roomFeeCell.setCellStyle(moneyStyle);
-                Cell serviceFeeCell = row.createCell(13);
+                Cell serviceFeeCell = row.createCell(14);
                 serviceFeeCell.setCellValue(o.getServiceFee() != null ? o.getServiceFee().doubleValue() : 0);
                 serviceFeeCell.setCellStyle(moneyStyle);
-                Cell totalCell = row.createCell(14);
+                Cell totalCell = row.createCell(15);
                 totalCell.setCellValue(o.getTotalAmount() != null ? o.getTotalAmount().doubleValue() : 0);
                 totalCell.setCellStyle(moneyStyle);
             }

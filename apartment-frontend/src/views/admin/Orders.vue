@@ -39,6 +39,10 @@
           <label>创建人</label>
           <input type="text" v-model="filters.creatorName" placeholder="搜索创建人姓名">
         </div>
+        <div class="search-item">
+          <label>房间号</label>
+          <input type="text" v-model="filters.roomNo" placeholder="搜索房间号">
+        </div>
       </div>
       <div class="search-actions">
         <button class="reset-btn" @click="resetFilters">重置</button>
@@ -313,6 +317,10 @@
               <div class="form-item">
                 <label>活动编码</label>
                 <input v-model="form.activityCode" placeholder="活动编码" :disabled="!isEditMode">
+              </div>
+              <div class="form-item">
+                <label>项目编码</label>
+                <input v-model="form.projectCode" placeholder="项目编码" :disabled="!isEditMode">
               </div>
             </div>
           </section>
@@ -795,7 +803,8 @@ const filters = reactive({
   endDateTo: '',
   bookerName: '',
   occupantName: '',
-  creatorName: ''
+  creatorName: '',
+  roomNo: ''
 });
 
 const resetFilters = () => {
@@ -806,6 +815,7 @@ const resetFilters = () => {
   filters.bookerName = '';
   filters.occupantName = '';
   filters.creatorName = '';
+  filters.roomNo = '';
   page.value = 1;
 };
 
@@ -839,6 +849,7 @@ const form = reactive<any>({
   contactName: '',
   contactPhone: '',
   activityCode: '',
+  projectCode: '',
   keyBoxNo: '',
   boxPassword: '',
   roomOccupies: [],
@@ -970,6 +981,12 @@ const filteredOrders = computed(() => {
     if (filters.creatorName) {
       const creatorName = o.createUser?.realName?.toLowerCase() || o.createUser?.username?.toLowerCase() || '';
       if (!creatorName.includes(filters.creatorName.toLowerCase())) return false;
+    }
+
+    // 6. Room No
+    if (filters.roomNo) {
+      const roomNos = o.roomOccupies?.map((ro: any) => ro.room?.roomNo || '').join(',') || '';
+      if (!roomNos.toLowerCase().includes(filters.roomNo.toLowerCase())) return false;
     }
 
     // Status filter
@@ -1410,6 +1427,7 @@ const openModal = (order?: any, tab: string = 'basic') => {
       contactName: '',
       contactPhone: '',
       activityCode: '',
+      projectCode: '',
       roomOccupies: [],
       productDetails: []
     });
@@ -1612,6 +1630,7 @@ const openModalWithRoom = async (roomId: number, roomNo: string) => {
     contactName: '',
     contactPhone: '',
     activityCode: '',
+    projectCode: '',
     keyBoxNo: '',
     boxPassword: '',
     roomOccupies: [{
@@ -2356,7 +2375,7 @@ onUnmounted(() => {
 .card-action-btn.delete:hover { color: #ef4444; }
 
 .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-.card-item label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 4px; font-weight: 600; }
+.card-item label { display: block; font-size: 11px; color: #475569; margin-bottom: 4px; font-weight: 600; }
 .card-item select, .card-item input { width: 100%; padding: 6px 8px; border: 1px solid #f1f5f9; border-radius: 6px; font-size: 13px; background: #f8fafc; }
 .empty-rooms { grid-column: span 3; text-align: center; padding: 40px; color: #94a3b8; background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 12px; }
 
