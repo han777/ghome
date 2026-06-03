@@ -39,10 +39,11 @@
                 v-for="m in getMaintenancesForRoom(room.id)"
                 :key="'m' + m.id"
                 class="order-bar maintenance-bar"
+                :class="{ 'maintenance-done': m.status === 1 }"
                 :style="getMaintenanceBarStyle(m)"
-                title="Maintenance"
+                :title="m.status === 0 ? '维修中' : '已完成'"
               >
-                维修
+                {{ m.status === 0 ? '维修中' : '完成' }}
               </div>
               <div v-for="day in daysInMonth" :key="day" class="grid-cell"></div>
             </div>
@@ -265,5 +266,9 @@ onUnmounted(() => {
   text-overflow: ellipsis;
   z-index: 10;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.maintenance-done {
+  background: #9ca3af !important;
 }
 </style>

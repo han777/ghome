@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -42,13 +43,14 @@ public class RoomTypeForecastController {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final int MAX_DAYS = 30;
+    private static final ZoneId BEIJING = ZoneId.of("Asia/Shanghai");
 
     @GetMapping("/room-type")
     public RoomTypeForecastDTO getForecast(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(BEIJING);
         if (start == null) start = today;
         if (end == null) end = today.plusDays(9);
         if (end.isBefore(start)) end = start;
@@ -86,25 +88,24 @@ public class RoomTypeForecastController {
         Map<Long, Set<String>> maintenanceByRoom = new HashMap<>();
         for (RoomMaintenance m : maintenances) {
             if (m.getRoom() == null) continue;
+            if (m.getMaintenanceType() == null || m.getMaintenanceType() != 1) continue; // 仅统计类型=维修
             Set<String> mDates = maintenanceByRoom.computeIfAbsent(m.getRoom().getId(), k -> new HashSet<>());
-            LocalDate mStart = m.getStartTime().toLocalDate();
-            LocalDate mEnd = m.getEndTime().toLocalDate();
-            for (LocalDate d = mStart; !d.isAfter(mEnd); d = d.plusDays(1)) {
-                String ds = d.format(DATE_FMT);
-                if (dates.contains(ds)) {
-                    mDates.add(ds);
+            for (LocalDate d = finalStart; !d.isAfter(finalEnd); d = d.plusDays(1)) {
+                LocalDateTime windowStart = d.atTime(14, 0);
+                LocalDateTime windowEnd = d.plusDays(1).atStartOfDay();
+                // 维修时间段与当日14:00-24:00有重叠
+                if (m.getStartTime().isBefore(windowEnd) && m.getEndTime().isAfter(windowStart)) {
+                    String ds = d.format(DATE_FMT);
+                    if (dates.contains(ds)) {
+                        mDates.add(ds);
+                    }
                 }
             }
         }
 
-        // Get all active orders (status 0, 1, 2) in the period
-        List<com.apartment.entity.RoomOrder> activeOrders = orderRepository.findByBookerIdAndStatusIn(
-                null, Arrays.asList(0, 1, 2)); // We need all, not just by booker
-
-        // Actually we need ALL active orders, not filtered by bookerId
-        // Let's use a different approach: find orders by status
+        // Get all orders with status 1 (Pending/待确认) or 2 (In/已入住) in the period
         List<com.apartment.entity.RoomOrder> allActiveOrders = orderRepository.findAll().stream()
-                .filter(o -> o.getStatus() != null && (o.getStatus() == 0 || o.getStatus() == 1 || o.getStatus() == 2))
+                .filter(o -> o.getStatus() != null && (o.getStatus() == 1 || o.getStatus() == 2))
                 .filter(o -> o.getStartDate() != null && o.getEndDate() != null)
                 .filter(o -> o.getStartDate().toLocalDate().isBefore(finalEnd.plusDays(1)) &&
                              o.getEndDate().toLocalDate().isAfter(finalStart.minusDays(1)))
@@ -117,12 +118,15 @@ public class RoomTypeForecastController {
             for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
                 if (occupy.getRoom() == null) continue;
                 Set<String> bDates = bookedByRoom.computeIfAbsent(occupy.getRoom().getId(), k -> new HashSet<>());
-                LocalDate oStart = order.getStartDate().toLocalDate();
-                LocalDate oEnd = order.getEndDate().toLocalDate();
-                for (LocalDate d = oStart; !d.isBefore(oEnd); d = d.plusDays(1)) {
-                    String ds = d.format(DATE_FMT);
-                    if (dates.contains(ds)) {
-                        bDates.add(ds);
+                for (LocalDate d = finalStart; !d.isAfter(finalEnd); d = d.plusDays(1)) {
+                    LocalDateTime windowStart = d.atTime(14, 0);
+                    LocalDateTime windowEnd = d.plusDays(1).atStartOfDay();
+                    // 订单时间段与当日14:00-24:00有重叠
+                    if (order.getStartDate().isBefore(windowEnd) && order.getEndDate().isAfter(windowStart)) {
+                        String ds = d.format(DATE_FMT);
+                        if (dates.contains(ds)) {
+                            bDates.add(ds);
+                        }
                     }
                 }
             }
