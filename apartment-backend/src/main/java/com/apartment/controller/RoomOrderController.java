@@ -128,6 +128,16 @@ public class RoomOrderController {
                 if (!existing.isEmpty()) {
                     throw new BusinessException(ErrorCode.ORDER_ALREADY_EXISTS);
                 }
+
+                // Mobile cutoff: after 15:00 Beijing time, cannot book for today
+                java.time.ZonedDateTime beijingNow = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Shanghai"));
+                if (beijingNow.getHour() >= 15 && order.getStartDate() != null) {
+                    java.time.LocalDate today = beijingNow.toLocalDate();
+                    java.time.LocalDate orderStartDate = order.getStartDate().toLocalDate();
+                    if (!orderStartDate.isAfter(today)) {
+                        throw new BusinessException(ErrorCode.ORDER_MOBILE_CUTOFF);
+                    }
+                }
             }
 
             if (order.getId() == null) {

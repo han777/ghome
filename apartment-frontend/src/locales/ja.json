@@ -398,6 +398,7 @@
     "order.OCCUPANT_TIME_CONFLICT": "この宿泊者は選択した期間に別の予約があります",
     "order.KEY_BOX_NO_EMPTY": "キーボックス番号を入力してください",
     "order.BOX_PASSWORD_EMPTY": "ボックスパスワードを入力してください",
+    "order.MOBILE_CUTOFF": "北京時間15:00以降は当日の予約はできません。明日以降の日付を選択してください。",
     "maint.START_AFTER_END": "開始時間は終了時間より前にしてください",
     "maint.ORDER_CONFLICT": "この期間、部屋には既存の予約があります！",
     "maint.OTHER_CONFLICT": "この期間、部屋には他のメンテナンス記録があります！",

@@ -110,9 +110,25 @@ const router = useRouter();
 const { t } = useI18n();
 
 
-const minDate = new Date().toISOString().split('T')[0];
-const startDate = ref(new Date().toISOString().split('T')[0]);
-const endDate = ref(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+// Beijing time (UTC+8) cutoff: after 15:00, cannot book for today
+const getBeijingHour = () => {
+  const now = new Date();
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  const beijingMs = utcMs + 8 * 3600000;
+  return new Date(beijingMs).getHours();
+};
+
+const getBeijingDateStr = (offsetDays = 0) => {
+  const now = new Date();
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  const beijingMs = utcMs + 8 * 3600000 + offsetDays * 86400000;
+  return new Date(beijingMs).toISOString().split('T')[0];
+};
+
+const isAfterCutoff = getBeijingHour() >= 15;
+const minDate = isAfterCutoff ? getBeijingDateStr(1) : getBeijingDateStr(0);
+const startDate = ref(minDate);
+const endDate = ref(isAfterCutoff ? getBeijingDateStr(2) : getBeijingDateStr(1));
 const roomTypes = ref<any[]>([]);
 const selectedTypeId = ref<number | null>(null);
 const defaultRoomImage = 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&q=80&w=400';

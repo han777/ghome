@@ -37,6 +37,7 @@ const errorMessagesZh: Record<string, string> = {
   'order.COMPANY_EMPTY': '所属公司不能为空',
   'order.COST_CENTER_EMPTY': '成本中心不能为空',
   'order.ACTIVITY_CODE_EMPTY': '活动编码不能为空',
+  'order.MOBILE_CUTOFF': '北京时间15:00后不可预订当天房间，请选择明天及以后的日期',
 
   // Maintenance
   'maint.START_AFTER_END': '开始时间不能晚于结束时间',

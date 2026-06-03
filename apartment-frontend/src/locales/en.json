@@ -398,6 +398,7 @@
     "order.OCCUPANT_TIME_CONFLICT": "This occupant already has another booking during this period",
     "order.KEY_BOX_NO_EMPTY": "Key box number cannot be empty",
     "order.BOX_PASSWORD_EMPTY": "Box password cannot be empty",
+    "order.MOBILE_CUTOFF": "Same-day booking is not available after 15:00 (Beijing Time). Please select tomorrow or later.",
     "maint.START_AFTER_END": "Start time cannot be after end time",
     "maint.ORDER_CONFLICT": "The room has existing booking orders during this period!",
     "maint.OTHER_CONFLICT": "The room has other maintenance records during this period!",
