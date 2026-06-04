@@ -111,17 +111,17 @@
         <div class="price-detail-list">
           <div class="price-detail-row">
             <span class="detail-label">{{ $t('confirm.roomCharge') }}{{ $t('confirm.perNightMath', { price: roomPrice, days: stayDays }) }}</span>
-            <span class="detail-value">¥ {{ (roomPrice * stayDays).toFixed(2) }}</span>
+            <span class="detail-value">CNY {{ (roomPrice * stayDays).toFixed(2) }}</span>
           </div>
           <div v-for="fee in extraFees" :key="fee.id" class="price-detail-row">
             <span class="detail-label">{{ fee.remarks || t('orderDetail.otherFee') }}</span>
-            <span class="detail-value">¥ {{ fee.amount.toFixed(2) }}</span>
+            <span class="detail-value">CNY {{ fee.amount.toFixed(2) }}</span>
           </div>
         </div>
         <div class="divider"></div>
         <div class="total-row">
           <span class="total-label">{{ $t('orderDetail.totalLabel') }}</span>
-          <span class="total-value">¥ {{ order.roomFee?.toFixed(2) || (roomPrice * stayDays).toFixed(2) }}</span>
+          <span class="total-value">CNY {{ order.roomFee?.toFixed(2) || (roomPrice * stayDays).toFixed(2) }}</span>
         </div>
       </div>
 
@@ -140,11 +140,11 @@
             </div>
             <div class="svc-meta-item">
               <span class="svc-meta-label">{{ $t('orderDetail.unitPrice') }}</span>
-              <span class="svc-meta-val">¥{{ Number(svc.actualPrice || 0).toFixed(2) }}</span>
+              <span class="svc-meta-val">CNY{{ Number(svc.actualPrice || 0).toFixed(2) }}</span>
             </div>
             <div class="svc-meta-item">
               <span class="svc-meta-label">{{ $t('orderDetail.subTotal') }}</span>
-              <span class="svc-meta-val primary-text">¥{{ (Number(svc.actualPrice || 0) * (svc.quantity || 1)).toFixed(2) }}</span>
+              <span class="svc-meta-val primary-text">CNY{{ (Number(svc.actualPrice || 0) * (svc.quantity || 1)).toFixed(2) }}</span>
             </div>
           </div>
         </div>
@@ -156,13 +156,13 @@
       <!-- 5. Service Fee Total -->
       <div class="fee-summary-row" v-if="order.serviceFee > 0">
         <span class="fee-summary-label">{{ $t('orderDetail.servicesSection') }}{{ $t('orderDetail.totalLabel') }}</span>
-        <span class="fee-summary-val">¥ {{ Number(order.serviceFee || 0).toFixed(2) }}</span>
+        <span class="fee-summary-val">CNY {{ Number(order.serviceFee || 0).toFixed(2) }}</span>
       </div>
 
       <!-- 6. Order Total Amount Banner -->
       <div class="total-amount-banner">
         <span class="tab-label">{{ $t('orderDetail.totalAmount') }}</span>
-        <span class="tab-amount">¥ {{ Number(order.totalAmount || 0).toFixed(2) }}</span>
+        <span class="tab-amount">CNY {{ Number(order.totalAmount || 0).toFixed(2) }}</span>
       </div>
 
       <!-- 7. Policy Notes -->

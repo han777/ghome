@@ -53,7 +53,7 @@
             <div class="room-name">{{ translateField(type.nameIntlJson, $i18n.locale) || type.typeCode }}</div>
             <div class="room-desc">{{ type.remarks }}</div>
             <div class="room-price-row">
-              <span class="price-symbol">¥</span>
+              <span class="price-symbol">CNY</span>
               <span class="price-value">{{ type.priceShortRent }}</span>
               <span class="price-unit">{{ $t('booking.perNight') }}</span>
             </div>

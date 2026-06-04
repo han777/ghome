@@ -43,14 +43,14 @@
         <div class="price-row">
           <span class="price-label">{{ $t('confirm.roomCharge') }}</span>
           <div class="price-val-group">
-            <span class="price-total">¥ {{ (roomPrice * stayDays).toFixed(2) }}</span>
+            <span class="price-total">CNY {{ (roomPrice * stayDays).toFixed(2) }}</span>
             <span class="price-detail">{{ $t('confirm.perNightMath2', { price: roomPrice, days: stayDays }) }}</span>
           </div>
         </div>
         <div class="divider"></div>
         <div class="price-row total-amount-row">
           <span class="price-label">{{ $t('confirm.totalAmount') }}</span>
-          <span class="price-total large">¥ {{ (roomPrice * stayDays).toFixed(2) }}</span>
+          <span class="price-total large">CNY {{ (roomPrice * stayDays).toFixed(2) }}</span>
         </div>
       </div>
 
@@ -95,7 +95,7 @@
     <div class="bottom-bar">
       <div class="bar-total">
         <div class="total-label">{{ $t('confirm.totalLabel') }}</div>
-        <div class="total-price">¥ {{ (roomPrice * stayDays).toFixed(2) }}</div>
+        <div class="total-price">CNY {{ (roomPrice * stayDays).toFixed(2) }}</div>
       </div>
       <button class="bar-btn cancel" @click="cancelOrder">{{ $t('confirm.cancelOrder') }}</button>
       <button class="bar-btn submit" :disabled="isExpired || submitting" @click="submitOrder">{{ submitting ? $t('confirm.submitting') : $t('confirm.submit') }}</button>
