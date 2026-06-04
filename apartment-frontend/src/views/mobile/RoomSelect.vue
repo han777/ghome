@@ -113,6 +113,16 @@ const fetchRooms = async () => {
       if (!isNaN(numA) && !isNaN(numB)) return numB - numA;
       return b.name.localeCompare(a.name);
     });
+
+    // Sort rooms within each floor by roomNo ascending
+    floors.value.forEach((floor: any) => {
+      floor.rooms.sort((a: any, b: any) => {
+        const numA = parseInt(a.roomNo);
+        const numB = parseInt(b.roomNo);
+        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+        return a.roomNo.localeCompare(b.roomNo);
+      });
+    });
   } catch (e) {
     console.error('Failed to fetch rooms', e);
   }

@@ -167,11 +167,15 @@
               <div v-if="room.guestName && (room.status === 1 || room.status === 5)" class="guest-name-center">
                 {{ room.guestName }}
               </div>
+              <!-- 今日抵客人姓名 -->
+              <div v-else-if="room.arrivingDays === 0 && room.nearestArriving?.guestName" class="guest-name-center arriving-guest">
+                {{ room.nearestArriving.guestName }}
+              </div>
 
               <!-- 彩色标签区 -->
               <div class="badge-area">
-                <span v-if="room.arrivingDays != null" class="badge" :class="arrivingBadgeClass(room.arrivingDays)">{{ formatArrivingDays(room.arrivingDays) }}</span>
                 <span v-if="room.departingDays != null && (room.status === 1 || room.status === 5)" class="badge" :class="departingBadgeClass(room.departingDays)">{{ formatDepartingDays(room.departingDays) }}</span>
+                <span v-if="room.arrivingDays != null" class="badge" :class="arrivingBadgeClass(room.arrivingDays)">{{ formatArrivingDays(room.arrivingDays) }}</span>
                 <template v-for="task in getPendingCleaningTasks(room)" :key="task.id">
                   <span class="badge" :class="task.taskType === 2 ? 'badge-deep-clean' : 'badge-daily-clean'">{{ task.taskType === 2 ? '强打扫' : '保洁' }}<span v-if="isTaskOverdue(task)" class="overdue-mark">!</span></span>
                 </template>
