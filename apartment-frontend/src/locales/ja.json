@@ -182,7 +182,7 @@
     "services": "付加サービス",
     "cost": "料金",
     "total": "合計",
-    "status_0": "確認待ち",
+    "status_0": "チェックイン待ち",
     "status_1": "確認済み",
     "status_2": "滞在中",
     "status_3": "完了",
@@ -352,7 +352,7 @@
     },
     "ORDER_STATUS": {
       "Cooling-off": "クーリングオフ",
-      "Pending": "確認待ち",
+      "Pending": "チェックイン待ち",
       "In": "滞在中",
       "Out": "チェックアウト済み",
       "Canceled": "キャンセル済み"

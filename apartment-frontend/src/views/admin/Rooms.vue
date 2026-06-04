@@ -288,7 +288,7 @@ const filteredRooms = computed(() => {
 // 后台管理固定显示中文
 const dictLabelZh: Record<string, Record<string, string>> = {
   ROOM_STATUS: { 'Available': '可用', 'Locked': '锁定' },
-  ORDER_STATUS: { 'Cooling-off': '冷静期', 'Pending': '待确认', 'In': '已入住', 'Out': '已退房', 'Canceled': '已取消' },
+  ORDER_STATUS: { 'Cooling-off': '冷静期', 'Pending': '待入住', 'In': '已入住', 'Out': '已退房', 'Canceled': '已取消' },
   BIZ_TYPE: { 'Short Rent': '短租', 'Long Rent': '长租' },
   DIRECTION: { 'SOUTH': '朝南', 'NORTH': '朝北', 'EAST': '朝东', 'WEST': '朝西' }
 };

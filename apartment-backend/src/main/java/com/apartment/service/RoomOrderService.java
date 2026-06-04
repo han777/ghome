@@ -55,6 +55,45 @@ public class RoomOrderService {
     @jakarta.persistence.PersistenceContext
     private jakarta.persistence.EntityManager entityManager;
 
+    private static final DateTimeFormatter DATE_ONLY = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    /**
+     * Get display name for order notifications: group name for team orders, booker name for individual.
+     */
+    private String getOrderDisplayName(RoomOrder order) {
+        if (order.getCustomerType() != null && order.getCustomerType() == 2) {
+            return order.getGroupName() != null ? order.getGroupName() : "-";
+        }
+        if (order.getBooker() != null) {
+            return order.getBooker().getRealName() != null ? order.getBooker().getRealName() : order.getBooker().getUsername();
+        }
+        return "-";
+    }
+
+    /**
+     * Send notification to the booker for individual orders (customerType=1).
+     * Skips group orders (customerType=2) as they have no single booker to notify.
+     */
+    private void notifyBooker(RoomOrder order, String subject, String content) {
+        if (order.getCustomerType() != null && order.getCustomerType() == 2) return; // Skip group orders
+        SysUser booker = order.getBooker();
+        if (booker == null) return;
+
+        String channel = "1".equals(booker.getSource()) ? "wecom" : "email";
+        String userLocale = booker.getLocale() != null ? booker.getLocale() : "zh";
+
+        NotificationRecord nr = new NotificationRecord();
+        nr.setOrder(order);
+        nr.setRecipientUser(booker);
+        nr.setChannel(channel);
+        nr.setOrderNo(order.getOrderNo());
+        nr.setLocale(userLocale);
+        nr.setRecipientName(booker.getRealName() != null ? booker.getRealName() : booker.getUsername());
+        nr.setSubject(subject);
+        nr.setContent(content);
+        notificationRecordRepository.save(nr);
+    }
+
     public void validateOrder(RoomOrder order) {
         if (order.getRoomOccupies() == null || order.getRoomOccupies().isEmpty()) {
             throw new BusinessException(ErrorCode.ORDER_ROOM_EMPTY);
@@ -284,6 +323,11 @@ public class RoomOrderService {
                 coTime != null ? coTime.format(fmt) : ""
             );
 
+            String displayName = getOrderDisplayName(order);
+            String subject = messageTemplateService.buildEmailSubject(displayName,
+                ciTime != null ? ciTime.format(DATE_ONLY) : "",
+                coTime != null ? coTime.format(DATE_ONLY) : "");
+
             NotificationRecord nr = new NotificationRecord();
             nr.setOrder(order);
             nr.setRecipientUser(recipient);
@@ -296,6 +340,7 @@ public class RoomOrderService {
             nr.setCheckInTime(ciTime);
             nr.setCheckOutTime(coTime);
             nr.setRecipientName(recipientNameVal);
+            nr.setSubject(subject);
             nr.setContent(content);
 
             notificationRecordRepository.save(nr);
@@ -376,6 +421,11 @@ public class RoomOrderService {
             roomNoSummary = sb.toString();
         }
 
+        String displayName = getOrderDisplayName(order);
+        String subject = messageTemplateService.buildEmailSubject(displayName,
+            ciTime != null ? ciTime.format(DATE_ONLY) : "",
+            coTime != null ? coTime.format(DATE_ONLY) : "");
+
         for (String email : notificationEmails) {
             NotificationRecord nr = new NotificationRecord();
             nr.setOrder(order);
@@ -387,6 +437,7 @@ public class RoomOrderService {
             nr.setCheckInTime(ciTime);
             nr.setCheckOutTime(coTime);
             nr.setRecipientName(email);
+            nr.setSubject(subject);
             nr.setContent(emailContent);
             notificationRecordRepository.save(nr);
         }
@@ -413,6 +464,17 @@ public class RoomOrderService {
                 }
             }
         }
+
+        // Notify booker of cancellation (individual orders only)
+        String displayName = getOrderDisplayName(order);
+        String startDate = order.getStartDate() != null ? order.getStartDate().format(DATE_ONLY) : "";
+        String endDate = order.getEndDate() != null ? order.getEndDate().format(DATE_ONLY) : "";
+        SysUser booker = order.getBooker();
+        String locale = booker != null && booker.getLocale() != null ? booker.getLocale() : "zh";
+        String cancelSubject = messageTemplateService.buildCancelSubject(locale, displayName);
+        String cancelContent = messageTemplateService.buildCancelContent(locale, order.getOrderNo(), displayName, startDate, endDate);
+        notifyBooker(order, cancelSubject, cancelContent);
+
         return orderRepository.save(order);
     }
 
@@ -432,6 +494,17 @@ public class RoomOrderService {
                 }
             }
         }
+
+        // Notify booker of cancellation (individual orders only)
+        String displayName = getOrderDisplayName(order);
+        String startDate = order.getStartDate() != null ? order.getStartDate().format(DATE_ONLY) : "";
+        String endDate = order.getEndDate() != null ? order.getEndDate().format(DATE_ONLY) : "";
+        SysUser booker = order.getBooker();
+        String locale = booker != null && booker.getLocale() != null ? booker.getLocale() : "zh";
+        String cancelSubject = messageTemplateService.buildCancelSubject(locale, displayName);
+        String cancelContent = messageTemplateService.buildCancelContent(locale, order.getOrderNo(), displayName, startDate, endDate);
+        notifyBooker(order, cancelSubject, cancelContent);
+
         return orderRepository.save(order);
     }
 
@@ -529,6 +602,17 @@ public class RoomOrderService {
 
         // Recalculate order date range from all active occupies
         recalcOrderDateRange(order);
+
+        // Notify booker of room change (individual orders only)
+        String displayName = getOrderDisplayName(order);
+        String oldRoomNo = oldRoom != null ? oldRoom.getRoomNo() : "-";
+        String newRoomNo = newRoom.getRoomNo();
+        String switchDateStr = switchDate.format(DATE_ONLY);
+        SysUser booker = order.getBooker();
+        String locale = booker != null && booker.getLocale() != null ? booker.getLocale() : "zh";
+        String changeSubject = messageTemplateService.buildRoomChangeSubject(locale, displayName, oldRoomNo, newRoomNo);
+        String changeContent = messageTemplateService.buildRoomChangeContent(locale, order.getOrderNo(), displayName, oldRoomNo, newRoomNo, switchDateStr);
+        notifyBooker(order, changeSubject, changeContent);
 
         return orderRepository.save(order);
     }

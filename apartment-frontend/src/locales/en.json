@@ -182,7 +182,7 @@
     "services": "Value-added Services",
     "cost": "Cost",
     "total": "Total",
-    "status_0": "Pending",
+    "status_0": "Awaiting Check-in",
     "status_1": "Confirmed",
     "status_2": "Checked In",
     "status_3": "Completed",
@@ -352,7 +352,7 @@
     },
     "ORDER_STATUS": {
       "Cooling-off": "Cooling-off",
-      "Pending": "Pending",
+      "Pending": "Awaiting Check-in",
       "In": "In",
       "Out": "Out",
       "Canceled": "Canceled"

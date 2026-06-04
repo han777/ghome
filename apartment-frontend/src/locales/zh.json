@@ -182,7 +182,7 @@
     "services": "增值服务",
     "cost": "费用",
     "total": "总计",
-    "status_0": "待确认",
+    "status_0": "待入住",
     "status_1": "已确认",
     "status_2": "已入住",
     "status_3": "已完成",
@@ -352,7 +352,7 @@
     },
     "ORDER_STATUS": {
       "Cooling-off": "冷静期",
-      "Pending": "待确认",
+      "Pending": "待入住",
       "In": "已入住",
       "Out": "已退房",
       "Canceled": "已取消"

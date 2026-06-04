@@ -54,6 +54,9 @@ public class NotificationRecord {
     private LocalDateTime checkOutTime;
     private String recipientName;
 
+    @Column(length = 500)
+    private String subject;
+
     @Column(columnDefinition = "TEXT")
     private String content;
 

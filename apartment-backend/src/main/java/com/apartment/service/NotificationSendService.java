@@ -49,8 +49,9 @@ public class NotificationSendService {
 
                 // Case 1: Direct email (notification email, no recipient user)
                 if ("email".equals(effectiveChannel) && recipientEmail != null && !recipientEmail.isBlank()) {
-                    String userLocale = nr.getLocale() != null ? nr.getLocale() : "zh";
-                    String subject = messageTemplateService.buildEmailSubject(userLocale);
+                    String subject = (nr.getSubject() != null && !nr.getSubject().isBlank())
+                        ? nr.getSubject()
+                        : messageTemplateService.buildEmailSubject();
                     emailService.sendEmail(recipientEmail, subject, nr.getContent());
                 }
                 // Case 2: User-based notification (wecom or email)
@@ -67,9 +68,9 @@ public class NotificationSendService {
                         if (recipient.getEmail() == null || recipient.getEmail().isBlank()) {
                             throw new BusinessException(ErrorCode.NOTIF_RECIPIENT_MISSING);
                         }
-                        String userLocale = nr.getLocale() != null ? nr.getLocale() :
-                            (recipient.getLocale() != null ? recipient.getLocale() : "zh");
-                        String subject = messageTemplateService.buildEmailSubject(userLocale);
+                        String subject = (nr.getSubject() != null && !nr.getSubject().isBlank())
+                            ? nr.getSubject()
+                            : messageTemplateService.buildEmailSubject();
                         emailService.sendEmail(recipient.getEmail(), subject, nr.getContent());
                     } else {
                         throw new BusinessException(ErrorCode.NOTIF_UNKNOWN_CHANNEL);

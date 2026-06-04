@@ -107,6 +107,8 @@
             <th>业务类型</th>
             <th>订房事由</th>
             <th>入住周期</th>
+            <th>房卡箱号</th>
+            <th>箱密码</th>
             <th>状态</th>
             <th>操作</th>
           </tr>
@@ -143,6 +145,8 @@
                 🔚 {{ order.endDate || '-' }}
               </div>
             </td>
+            <td>{{ order.keyBoxNo || '-' }}</td>
+            <td>{{ order.boxPassword || '-' }}</td>
             <td>
               <span class="status-badge" :class="getOrderStatusClass(order.status)">
                 {{ getDictLabel('ORDER_STATUS', order.status) }}
@@ -154,7 +158,7 @@
             </td>
           </tr>
           <tr v-if="paginatedOrders.length === 0">
-            <td colspan="11" class="empty-row">暂无数据</td>
+            <td colspan="13" class="empty-row">暂无数据</td>
           </tr>
         </tbody>
       </table>
@@ -345,7 +349,6 @@
                   </div>
                   <div class="card-actions">
                     <button class="card-action-btn adjust" v-if="occupy.status === 0" @click="openTimeAdjustModal(occupy)">调整时间</button>
-                    <button class="card-action-btn change" v-if="occupy.id && occupy.status === 0" @click="startChangeRoom(occupy)">换房</button>
                     <button class="card-action-btn delete" v-if="isEditMode" @click="removeRoomRow(index)">×</button>
                   </div>
                 </div>
@@ -395,8 +398,12 @@
                   </div>
                     <div class="card-item">
                       <label>房间</label>
-                      <div class="room-selector-btn" @click="openRoomPicker(occupy, index)" v-if="isEditMode && !occupy.roomId">
-                        <span class="placeholder">选择房间...</span>
+                      <div class="room-selector-btn" @click="openRoomPicker(occupy, index)" v-if="isEditMode">
+                        <span v-if="occupy.roomId" class="selected-room-info">
+                          <strong>{{ getRoomNo(Number(occupy.roomId)) }}</strong>
+                          <small>({{ getRoomTypeName(Number(occupy.roomId)) }})</small>
+                        </span>
+                        <span v-else class="placeholder">选择房间...</span>
                       </div>
                       <div class="room-selector-btn" v-else style="cursor: default; opacity: 0.8;">
                         <span v-if="occupy.roomId" class="selected-room-info">
@@ -1018,7 +1025,7 @@ const goToPage = () => {
 // 后台管理固定显示中文
 const dictLabelZh: Record<string, Record<string, string>> = {
   ROOM_STATUS: { 'Available': '可用', 'Locked': '锁定' },
-  ORDER_STATUS: { 'Cooling-off': '冷静期', 'Pending': '待确认', 'In': '已入住', 'Out': '已退房', 'Canceled': '已取消' },
+  ORDER_STATUS: { 'Cooling-off': '冷静期', 'Pending': '待入住', 'In': '已入住', 'Out': '已退房', 'Canceled': '已取消' },
   BIZ_TYPE: { 'Short Rent': '短租', 'Long Rent': '长租' }
 };
 
