@@ -99,14 +99,15 @@
         <thead>
           <tr>
             <th>序号</th>
-            <th>订单号</th>
+            <th class="sortable" @click="toggleSort('orderNo')">订单号{{ sortIndicator('orderNo') }}</th>
             <th>预订人</th>
             <th>创建人</th>
             <th>房数</th>
             <th>房间列表</th>
             <th>业务类型</th>
             <th>订房事由</th>
-            <th>入住周期</th>
+            <th class="sortable" @click="toggleSort('startDate')">入住时间{{ sortIndicator('startDate') }}</th>
+            <th class="sortable" @click="toggleSort('endDate')">离开时间{{ sortIndicator('endDate') }}</th>
             <th>房卡箱号</th>
             <th>箱密码</th>
             <th>状态</th>
@@ -139,12 +140,8 @@
               </span>
             </td>
             <td>{{ order.purpose?.name || '-' }}</td>
-            <td>
-              <div style="font-size: 12px; white-space: nowrap;">
-                📅 {{ order.startDate || '-' }}<br>
-                🔚 {{ order.endDate || '-' }}
-              </div>
-            </td>
+            <td>{{ order.startDate ? order.startDate.slice(0, 10) : '-' }}</td>
+            <td>{{ order.endDate ? order.endDate.slice(0, 10) : '-' }}</td>
             <td>{{ order.keyBoxNo || '-' }}</td>
             <td>{{ order.boxPassword || '-' }}</td>
             <td>
@@ -158,7 +155,7 @@
             </td>
           </tr>
           <tr v-if="paginatedOrders.length === 0">
-            <td colspan="13" class="empty-row">暂无数据</td>
+            <td colspan="14" class="empty-row">暂无数据</td>
           </tr>
         </tbody>
       </table>
@@ -802,6 +799,23 @@ const returnPath = ref<string | null>(null);
 const page = ref(1);
 const pageSize = ref(20);
 const jumpPage = ref(1);
+const sortField = ref<'orderNo' | 'startDate' | 'endDate'>('orderNo');
+const sortDir = ref<'asc' | 'desc'>('desc');
+
+const toggleSort = (field: 'orderNo' | 'startDate' | 'endDate') => {
+  if (sortField.value === field) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortField.value = field;
+    sortDir.value = 'desc';
+  }
+  page.value = 1;
+};
+
+const sortIndicator = (field: string) => {
+  if (sortField.value !== field) return ' ↕';
+  return sortDir.value === 'asc' ? ' ↑' : ' ↓';
+};
 
 const filters = reactive({
   startDateFrom: '',
@@ -1006,6 +1020,12 @@ const filteredOrders = computed(() => {
     const matchDeparture = !filterTodayDeparture.value || o.endDate?.split('T')[0] === today;
 
     return matchStatus && matchArrival && matchDeparture;
+  }).sort((a, b) => {
+    const dir = sortDir.value === 'asc' ? 1 : -1;
+    const field = sortField.value;
+    const va = (a[field] || '') as string;
+    const vb = (b[field] || '') as string;
+    return va.localeCompare(vb) * dir;
   });
 });
 
@@ -1999,6 +2019,16 @@ onUnmounted(() => {
 .tag { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
 .occupied { background: #fef9c3; color: #854d0e; }
 .repair { background: #fee2e2; color: #991b1b; }
+
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+th.sortable:hover {
+  background: #f1f5f9;
+}
 
 .refresh-btn {
   background: #fff;
