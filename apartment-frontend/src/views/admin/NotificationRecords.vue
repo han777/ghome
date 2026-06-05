@@ -13,6 +13,14 @@
           <option value="wecom">企业微信</option>
           <option value="email">邮件</option>
         </select>
+        <label>消息类型</label>
+        <select v-model="messageTypeFilter" @change="fetchData(0)">
+          <option value="">全部</option>
+          <option value="order_created">订单生成</option>
+          <option value="key_box">发房卡码</option>
+          <option value="order_cancel">取消订单</option>
+          <option value="room_change">换房</option>
+        </select>
         <label>通知状态</label>
         <select v-model="statusFilter" @change="fetchData(0)">
           <option value="">全部</option>
@@ -52,6 +60,7 @@
             <th>入住时间</th>
             <th>离店时间</th>
             <th>收件人</th>
+            <th>消息类型</th>
             <th>通知渠道</th>
             <th>通知状态</th>
             <th>创建时间</th>
@@ -68,13 +77,14 @@
             <td>{{ formatDT(row.checkInTime) }}</td>
             <td>{{ formatDT(row.checkOutTime) }}</td>
             <td>{{ row.recipientName }}</td>
+            <td>{{ messageTypeLabel(row.messageType) }}</td>
             <td>{{ channelLabel(row.channel) }}</td>
             <td>{{ statusLabel(row.status) }}</td>
             <td>{{ formatDT(row.createdAt) }}</td>
             <td>{{ row.failReason || '-' }}</td>
           </tr>
           <tr v-if="rows.length === 0">
-            <td colspan="12" class="empty-cell">暂无数据</td>
+            <td colspan="13" class="empty-cell">暂无数据</td>
           </tr>
         </tbody>
       </table>
@@ -116,6 +126,7 @@ const jumpPage = ref(1);
 const orderNoFilter = ref('');
 const recipientNameFilter = ref('');
 const channelFilter = ref('');
+const messageTypeFilter = ref('');
 const statusFilter = ref('');
 const createdFrom = ref('');
 const createdTo = ref('');
@@ -123,6 +134,13 @@ const createdTo = ref('');
 const rowNumber = (idx: number) => currentPage.value * pageSize.value + idx + 1;
 
 const channelLabel = (ch: string) => ch === 'wecom' ? '企业微信' : '邮件';
+const messageTypeLabel = (mt: string) => {
+  if (mt === 'order_created') return '订单生成';
+  if (mt === 'key_box') return '发房卡码';
+  if (mt === 'order_cancel') return '取消订单';
+  if (mt === 'room_change') return '换房';
+  return mt || '-';
+};
 const statusLabel = (st: string) => {
   if (st === 'pending') return '待发送';
   if (st === 'sent') return '已发送';
@@ -136,6 +154,7 @@ const fetchData = async (page: number) => {
   if (orderNoFilter.value) url += `&orderNo=${encodeURIComponent(orderNoFilter.value)}`;
   if (recipientNameFilter.value) url += `&recipientName=${encodeURIComponent(recipientNameFilter.value)}`;
   if (channelFilter.value) url += `&channel=${channelFilter.value}`;
+  if (messageTypeFilter.value) url += `&messageType=${messageTypeFilter.value}`;
   if (statusFilter.value) url += `&status=${statusFilter.value}`;
   if (createdFrom.value) url += `&createdFrom=${createdFrom.value}T00:00:00`;
   if (createdTo.value) url += `&createdTo=${createdTo.value}T23:59:59`;

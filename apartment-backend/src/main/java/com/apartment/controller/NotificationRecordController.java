@@ -31,13 +31,14 @@ public class NotificationRecordController {
             @RequestParam(required = false) String recipientName,
             @RequestParam(required = false) String channel,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String messageType,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime createdFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime createdTo) {
 
         List<NotificationRecord> all = notificationRecordRepository.findAll();
 
         List<NotificationRecord> filtered = all;
-        if (orderNo != null || recipientName != null || channel != null || status != null
+        if (orderNo != null || recipientName != null || channel != null || status != null || messageType != null
                 || createdFrom != null || createdTo != null) {
             filtered = new ArrayList<>();
             for (NotificationRecord nr : all) {
@@ -47,6 +48,7 @@ public class NotificationRecordController {
                         && (nr.getRecipientName() == null || !nr.getRecipientName().contains(recipientName))) continue;
                 if (channel != null && !channel.isBlank() && !channel.equals(nr.getChannel())) continue;
                 if (status != null && !status.isBlank() && !status.equals(nr.getStatus())) continue;
+                if (messageType != null && !messageType.isBlank() && !messageType.equals(nr.getMessageType())) continue;
                 if (createdFrom != null && nr.getCreatedAt() != null && nr.getCreatedAt().isBefore(createdFrom)) continue;
                 if (createdTo != null && nr.getCreatedAt() != null && nr.getCreatedAt().isAfter(createdTo)) continue;
                 filtered.add(nr);

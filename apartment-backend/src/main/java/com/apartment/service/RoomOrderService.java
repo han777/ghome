@@ -74,7 +74,7 @@ public class RoomOrderService {
      * Send notification to the booker for individual orders (customerType=1).
      * Skips group orders (customerType=2) as they have no single booker to notify.
      */
-    private void notifyBooker(RoomOrder order, String subject, String content) {
+    private void notifyBooker(RoomOrder order, String subject, String content, String messageType) {
         if (order.getCustomerType() != null && order.getCustomerType() == 2) return; // Skip group orders
         SysUser booker = order.getBooker();
         if (booker == null) return;
@@ -86,6 +86,7 @@ public class RoomOrderService {
         nr.setOrder(order);
         nr.setRecipientUser(booker);
         nr.setChannel(channel);
+        nr.setMessageType(messageType);
         nr.setOrderNo(order.getOrderNo());
         nr.setLocale(userLocale);
         nr.setRecipientName(booker.getRealName() != null ? booker.getRealName() : booker.getUsername());
@@ -341,6 +342,7 @@ public class RoomOrderService {
             nr.setOrder(order);
             nr.setRecipientUser(recipient);
             nr.setChannel(channel);
+            nr.setMessageType("key_box");
             nr.setOrderNo(order.getOrderNo());
             nr.setRoomNo(roomNosVal);
             nr.setKeyBoxNo(keyBoxNo);
@@ -439,6 +441,7 @@ public class RoomOrderService {
             NotificationRecord nr = new NotificationRecord();
             nr.setOrder(order);
             nr.setChannel("email");
+            nr.setMessageType("order_created");
             nr.setRecipientEmail(email);
             nr.setOrderNo(order.getOrderNo());
             nr.setRoomNo(roomNoSummary);
@@ -492,7 +495,7 @@ public class RoomOrderService {
         String locale = booker != null && booker.getLocale() != null ? booker.getLocale() : "zh";
         String cancelSubject = messageTemplateService.buildCancelSubject(locale, displayName);
         String cancelContent = messageTemplateService.buildCancelContent(locale, order.getOrderNo(), displayName, startDate, endDate);
-        notifyBooker(order, cancelSubject, cancelContent);
+        notifyBooker(order, cancelSubject, cancelContent, "order_cancel");
 
         return orderRepository.save(order);
     }
@@ -532,7 +535,7 @@ public class RoomOrderService {
         String locale = booker != null && booker.getLocale() != null ? booker.getLocale() : "zh";
         String cancelSubject = messageTemplateService.buildCancelSubject(locale, displayName);
         String cancelContent = messageTemplateService.buildCancelContent(locale, order.getOrderNo(), displayName, startDate, endDate);
-        notifyBooker(order, cancelSubject, cancelContent);
+        notifyBooker(order, cancelSubject, cancelContent, "order_cancel");
 
         return orderRepository.save(order);
     }
@@ -647,7 +650,7 @@ public class RoomOrderService {
         String locale = booker != null && booker.getLocale() != null ? booker.getLocale() : "zh";
         String changeSubject = messageTemplateService.buildRoomChangeSubject(locale, displayName, oldRoomNo, newRoomNo);
         String changeContent = messageTemplateService.buildRoomChangeContent(locale, order.getOrderNo(), displayName, oldRoomNo, newRoomNo, switchDateStr);
-        notifyBooker(order, changeSubject, changeContent);
+        notifyBooker(order, changeSubject, changeContent, "room_change");
 
         return orderRepository.save(order);
     }

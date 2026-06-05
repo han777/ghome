@@ -36,6 +36,9 @@ public class NotificationRecord {
     @Column(nullable = false)
     private String channel; // "wecom" or "email"
 
+    @Column(name = "message_type", length = 30)
+    private String messageType; // "order_created", "key_box", "order_cancel", "room_change"
+
     @Column(nullable = false)
     private String status = "pending"; // "pending", "sent", "failed", "permanently_failed"
 
