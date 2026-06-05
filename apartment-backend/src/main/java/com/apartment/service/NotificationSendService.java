@@ -80,6 +80,7 @@ public class NotificationSendService {
                 }
 
                 nr.setStatus("sent");
+                nr.setSentAt(java.time.LocalDateTime.now());
                 nr.setFailReason(null);
                 nr.setRetryCount(nr.getRetryCount() + 1);
                 notificationRecordRepository.save(nr);

@@ -13,8 +13,9 @@ ALTER TABLE notification_record ADD COLUMN IF NOT EXISTS key_box_no VARCHAR(50);
 ALTER TABLE notification_record ADD COLUMN IF NOT EXISTS box_password VARCHAR(50);
 ALTER TABLE notification_record ADD COLUMN IF NOT EXISTS locale VARCHAR(5);
 
--- #7: Notification message type
+-- #7: Notification message type + sent_at
 ALTER TABLE notification_record ADD COLUMN IF NOT EXISTS message_type VARCHAR(30);
+ALTER TABLE notification_record ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP;
 
 -- #5: Remove roomCardNo/doorCode from notification_record (replaced by keyBoxNo/boxPassword)
 ALTER TABLE notification_record DROP COLUMN IF EXISTS room_card_no;

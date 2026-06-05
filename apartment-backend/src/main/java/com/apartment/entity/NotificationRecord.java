@@ -66,6 +66,9 @@ public class NotificationRecord {
     @Column(columnDefinition = "TEXT")
     private String failReason;
 
+    @Column(name = "sent_at")
+    private LocalDateTime sentAt;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 

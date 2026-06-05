@@ -65,6 +65,7 @@
             <th>通知状态</th>
             <th>创建时间</th>
             <th>失败原因</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -82,9 +83,10 @@
             <td>{{ statusLabel(row.status) }}</td>
             <td>{{ formatDT(row.createdAt) }}</td>
             <td>{{ row.failReason || '-' }}</td>
+            <td><button class="admin-btn small" @click="openDetail(row)">详情</button></td>
           </tr>
           <tr v-if="rows.length === 0">
-            <td colspan="13" class="empty-cell">暂无数据</td>
+            <td colspan="14" class="empty-cell">暂无数据</td>
           </tr>
         </tbody>
       </table>
@@ -109,6 +111,78 @@
         <button class="admin-btn small" @click="doJump">跳转</button>
       </span>
     </div>
+
+    <!-- Detail Drawer -->
+    <div v-if="detailRow" class="detail-overlay" @click.self="detailRow = null">
+      <div class="detail-drawer">
+        <div class="drawer-header">
+          <span class="drawer-title">通知详情</span>
+          <button class="drawer-close" @click="detailRow = null">&times;</button>
+        </div>
+        <div class="drawer-body">
+          <div class="detail-field">
+            <label>订单号</label>
+            <span>{{ detailRow.orderNo || '-' }}</span>
+          </div>
+          <div class="detail-field">
+            <label>消息类型</label>
+            <span>{{ messageTypeLabel(detailRow.messageType) }}</span>
+          </div>
+          <div class="detail-field">
+            <label>通知渠道</label>
+            <span>{{ channelLabel(detailRow.channel) }}</span>
+          </div>
+          <div class="detail-field">
+            <label>通知状态</label>
+            <span>{{ statusLabel(detailRow.status) }}</span>
+          </div>
+          <div class="detail-field">
+            <label>收件人</label>
+            <span>{{ detailRow.recipientName || '-' }}</span>
+          </div>
+          <div class="detail-field" v-if="detailRow.channel === 'email' && detailRow.subject">
+            <label>邮件标题</label>
+            <span>{{ detailRow.subject }}</span>
+          </div>
+          <div class="detail-field">
+            <label>通知内容</label>
+            <pre class="detail-content">{{ detailRow.content || '-' }}</pre>
+          </div>
+          <div class="detail-field">
+            <label>房间号</label>
+            <span>{{ detailRow.roomNo || '-' }}</span>
+          </div>
+          <div class="detail-field">
+            <label>房卡箱号</label>
+            <span>{{ detailRow.keyBoxNo || '-' }}</span>
+          </div>
+          <div class="detail-field">
+            <label>箱密码</label>
+            <span>{{ detailRow.boxPassword || '-' }}</span>
+          </div>
+          <div class="detail-field">
+            <label>入住时间</label>
+            <span>{{ formatDT(detailRow.checkInTime) }}</span>
+          </div>
+          <div class="detail-field">
+            <label>离店时间</label>
+            <span>{{ formatDT(detailRow.checkOutTime) }}</span>
+          </div>
+          <div class="detail-field">
+            <label>创建时间</label>
+            <span>{{ formatDT(detailRow.createdAt) }}</span>
+          </div>
+          <div class="detail-field" v-if="detailRow.sentAt">
+            <label>发送成功时间</label>
+            <span>{{ formatDT(detailRow.sentAt) }}</span>
+          </div>
+          <div class="detail-field" v-if="detailRow.failReason">
+            <label>失败原因</label>
+            <span class="fail-text">{{ detailRow.failReason }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -130,6 +204,9 @@ const messageTypeFilter = ref('');
 const statusFilter = ref('');
 const createdFrom = ref('');
 const createdTo = ref('');
+const detailRow = ref<any>(null);
+
+const openDetail = (row: any) => { detailRow.value = row; };
 
 const rowNumber = (idx: number) => currentPage.value * pageSize.value + idx + 1;
 
@@ -358,5 +435,96 @@ fetchData(0);
   border-radius: 4px;
   font-size: 14px;
   text-align: center;
+}
+
+/* Detail Drawer */
+.detail-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.detail-drawer {
+  width: 480px;
+  max-width: 90vw;
+  background: #fff;
+  height: 100vh;
+  overflow-y: auto;
+  box-shadow: -2px 0 12px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.drawer-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.drawer-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: #64748b;
+  line-height: 1;
+}
+
+.drawer-close:hover { color: #1e293b; }
+
+.drawer-body {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.detail-field {
+  margin-bottom: 16px;
+}
+
+.detail-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-field span {
+  font-size: 14px;
+  color: #1e293b;
+  word-break: break-all;
+}
+
+.detail-content {
+  font-size: 14px;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  line-height: 1.6;
+  font-family: inherit;
+}
+
+.fail-text {
+  color: #ef4444;
 }
 </style>
