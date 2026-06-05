@@ -48,7 +48,7 @@ public class CleaningTaskService {
         for (RoomOccupy occupy : checkoutOccupies) {
             Room room = occupy.getRoom();
             if (room != null && !processedRooms.contains(room.getId())) {
-                if (!taskRepository.existsByRoomIdAndTaskDate(room.getId(), today)) {
+                if (!taskRepository.existsByRoomIdAndStatus(room.getId(), 0)) {
                     createTask(room, 2, today, "当日退房，需强打扫");
                     processedRooms.add(room.getId());
                 }
@@ -63,7 +63,7 @@ public class CleaningTaskService {
             if (room != null && !processedRooms.contains(room.getId())) {
                 // 检查是否当日退房（如果是，已经在上面的强打扫中处理了）
                 if (occupy.getCheckOutTime() == null || !occupy.getCheckOutTime().toLocalDate().equals(today)) {
-                    if (!taskRepository.existsByRoomIdAndTaskDate(room.getId(), today)) {
+                    if (!taskRepository.existsByRoomIdAndStatus(room.getId(), 0)) {
                         createTask(room, 1, today, "日常保洁");
                         processedRooms.add(room.getId());
                     }
@@ -160,7 +160,7 @@ public class CleaningTaskService {
         for (RoomOccupy occupy : checkoutOccupies) {
             Room room = occupy.getRoom();
             if (room != null && !processedRooms.contains(room.getId())) {
-                if (!taskRepository.existsByRoomIdAndTaskDate(room.getId(), date)) {
+                if (!taskRepository.existsByRoomIdAndStatus(room.getId(), 0)) {
                     createTask(room, 2, date, "当日退房，需强打扫");
                     processedRooms.add(room.getId());
                     count++;
@@ -174,7 +174,7 @@ public class CleaningTaskService {
             Room room = occupy.getRoom();
             if (room != null && !processedRooms.contains(room.getId())) {
                 if (occupy.getCheckOutTime() == null || !occupy.getCheckOutTime().toLocalDate().equals(date)) {
-                    if (!taskRepository.existsByRoomIdAndTaskDate(room.getId(), date)) {
+                    if (!taskRepository.existsByRoomIdAndStatus(room.getId(), 0)) {
                         createTask(room, 1, date, "日常保洁");
                         processedRooms.add(room.getId());
                         count++;
