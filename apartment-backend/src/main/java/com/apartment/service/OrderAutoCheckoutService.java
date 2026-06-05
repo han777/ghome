@@ -51,8 +51,8 @@ public class OrderAutoCheckoutService {
         if (occupies == null || occupies.isEmpty()) return;
 
         for (RoomOccupy occupy : occupies) {
-            if (occupy.getStatus() != null && occupy.getStatus() == 0) {
-                occupy.setStatus(1);
+            if (occupy.getStatus() != null && occupy.getStatus() == RoomOccupy.STATUS_CHECKED_IN) {
+                occupy.setStatus(RoomOccupy.STATUS_CHECKED_OUT);
                 occupy.setCheckOutTime(now);
                 occupyRepository.save(occupy);
 
@@ -65,7 +65,7 @@ public class OrderAutoCheckoutService {
         }
 
         boolean allFinished = occupies.stream()
-                .allMatch(o -> o.getStatus() != null && o.getStatus() == 1);
+                .allMatch(o -> o.getStatus() != null && (o.getStatus() == RoomOccupy.STATUS_CHECKED_OUT || o.getStatus() == RoomOccupy.STATUS_CANCELED));
 
         if (allFinished) {
             order.setStatus(3);

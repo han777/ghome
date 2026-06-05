@@ -109,7 +109,7 @@ public class RoomController {
         }
 
         // 2. Add room-specific occupancy periods from RoomOccupy (for active orders: status 1 or 2)
-        java.util.List<com.apartment.entity.RoomOccupy> occupies = occupyRepository.findByRoomIdAndStatus(id, 0);
+        java.util.List<com.apartment.entity.RoomOccupy> occupies = occupyRepository.findActiveByRoomId(id);
         for (com.apartment.entity.RoomOccupy o : occupies) {
             if (o.getOrder() != null && (o.getOrder().getStatus() == 1 || o.getOrder().getStatus() == 2)) {
                 java.util.Map<String, Object> period = new java.util.HashMap<>();

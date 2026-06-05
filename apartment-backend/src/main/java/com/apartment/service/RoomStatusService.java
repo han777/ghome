@@ -75,8 +75,9 @@ public class RoomStatusService {
             .collect(Collectors.toList());
 
         // 已入住订单 (status=2) - 纯按订单状态判断，不用时间范围
+        // Also include status=1 (Pending) orders as they may have pending rooms
         List<RoomOrder> activeOrders = allOrders.stream()
-            .filter(o -> o.getStatus() != null && o.getStatus() == 2)
+            .filter(o -> o.getStatus() != null && (o.getStatus() == 1 || o.getStatus() == 2))
             .collect(Collectors.toList());
 
         // 今日抵达/离开（仅统计未入住/未退房的订单）
@@ -142,9 +143,11 @@ public class RoomStatusService {
                 .filter(m -> m.getRoom() != null && m.getRoom().getId().equals(room.getId()))
                 .findFirst().orElse(null);
 
-            // 当前订单
+            // 当前订单：基于 RoomOccupy 状态判断，只有已入住房间才算"当前在住"
             RoomOrder currentOrder = activeOrders.stream()
-                .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))
+                .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream()
+                    .anyMatch(ro -> ro.getRoom() != null && ro.getRoom().getId().equals(room.getId())
+                        && ro.getStatus() != null && ro.getStatus() == RoomOccupy.STATUS_CHECKED_IN))
                 .findFirst().orElse(null);
 
             // 该房间所有未完成的清扫任务（包括过期的）
@@ -237,10 +240,12 @@ public class RoomStatusService {
             }
 
             // 最近离开订单信息（已抵达）
-            // 已入住订单(status=2): 无论时间早晚，都视为已抵达，按离开时间计算
+            // Based on RoomOccupy status=1 (Checked-in), not just order status
             RoomOrder nearestDeparting = allOrders.stream()
                 .filter(o -> o.getStatus() != null && o.getStatus() == 2)
-                .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))
+                .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream()
+                    .anyMatch(ro -> ro.getRoom() != null && ro.getRoom().getId().equals(room.getId())
+                        && ro.getStatus() != null && ro.getStatus() == RoomOccupy.STATUS_CHECKED_IN))
                 .filter(o -> o.getEndDate() != null)
                 .min(Comparator.comparing(RoomOrder::getEndDate))
                 .orElse(null);

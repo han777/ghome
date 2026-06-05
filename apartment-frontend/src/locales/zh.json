@@ -357,6 +357,12 @@
       "Out": "已退房",
       "Canceled": "已取消"
     },
+    "OCCUPY_STATUS": {
+      "Pending": "待入住",
+      "Checked-in": "已入住",
+      "Checked-out": "已退房",
+      "Canceled": "已取消"
+    },
     "BIZ_TYPE": {
       "Short Rent": "短租",
       "Long Rent": "长租"
@@ -409,7 +415,13 @@
       "CONTACT_PHONE_EMPTY": "联系电话不能为空",
       "COMPANY_EMPTY": "所属公司不能为空",
       "COST_CENTER_EMPTY": "成本中心不能为空",
-      "ACTIVITY_CODE_EMPTY": "活动编码不能为空"
+      "ACTIVITY_CODE_EMPTY": "活动编码不能为空",
+      "GROUP_CHECKOUT_PER_ROOM": "团体订单请逐间退房",
+      "HAS_CHECKED_IN_ROOM": "已有房间入住，无法取消订单",
+      "OCCUPY_NOT_PENDING": "该房间不在待入住状态",
+      "OCCUPY_NOT_CHECKED_IN": "该房间不在已入住状态",
+      "OCCUPY_FINISHED": "已退房或已取消的房间无法调整时间",
+      "ALREADY_CHECKED_OUT": "订单已退房，无法添加房间"
     },
     "maint": {
       "START_AFTER_END": "开始时间不能晚于结束时间",

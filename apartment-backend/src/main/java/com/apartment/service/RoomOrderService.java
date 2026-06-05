@@ -272,13 +272,22 @@ public class RoomOrderService {
         order.setBoxPassword(boxPassword);
 
         order.setStatus(2); // Set to In (已入住)
-        // Set actual check-in time if not set
+
+        boolean isGroup = order.getCustomerType() != null && order.getCustomerType() == 2;
         LocalDateTime now = LocalDateTime.now();
-        for (RoomOccupy ro : order.getRoomOccupies()) {
-            if (ro.getStatus() != null && ro.getStatus() == 0 && ro.getCheckInTime() == null) {
-                ro.setCheckInTime(now);
+
+        if (!isGroup) {
+            // Individual order: set all Pending rooms to Checked-in
+            for (RoomOccupy ro : order.getRoomOccupies()) {
+                if (ro.getStatus() != null && ro.getStatus() == RoomOccupy.STATUS_PENDING) {
+                    ro.setStatus(RoomOccupy.STATUS_CHECKED_IN);
+                    if (ro.getCheckInTime() == null) {
+                        ro.setCheckInTime(now);
+                    }
+                }
             }
         }
+        // Group order: do NOT change room status — rooms stay Pending until individually checked in
 
         // Check if room card notification already sent for this order (one per order)
         if (notificationRecordRepository.existsByOrderIdAndKeyBoxNoIsNotNull(order.getId())) {
@@ -287,12 +296,12 @@ public class RoomOrderService {
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-        // Collect all room numbers (comma-separated)
+        // Collect all room numbers (comma-separated) from active occupies (Pending or Checked-in)
         StringBuilder roomNosBuilder = new StringBuilder();
         LocalDateTime earliestCheckIn = null;
         if (order.getRoomOccupies() != null) {
             for (RoomOccupy ro : order.getRoomOccupies()) {
-                if (ro.getStatus() != null && ro.getStatus() == 0 && ro.getRoom() != null) {
+                if (ro.getStatus() != null && (ro.getStatus() == RoomOccupy.STATUS_PENDING || ro.getStatus() == RoomOccupy.STATUS_CHECKED_IN) && ro.getRoom() != null) {
                     if (roomNosBuilder.length() > 0) roomNosBuilder.append(", ");
                     roomNosBuilder.append(ro.getRoom().getRoomNo());
                     LocalDateTime ciTime = ro.getCheckInTime() != null ? ro.getCheckInTime() : order.getStartDate();
@@ -448,6 +457,15 @@ public class RoomOrderService {
         if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
         RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
+        // Reject if any room is already checked in
+        if (order.getRoomOccupies() != null) {
+            for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
+                if (occupy.getStatus() != null && occupy.getStatus() == RoomOccupy.STATUS_CHECKED_IN) {
+                    throw new BusinessException(ErrorCode.ORDER_HAS_CHECKED_IN_ROOM);
+                }
+            }
+        }
+
         // Cancel deadline: must be no later than 24:00 of the day before check-in
         LocalDateTime cancelDeadline = order.getStartDate().toLocalDate().atStartOfDay();
         if (LocalDateTime.now().isAfter(cancelDeadline) || LocalDateTime.now().isEqual(cancelDeadline)) {
@@ -457,6 +475,7 @@ public class RoomOrderService {
         order.setStatus(4); // Canceled
         if (order.getRoomOccupies() != null) {
             for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
+                occupy.setStatus(RoomOccupy.STATUS_CANCELED);
                 com.apartment.entity.Room room = occupy.getRoom();
                 if (room != null) {
                     room.setStatus(0); // Set room back to free
@@ -484,9 +503,19 @@ public class RoomOrderService {
         if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
         RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
+        // Reject if any room is already checked in
+        if (order.getRoomOccupies() != null) {
+            for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
+                if (occupy.getStatus() != null && occupy.getStatus() == RoomOccupy.STATUS_CHECKED_IN) {
+                    throw new BusinessException(ErrorCode.ORDER_HAS_CHECKED_IN_ROOM);
+                }
+            }
+        }
+
         order.setStatus(4); // Canceled
         if (order.getRoomOccupies() != null) {
             for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
+                occupy.setStatus(RoomOccupy.STATUS_CANCELED);
                 com.apartment.entity.Room room = occupy.getRoom();
                 if (room != null) {
                     room.setStatus(0); // Set room back to free
@@ -512,12 +541,18 @@ public class RoomOrderService {
     public RoomOrder checkoutOrder(Long orderId) {
         if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
         RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        boolean isGroup = order.getCustomerType() != null && order.getCustomerType() == 2;
+        if (isGroup) {
+            throw new BusinessException(ErrorCode.ORDER_GROUP_CHECKOUT_PER_ROOM);
+        }
+
         order.setStatus(3); // Out
         LocalDateTime now = LocalDateTime.now();
         order.setEndDate(now);
         if (order.getRoomOccupies() != null) {
             for (RoomOccupy occupy : order.getRoomOccupies()) {
-                occupy.setStatus(1); // Finish
+                occupy.setStatus(RoomOccupy.STATUS_CHECKED_OUT);
                 occupy.setCheckOutTime(now);
                 Room room = occupy.getRoom();
                 if (room != null) {
@@ -544,7 +579,7 @@ public class RoomOrderService {
             .orElseThrow(() -> new BusinessException(ErrorCode.GENERAL_ROOM_NOT_FOUND));
 
         // 1. Finish Old Occupation
-        oldOccupy.setStatus(1); // Finish
+        oldOccupy.setStatus(RoomOccupy.STATUS_CHECKED_OUT); // Checked-out
         oldOccupy.setCheckOutTime(switchDate);
         if (oldRoom != null) {
             oldRoom.setStatus(0); // Available
@@ -561,7 +596,7 @@ public class RoomOrderService {
         newOccupy.setCoOccupants(oldOccupy.getCoOccupants());
         newOccupy.setCheckInTime(switchDate);
         newOccupy.setCheckOutTime(order.getEndDate());
-        newOccupy.setStatus(0); // Current
+        newOccupy.setStatus(RoomOccupy.STATUS_PENDING); // Pending
 
         newRoom.setStatus(1); // Occupied
         roomRepository.save(newRoom);
@@ -623,6 +658,10 @@ public class RoomOrderService {
         RoomOrder order = orderRepository.findById(orderId).orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
         com.apartment.entity.Room room = roomRepository.findById(roomId).orElseThrow(() -> new BusinessException(ErrorCode.GENERAL_ROOM_NOT_FOUND));
 
+        if (order.getStatus() != null && order.getStatus() == 3) {
+            throw new BusinessException(ErrorCode.ORDER_ALREADY_CHECKED_OUT);
+        }
+
         com.apartment.entity.RoomOccupy occupy = new com.apartment.entity.RoomOccupy();
         occupy.setOrder(order);
         occupy.setRoom(room);
@@ -633,11 +672,116 @@ public class RoomOrderService {
         } else {
             occupy.setOccupantUser(order.getBooker());
         }
-        occupy.setStatus(0);
+        occupy.setStatus(RoomOccupy.STATUS_PENDING);
 
-        room.setStatus(1);
-        roomRepository.save(room);
+        // For individual orders, mark room as occupied immediately;
+        // for group orders, room stays available until actual check-in
+        if (!isGroup) {
+            room.setStatus(1);
+            roomRepository.save(room);
+        }
         occupyRepository.save(occupy);
+
+        return order;
+    }
+
+    @Transactional
+    public RoomOrder checkInRoom(Long occupyId) {
+        RoomOccupy occupy = occupyRepository.findById(occupyId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_OCCUPY_NOT_FOUND));
+
+        if (occupy.getStatus() == null || occupy.getStatus() != RoomOccupy.STATUS_PENDING) {
+            throw new BusinessException(ErrorCode.ORDER_OCCUPY_NOT_PENDING);
+        }
+
+        // Dirty room check
+        if (occupy.getRoom() != null && occupy.getRoom().getId() != null) {
+            List<com.apartment.entity.CleaningTask> pendingTasks = cleaningTaskRepository
+                .findByRoomIdAndStatus(occupy.getRoom().getId(), 0);
+            if (!pendingTasks.isEmpty()) {
+                throw new BusinessException(ErrorCode.ORDER_ROOM_DIRTY);
+            }
+        }
+
+        occupy.setStatus(RoomOccupy.STATUS_CHECKED_IN);
+        occupy.setCheckInTime(LocalDateTime.now());
+        occupyRepository.save(occupy);
+
+        Room room = occupy.getRoom();
+        if (room != null) {
+            room.setStatus(1); // Occupied
+            roomRepository.save(room);
+        }
+
+        RoomOrder order = occupy.getOrder();
+        if (order != null && order.getStatus() != null && order.getStatus() == 1) {
+            order.setStatus(2); // In
+            orderRepository.save(order);
+        }
+
+        return order;
+    }
+
+    @Transactional
+    public RoomOrder checkoutRoom(Long occupyId) {
+        RoomOccupy occupy = occupyRepository.findById(occupyId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_OCCUPY_NOT_FOUND));
+
+        if (occupy.getStatus() == null || occupy.getStatus() != RoomOccupy.STATUS_CHECKED_IN) {
+            throw new BusinessException(ErrorCode.ORDER_OCCUPY_NOT_CHECKED_IN);
+        }
+
+        occupy.setStatus(RoomOccupy.STATUS_CHECKED_OUT);
+        occupy.setCheckOutTime(LocalDateTime.now());
+        occupyRepository.save(occupy);
+
+        Room room = occupy.getRoom();
+        if (room != null) {
+            room.setStatus(0); // Available
+            roomRepository.save(room);
+        }
+
+        RoomOrder order = occupy.getOrder();
+        if (order != null) {
+            // Reload occupies to get latest status
+            List<RoomOccupy> allOccupies = occupyRepository.findByOrderId(order.getId());
+            boolean allFinished = allOccupies.stream()
+                .allMatch(o -> o.getStatus() != null && (o.getStatus() == RoomOccupy.STATUS_CHECKED_OUT || o.getStatus() == RoomOccupy.STATUS_CANCELED));
+
+            if (allFinished) {
+                order.setStatus(3); // Out
+                order.setEndDate(LocalDateTime.now());
+                orderRepository.save(order);
+            }
+        }
+
+        return order;
+    }
+
+    @Transactional
+    public RoomOrder deleteRoomOccupy(Long occupyId) {
+        RoomOccupy occupy = occupyRepository.findById(occupyId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_OCCUPY_NOT_FOUND));
+
+        if (occupy.getStatus() == null || occupy.getStatus() != RoomOccupy.STATUS_PENDING) {
+            throw new BusinessException(ErrorCode.ORDER_OCCUPY_NOT_PENDING);
+        }
+
+        RoomOrder order = occupy.getOrder();
+        Room room = occupy.getRoom();
+
+        occupyRepository.delete(occupy);
+
+        if (room != null) {
+            room.setStatus(0); // Available
+            roomRepository.save(room);
+        }
+
+        if (order != null) {
+            recalcOrderDateRange(order);
+            calculatePrices(order);
+            orderRepository.save(order);
+        }
 
         return order;
     }
@@ -668,6 +812,10 @@ public class RoomOrderService {
         RoomOccupy occupy = occupyRepository.findById(occupyId)
             .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_OCCUPY_NOT_FOUND));
         RoomOrder order = occupy.getOrder();
+
+        if (occupy.getStatus() != null && (occupy.getStatus() == RoomOccupy.STATUS_CHECKED_OUT || occupy.getStatus() == RoomOccupy.STATUS_CANCELED)) {
+            throw new BusinessException(ErrorCode.ORDER_OCCUPY_FINISHED);
+        }
 
         if (newStart.isAfter(newEnd) || newStart.isEqual(newEnd)) {
             throw new BusinessException(ErrorCode.ORDER_END_BEFORE_START);
@@ -720,14 +868,14 @@ public class RoomOrderService {
     }
 
     /**
-     * Recalculate order-level start/end dates to cover all active (status=0) occupy date ranges.
+     * Recalculate order-level start/end dates to cover all active (Pending or Checked-in) occupy date ranges.
      */
     private void recalcOrderDateRange(RoomOrder order) {
         List<RoomOccupy> allOccupies = occupyRepository.findByOrderId(order.getId());
         LocalDateTime minStart = null;
         LocalDateTime maxEnd = null;
         for (RoomOccupy o : allOccupies) {
-            if (o.getStatus() != null && o.getStatus() == 0) {
+            if (o.getStatus() != null && (o.getStatus() == RoomOccupy.STATUS_PENDING || o.getStatus() == RoomOccupy.STATUS_CHECKED_IN)) {
                 LocalDateTime ci = o.getCheckInTime();
                 LocalDateTime co = o.getCheckOutTime();
                 if (ci != null) {
@@ -740,7 +888,7 @@ public class RoomOrderService {
         }
         // For occupies with null checkOutTime, use order's endDate as fallback
         for (RoomOccupy o : allOccupies) {
-            if (o.getStatus() != null && o.getStatus() == 0 && o.getCheckOutTime() == null) {
+            if (o.getStatus() != null && (o.getStatus() == RoomOccupy.STATUS_PENDING || o.getStatus() == RoomOccupy.STATUS_CHECKED_IN) && o.getCheckOutTime() == null) {
                 if (maxEnd == null || order.getEndDate().isAfter(maxEnd)) {
                     maxEnd = order.getEndDate();
                 }

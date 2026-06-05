@@ -63,9 +63,10 @@ public class CoolingOffAutoCancelService {
     private void cancelOrder(RoomOrder order) {
         order.setStatus(STATUS_CANCELED);
 
-        // 释放关联房间
+        // 释放关联房间，并将房间入住记录状态设为取消
         if (order.getRoomOccupies() != null) {
             for (com.apartment.entity.RoomOccupy occupy : order.getRoomOccupies()) {
+                occupy.setStatus(com.apartment.entity.RoomOccupy.STATUS_CANCELED);
                 com.apartment.entity.Room room = occupy.getRoom();
                 if (room != null) {
                     room.setStatus(0); // Available

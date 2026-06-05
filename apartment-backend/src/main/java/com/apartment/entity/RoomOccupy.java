@@ -31,7 +31,12 @@ public class RoomOccupy {
     private String coOccupants; // 同住人
     private String occupantName; // 入住人姓名（团体时=团体名称）
 
-    private Integer status = 0; // 0: Current (当前), 1: Finish (完成)
+    private Integer status = 0; // 0: Pending(待入住), 1: Checked-in(已入住), 2: Checked-out(已退房), 3: Canceled(取消)
+
+    public static final int STATUS_PENDING = 0;
+    public static final int STATUS_CHECKED_IN = 1;
+    public static final int STATUS_CHECKED_OUT = 2;
+    public static final int STATUS_CANCELED = 3;
     
     private java.math.BigDecimal actualPrice; // 实际单价
     private Integer quantity; // 数量（天数/次数）

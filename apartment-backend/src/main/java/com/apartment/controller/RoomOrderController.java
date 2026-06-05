@@ -361,6 +361,27 @@ public class RoomOrderController {
         return orderService.addRoom(id, roomId);
     }
 
+    @PostMapping("/occupy/{occupyId}/check-in")
+    public RoomOrder checkInRoom(@PathVariable Long occupyId) {
+        RoomOrder result = orderService.checkInRoom(occupyId);
+        logOperation(result, "CHECK_IN", "房间入住", null);
+        return result;
+    }
+
+    @PostMapping("/occupy/{occupyId}/checkout")
+    public RoomOrder checkoutRoom(@PathVariable Long occupyId) {
+        RoomOrder result = orderService.checkoutRoom(occupyId);
+        logOperation(result, "ROOM_CHECKOUT", "房间退房", null);
+        return result;
+    }
+
+    @DeleteMapping("/occupy/{occupyId}")
+    public RoomOrder deleteRoomOccupy(@PathVariable Long occupyId) {
+        RoomOrder result = orderService.deleteRoomOccupy(occupyId);
+        logOperation(result, "DELETE_ROOM", "删除房间", null);
+        return result;
+    }
+
     @DeleteMapping("/{id}")
     public void deleteOrder(@PathVariable Long id) {
         orderRepository.deleteById(id);

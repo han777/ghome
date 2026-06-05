@@ -128,8 +128,12 @@
             <td><span class="room-count-badge">{{ order.roomOccupies?.length || 0 }}</span></td>
             <td>
               <div class="room-tags">
-                <span v-for="ro in order.roomOccupies" :key="ro.id" class="room-tag">
+                <span v-for="ro in order.roomOccupies" :key="ro.id" class="room-tag" :class="'occupy-status-' + ro.status">
                   {{ ro.room?.roomNo }}
+                  <small v-if="ro.status === 0" class="status-dot pending" title="待入住"></small>
+                  <small v-if="ro.status === 1" class="status-dot checked-in" title="已入住"></small>
+                  <small v-if="ro.status === 2" class="status-dot checked-out" title="已退房"></small>
+                  <small v-if="ro.status === 3" class="status-dot canceled" title="已取消"></small>
                 </span>
                 <span v-if="!order.roomOccupies || order.roomOccupies.length === 0">-</span>
               </div>
@@ -188,7 +192,7 @@
             <button v-if="form.id && !isEditMode" class="edit-top-btn" @click="isEditMode = true">编辑</button>
             <button v-if="form.id && form.status <= 1" class="cancel-order-btn" @click="cancelOrderFromModal(form.id)">取消订单</button>
             <button v-if="form.id && form.status === 1" class="send-card-btn" @click="openSendCardModal(form.id)">📇 发送房卡</button>
-            <button v-if="form.id && form.status < 3 && form.status > 1" class="checkout-btn" @click="handleCheckout">🔔 退房</button>
+            <button v-if="form.id && form.status < 3 && form.status > 1 && form.customerType === 1" class="checkout-btn" @click="handleCheckout">🔔 退房</button>
             <button class="maximize-btn" @click="isMaximized = !isMaximized">
               {{ isMaximized ? '🗗' : '🗖' }}
             </button>
@@ -345,8 +349,10 @@
                     <span class="room-type">{{ getRoomTypeName(Number(occupy.roomId)) }}</span>
                   </div>
                   <div class="card-actions">
-                    <button class="card-action-btn adjust" v-if="occupy.status === 0" @click="openTimeAdjustModal(occupy)">调整时间</button>
-                    <button class="card-action-btn delete" v-if="isEditMode" @click="removeRoomRow(index)">×</button>
+                    <button class="card-action-btn checkin" v-if="form.customerType === 2 && occupy.status === 0 && form.status >= 2" @click="checkInRoom(occupy)">入住</button>
+                    <button class="card-action-btn checkout" v-if="occupy.status === 1 && form.customerType === 2" @click="checkoutRoom(occupy)">退房</button>
+                    <button class="card-action-btn adjust" v-if="occupy.status === 0 || occupy.status === 1" @click="openTimeAdjustModal(occupy)">调整时间</button>
+                    <button class="card-action-btn delete" v-if="occupy.status === 0 && isEditMode" @click="removeOrDeleteRoom(occupy, index)">×</button>
                   </div>
                 </div>
                 <div class="card-grid">
@@ -395,7 +401,7 @@
                   </div>
                     <div class="card-item">
                       <label>房间</label>
-                      <div class="room-selector-btn" @click="openRoomPicker(occupy, index)" v-if="isEditMode">
+                      <div class="room-selector-btn" @click="openRoomPicker(occupy, index)" v-if="isEditMode && occupy.status === 0">
                         <span v-if="occupy.roomId" class="selected-room-info">
                           <strong>{{ getRoomNo(Number(occupy.roomId)) }}</strong>
                           <small>({{ getRoomTypeName(Number(occupy.roomId)) }})</small>
@@ -436,9 +442,11 @@
                   </div>
                   <div class="card-item">
                     <label>状态</label>
-                    <select v-model="occupy.status" :disabled="!isEditMode">
-                      <option :value="0">当前</option>
-                      <option :value="1">完成</option>
+                    <select v-model="occupy.status" :disabled="!isEditMode || occupy.status !== 0">
+                      <option :value="0">待入住</option>
+                      <option :value="1">已入住</option>
+                      <option :value="2">已退房</option>
+                      <option :value="3">已取消</option>
                     </select>
                   </div>
                   <div class="card-item span-3">
@@ -1195,6 +1203,97 @@ const addRoomRow = () => {
 const removeRoomRow = (index: any) => {
   form.roomOccupies.splice(index, 1);
   refreshTotals();
+};
+
+const removeOrDeleteRoom = async (occupy: any, index: number) => {
+  if (occupy.id && form.id) {
+    // Existing occupy in existing order: call API to delete
+    if (!confirm(`确定删除房间 ${getRoomNo(Number(occupy.roomId))}？`)) return;
+    try {
+      const savedOrder: any = await api.delete(`/orders/occupy/${occupy.id}`);
+      if (savedOrder) {
+        Object.assign(form, savedOrder);
+        if (savedOrder.createdAt) form.createdAt = savedOrder.createdAt.slice(0, 16);
+        if (savedOrder.startDate) form.startDate = savedOrder.startDate.slice(0, 10);
+        if (savedOrder.endDate) form.endDate = savedOrder.endDate.slice(0, 10);
+        if (savedOrder.roomOccupies) {
+          form.roomOccupies = savedOrder.roomOccupies.map((ro: any) => ({
+            ...ro,
+            roomId: ro.room?.id,
+            occupantUserId: ro.occupantUser?.id,
+            checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
+            checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
+          }));
+        }
+        form.bookerId = savedOrder.booker?.id || null;
+        form.purposeId = savedOrder.purpose?.id || null;
+        if (savedOrder.productDetails) {
+          form.productDetails = savedOrder.productDetails.map((d: any) => ({
+            ...d,
+            productId: d.product?.id
+          }));
+        } else {
+          form.productDetails = [];
+        }
+      }
+      fetchData();
+    } catch (e: any) {
+      alert('删除失败: ' + getErrorMessageZh(e));
+    }
+  } else {
+    // New occupy or new order: just remove from array
+    form.roomOccupies.splice(index, 1);
+    refreshTotals();
+  }
+};
+
+const refreshFormFromSaved = (savedOrder: any) => {
+  Object.assign(form, savedOrder);
+  if (savedOrder.createdAt) form.createdAt = savedOrder.createdAt.slice(0, 16);
+  if (savedOrder.startDate) form.startDate = savedOrder.startDate.slice(0, 10);
+  if (savedOrder.endDate) form.endDate = savedOrder.endDate.slice(0, 10);
+  if (savedOrder.roomOccupies) {
+    form.roomOccupies = savedOrder.roomOccupies.map((ro: any) => ({
+      ...ro,
+      roomId: ro.room?.id,
+      occupantUserId: ro.occupantUser?.id,
+      checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
+      checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
+    }));
+  }
+  form.bookerId = savedOrder.booker?.id || null;
+  form.purposeId = savedOrder.purpose?.id || null;
+  if (savedOrder.productDetails) {
+    form.productDetails = savedOrder.productDetails.map((d: any) => ({
+      ...d,
+      productId: d.product?.id
+    }));
+  } else {
+    form.productDetails = [];
+  }
+};
+
+const checkInRoom = async (occupy: any) => {
+  if (!occupy.id) return;
+  try {
+    const savedOrder: any = await api.post(`/orders/occupy/${occupy.id}/check-in`);
+    refreshFormFromSaved(savedOrder);
+    fetchData();
+  } catch (e: any) {
+    alert('入住失败: ' + getErrorMessageZh(e));
+  }
+};
+
+const checkoutRoom = async (occupy: any) => {
+  if (!occupy.id) return;
+  if (!confirm(`确定退房 ${getRoomNo(Number(occupy.roomId))}？`)) return;
+  try {
+    const savedOrder: any = await api.post(`/orders/occupy/${occupy.id}/checkout`);
+    refreshFormFromSaved(savedOrder);
+    fetchData();
+  } catch (e: any) {
+    alert('退房失败: ' + getErrorMessageZh(e));
+  }
 };
 
 const changeRoomPriceDiff = computed(() => {
@@ -2410,6 +2509,10 @@ th.sortable:hover {
 .room-type { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 .card-actions { display: flex; gap: 8px; }
 .card-action-btn { padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.card-action-btn.checkin { color: #059669; border-color: #a7f3d0; background: #ecfdf5; }
+.card-action-btn.checkin:hover { background: #d1fae5; }
+.card-action-btn.checkout { color: #d97706; border-color: #fde68a; background: #fffbeb; }
+.card-action-btn.checkout:hover { background: #fef3c7; }
 .card-action-btn.change { color: #0369a1; border-color: #bae6fd; background: #f0f9ff; }
 .card-action-btn.change:hover { background: #e0f2fe; }
 .card-action-btn.adjust { color: #8b5cf6; border-color: #ddd6fe; background: #f5f3ff; }
@@ -2425,7 +2528,16 @@ th.sortable:hover {
 /* List View Styles */
 .room-count-badge { background: #0f172a; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
 .room-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-.room-tag { background: #f1f5f9; color: #475569; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; border: 1px solid #e2e8f0; }
+.room-tag { background: #f1f5f9; color: #475569; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; border: 1px solid #e2e8f0; display: inline-flex; align-items: center; gap: 3px; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.status-dot.pending { background: #f59e0b; }
+.status-dot.checked-in { background: #10b981; }
+.status-dot.checked-out { background: #94a3b8; }
+.status-dot.canceled { background: #ef4444; }
+.occupy-status-0 { border-color: #f59e0b; }
+.occupy-status-1 { border-color: #10b981; }
+.occupy-status-2 { border-color: #94a3b8; }
+.occupy-status-3 { border-color: #ef4444; }
 .amount-display.highlight { border-color: #38bdf8; background: #f0f9ff; }
 
 .info-alert { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 12px; margin-bottom: 20px; }
