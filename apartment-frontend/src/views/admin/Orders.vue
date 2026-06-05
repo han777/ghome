@@ -1310,7 +1310,13 @@ const fetchPickerAvailableRooms = async () => {
     return;
   }
   try {
-    const res = await api.get(`/rooms/available?startDate=${roomPickerFilters.startDate}&endDate=${roomPickerFilters.endDate}`) as any;
+    const startDT = roomPickerFilters.startDate.length === 10
+      ? roomPickerFilters.startDate + 'T14:00:00'
+      : roomPickerFilters.startDate;
+    const endDT = roomPickerFilters.endDate.length === 10
+      ? roomPickerFilters.endDate + 'T12:00:00'
+      : roomPickerFilters.endDate;
+    const res = await api.get(`/rooms/available?startDate=${startDT}&endDate=${endDT}`) as any;
     pickerAvailableRooms.value = res;
   } catch (e) {
     console.error('Failed to fetch picker available rooms', e);
@@ -1321,7 +1327,7 @@ const filteredPickerRooms = computed(() => {
   let list = pickerAvailableRooms.value;
   // Apply "not locked" and "not maintenance" logic
   // status 0 = Available, 1 = Locked
-  list = list.filter(r => r.status === 0 && !r.isMaintenance);
+  list = list.filter(r => !r.isMaintenance);
   
   // Apply room type filter
   if (roomPickerFilters.roomTypeId) {

@@ -127,6 +127,39 @@ catch (e) {
 }
 ```
 
+## Timezone Convention (UTC+8)
+
+**The entire apartment system operates in Beijing Time (UTC+8 / Asia/Shanghai).**
+
+1. All dates and times in the database, API, and UI are **UTC+8** — no conversion, no user-local offset.
+2. Users in any timezone see and input times in UTC+8. A user in UTC+9 selecting "June 5" means June 5 Beijing Time, not their local June 5.
+3. **Check-in default time** = `YYYY-MM-DDT14:00:00` (2 PM Beijing Time)
+4. **Check-out default time** = `YYYY-MM-DDT12:00:00` (12 PM Beijing Time)
+5. When a date-only string (`YYYY-MM-DD`) is received by the backend:
+   - For **start/check-in** parameters → parse as `T14:00:00`
+   - For **end/check-out** parameters → parse as `T12:00:00`
+   - Never parse a date-only string as `T00:00:00` (midnight) — this causes false overlap detection
+6. Backend time comparisons for room availability MUST use the full `LocalDateTime` (date + time), never date-only comparisons.
+
+### Anti-Patterns (FORBIDDEN)
+
+```java
+// ❌ Parsing date-only as midnight — causes false conflict with same-day check-outs
+LocalDate.parse("2026-06-05").atTime(0, 0);
+
+// ✅ Correct: parse as check-in/check-out time
+LocalDate.parse("2026-06-05").atTime(14, 0);  // check-in
+LocalDate.parse("2026-06-06").atTime(12, 0);  // check-out
+```
+
+```typescript
+// ❌ Sending date-only to availability API — backend parses as midnight
+api.get(`/rooms/available?startDate=2026-06-05&endDate=2026-06-06`)
+
+// ✅ Correct: include standard check-in/out times
+api.get(`/rooms/available?startDate=2026-06-05T14:00:00&endDate=2026-06-06T12:00:00`)
+```
+
 ## Other Conventions
 
 ### API Response Format

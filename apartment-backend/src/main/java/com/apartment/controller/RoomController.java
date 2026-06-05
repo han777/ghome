@@ -23,8 +23,8 @@ public class RoomController {
 
     @GetMapping("/available")
     public List<Room> getAvailableRooms(@RequestParam String startDate, @RequestParam String endDate) {
-        java.time.LocalDateTime start = parseDateTime(startDate);
-        java.time.LocalDateTime end = parseDateTime(endDate);
+        java.time.LocalDateTime start = parseDateTime(startDate, true);
+        java.time.LocalDateTime end = parseDateTime(endDate, false);
         
         // 1. Get rooms occupied by active orders
         java.util.List<Long> occupiedRoomIds = orderRepository.findOccupiedRoomIds(start, end);
@@ -124,11 +124,17 @@ public class RoomController {
         return periods;
     }
 
-    /** 兼容多种日期格式：YYYY-MM-DD、YYYY-MM-DDTHH:mm、YYYY-MM-DDTHH:mm:ss */
-    private java.time.LocalDateTime parseDateTime(String str) {
+    /**
+     * 兼容多种日期格式：YYYY-MM-DD、YYYY-MM-DDTHH:mm、YYYY-MM-DDTHH:mm:ss
+     * Date-only strings are resolved using standard check-in/out times (UTC+8):
+     *   isStart=true  → T14:00 (check-in)
+     *   isStart=false → T12:00 (check-out)
+     * Never resolves to T00:00 (midnight) as it causes false overlap detection.
+     */
+    private java.time.LocalDateTime parseDateTime(String str, boolean isStart) {
         if (str == null || str.isEmpty()) return null;
         if (str.length() == 10) { // YYYY-MM-DD
-            return java.time.LocalDate.parse(str).atTime(0, 0);
+            return java.time.LocalDate.parse(str).atTime(isStart ? 14 : 12, 0);
         }
         if (str.length() == 16) { // YYYY-MM-DDTHH:mm
             return java.time.LocalDateTime.parse(str + ":00");
