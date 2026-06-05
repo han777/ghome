@@ -357,6 +357,12 @@
       "Out": "チェックアウト済み",
       "Canceled": "キャンセル済み"
     },
+    "OCCUPY_STATUS": {
+      "Pending": "チェックイン待ち",
+      "Checked-in": "滞在中",
+      "Checked-out": "チェックアウト済み",
+      "Canceled": "キャンセル済み"
+    },
     "BIZ_TYPE": {
       "Short Rent": "短期賃貸",
       "Long Rent": "長期賃貸"

@@ -92,6 +92,13 @@ public class DataInitializer {
                     {"Canceled", "4"}
             });
 
+            initEnumDict(dictRepository, dictItemRepository, "OCCUPY_STATUS", "Occupy Status", new String[][]{
+                    {"Pending", "0"},
+                    {"Checked-in", "1"},
+                    {"Checked-out", "2"},
+                    {"Canceled", "3"}
+            });
+
             initEnumDict(dictRepository, dictItemRepository, "BIZ_TYPE", "Business Type", new String[][]{
                     {"Short Rent", "1"},
                     {"Long Rent", "2"}

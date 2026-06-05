@@ -357,6 +357,12 @@
       "Out": "Out",
       "Canceled": "Canceled"
     },
+    "OCCUPY_STATUS": {
+      "Pending": "Pending",
+      "Checked-in": "Checked-in",
+      "Checked-out": "Checked-out",
+      "Canceled": "Canceled"
+    },
     "BIZ_TYPE": {
       "Short Rent": "Short Rent",
       "Long Rent": "Long Rent"
