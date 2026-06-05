@@ -176,12 +176,12 @@
     <!-- Bottom Actions -->
     <div class="bottom-actions">
       <template v-if="order.status === 0">
-        <button class="action-btn primary" @click="submitOrder">{{ $t('confirm.submit') }}</button>
-        <button class="action-btn" @click="cancelBooking">{{ $t('orderDetail.cancelBtn') }}</button>
+        <button class="action-btn primary" :disabled="submitting" @click="submitOrder">{{ submitting ? $t('confirm.submitting') : $t('confirm.submit') }}</button>
+        <button class="action-btn" :disabled="submitting" @click="cancelBooking">{{ $t('orderDetail.cancelBtn') }}</button>
       </template>
       <template v-else>
-        <button class="action-btn" :disabled="order.status !== 2" @click="earlyCheckOut">{{ $t('orderDetail.earlyCheckoutBtn') }}</button>
-        <button class="action-btn" :disabled="!canCancel" @click="cancelBooking">{{ $t('orderDetail.cancelBtn') }}</button>
+        <button class="action-btn" :disabled="order.status !== 2 || submitting" @click="earlyCheckOut">{{ $t('orderDetail.earlyCheckoutBtn') }}</button>
+        <button class="action-btn" :disabled="!canCancel || submitting" @click="cancelBooking">{{ $t('orderDetail.cancelBtn') }}</button>
       </template>
     </div>
   </div>
@@ -205,6 +205,7 @@ const orderId = route.params.id;
 
 const order = ref<any>(null);
 const extraFees = ref<any[]>([]);
+const submitting = ref(false);
 
 // roomNo and roomTypeName are rendered per-occupy via getRoomTypeName()
 const roomPrice = computed(() => order.value?.roomOccupies?.[0]?.room?.roomType?.priceShortRent || 0);
@@ -290,34 +291,44 @@ const getDayOfWeek = (dateStr: string) => {
 };
 
 const cancelBooking = async () => {
+  if (submitting.value) return;
   if (!canCancel.value) {
     alert(t('orderDetail.cancelDeadlinePassed'));
     return;
   }
   if (confirm(t('orderDetail.cancelConfirmMsg'))) {
+    submitting.value = true;
     try {
       await api.post(`/orders/${orderId}/cancel`);
       alert(t('orderDetail.cancelSuccess'));
       fetchOrder();
     } catch (e: any) {
       alert(t('orderDetail.cancelFail') + getErrorMessageI18n(e));
+    } finally {
+      submitting.value = false;
     }
   }
 };
 
 const earlyCheckOut = async () => {
+  if (submitting.value) return;
   if (confirm(t('orderDetail.checkoutConfirmMsg'))) {
+    submitting.value = true;
     try {
       await api.post(`/orders/${orderId}/checkout`);
       alert(t('orderDetail.checkoutSuccess'));
       fetchOrder();
     } catch (e: any) {
       alert(t('orderDetail.checkoutFail') + getErrorMessageI18n(e));
+    } finally {
+      submitting.value = false;
     }
   }
 };
 
 const submitOrder = async () => {
+  if (submitting.value) return;
+  submitting.value = true;
   try {
     const updatedOrder = { ...order.value };
     updatedOrder.status = 1;
@@ -326,6 +337,8 @@ const submitOrder = async () => {
     fetchOrder();
   } catch (e: any) {
     alert(t('confirm.submitFailed') + ': ' + getErrorMessageI18n(e));
+  } finally {
+    submitting.value = false;
   }
 };
 

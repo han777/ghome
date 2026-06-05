@@ -97,7 +97,7 @@
         <div class="total-label">{{ $t('confirm.totalLabel') }}</div>
         <div class="total-price">CNY {{ (roomPrice * stayDays).toFixed(2) }}</div>
       </div>
-      <button class="bar-btn cancel" @click="cancelOrder">{{ $t('confirm.cancelOrder') }}</button>
+      <button class="bar-btn cancel" :disabled="submitting" @click="cancelOrder">{{ $t('confirm.cancelOrder') }}</button>
       <button class="bar-btn submit" :disabled="isExpired || submitting" @click="submitOrder">{{ submitting ? $t('confirm.submitting') : $t('confirm.submit') }}</button>
     </div>
   </div>
@@ -210,12 +210,16 @@ const removeCompanion = (index: number) => {
 };
 
 const cancelOrder = async () => {
+  if (submitting.value) return;
   if (confirm(t('confirm.cancelConfirm'))) {
+    submitting.value = true;
     try {
       await api.post(`/orders/${orderId}/cancel`);
       router.push('/m/booking');
     } catch (e) {
       console.error('Cancel failed', e);
+    } finally {
+      submitting.value = false;
     }
   }
 };

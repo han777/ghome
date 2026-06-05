@@ -373,46 +373,67 @@
     }
   },
   "errors": {
-    "auth.CODE_FORMAT_INVALID": "認証コードの形式が正しくありません。4〜6桁の数字を入力してください",
-    "auth.PHONE_NOT_REGISTERED": "電話番号が登録されていません。企業WeChatでログインしてください",
-    "auth.PHONE_IN_USE": "この電話番号は他のユーザーに使用されています",
-    "auth.USER_NOT_FOUND": "ユーザーが見つかりません",
-    "user.EMAIL_REQUIRED": "手動で追加されたユーザーのメールアドレスは必須です",
-    "order.ROOM_EMPTY": "部屋を選択してください",
-    "order.DATES_EMPTY": "チェックインとチェックアウトの日付を入力してください",
-    "order.END_BEFORE_START": "チェックアウト時間はチェックイン時間より後である必要があります",
-    "order.ROOM_NO_EMPTY": "部屋番号を入力してください",
-    "order.ROOM_TIME_CONFLICT": "部屋 {0} の期間は既存のアクティブな注文と競合しています！",
-    "order.ROOM_MAINTENANCE": "部屋 {0} はメンテナンス中です！",
-    "order.OCCUPANT_CONFLICT": "宿泊者 {0} はこの期間に別の予約があります！",
-    "order.INDIVIDUAL_ONE_CURRENT": "個人のお客様の注文は、現在の記録を1つだけ持つことができます",
-    "order.NOT_FOUND": "注文が見つかりません",
-    "order.NO_ROOM_RECORDS": "この注文には部屋の記録がありません",
-    "order.ROOM_CARD_EMPTY": "部屋 {0} のルームキーカード番号を入力してください",
-    "order.DOOR_CODE_EMPTY": "部屋 {0} のドアコードを入力してください",
-    "order.CANCEL_DEADLINE_PASSED": "キャンセルはチェックイン前日の24:00までに操作が必要です。期限切れです。",
-    "order.ALREADY_EXISTS": "注文が既に存在します、注文を確認してください",
-    "order.OCCUPY_NOT_FOUND": "宿泊記録が見つかりません",
-    "order.TIME_CONFLICT": "この期間は部屋の既存の注文と競合しています",
-    "order.MAINTENANCE_CONFLICT": "この期間、部屋はメンテナンス中です",
-    "order.OCCUPANT_TIME_CONFLICT": "この宿泊者は選択した期間に別の予約があります",
-    "order.KEY_BOX_NO_EMPTY": "キーボックス番号を入力してください",
-    "order.BOX_PASSWORD_EMPTY": "ボックスパスワードを入力してください",
-    "order.MOBILE_CUTOFF": "北京時間15:00以降は当日の予約はできません。明日以降の日付を選択してください。",
-    "maint.START_AFTER_END": "開始時間は終了時間より前にしてください",
-    "maint.ORDER_CONFLICT": "この期間、部屋には既存の予約があります！",
-    "maint.OTHER_CONFLICT": "この期間、部屋には他のメンテナンス記録があります！",
-    "maint.COMPLETED_NO_REVERT": "完了したメンテナンス記録は無効化のみ可能で、進行中に戻すことはできません",
-    "maint.COMPLETED_NO_DELETE": "完了したメンテナンス記録は削除できません",
-    "maint.ACTIVE_NO_DELETE": "進行中のメンテナンス記録は削除できません、キャンセルのみ可能です",
-    "notif.RECIPIENT_MISSING": "受信者情報が不足しています",
-    "notif.UNKNOWN_CHANNEL": "不明な通知チャネル",
-    "general.EXCEL_FAILED": "Excelの生成に失敗しました",
-    "general.ORDER_NOT_FOUND": "注文が見つかりません",
-    "general.ROOM_NOT_FOUND": "部屋が見つかりません",
-    "general.OCCUPY_NOT_FOUND": "宿泊記録が見つかりません",
-    "general.DATA_CONSTRAINT_VIOLATION": "データ制約違反または無効なリクエスト",
-    "general.INTERNAL_ERROR": "サーバー内部エラー",
-    "runtime.UNEXPECTED": "操作に失敗しました"
+    "auth": {
+      "CODE_FORMAT_INVALID": "認証コードの形式が正しくありません。4〜6桁の数字を入力してください",
+      "PHONE_NOT_REGISTERED": "電話番号が登録されていません。企業WeChatでログインしてください",
+      "PHONE_IN_USE": "この電話番号は他のユーザーに使用されています",
+      "USER_NOT_FOUND": "ユーザーが見つかりません"
+    },
+    "user": {
+      "EMAIL_REQUIRED": "手動で追加されたユーザーのメールアドレスは必須です"
+    },
+    "order": {
+      "ROOM_EMPTY": "部屋を選択してください",
+      "DATES_EMPTY": "チェックインとチェックアウトの日付を入力してください",
+      "END_BEFORE_START": "チェックアウト時間はチェックイン時間より後である必要があります",
+      "ROOM_NO_EMPTY": "部屋番号を入力してください",
+      "ROOM_TIME_CONFLICT": "部屋 {0} の期間は既存のアクティブな注文と競合しています！",
+      "ROOM_MAINTENANCE": "部屋 {0} はメンテナンス中です！",
+      "OCCUPANT_CONFLICT": "宿泊者 {0} はこの期間に別の予約があります！",
+      "INDIVIDUAL_ONE_CURRENT": "個人のお客様の注文は、現在の記録を1つだけ持つことができます",
+      "NOT_FOUND": "注文が見つかりません",
+      "NO_ROOM_RECORDS": "この注文には部屋の記録がありません",
+      "ROOM_CARD_EMPTY": "部屋 {0} のルームキーカード番号を入力してください",
+      "DOOR_CODE_EMPTY": "部屋 {0} のドアコードを入力してください",
+      "CANCEL_DEADLINE_PASSED": "キャンセルはチェックイン前日の24:00までに操作が必要です。期限切れです。",
+      "ALREADY_EXISTS": "注文が既に存在します、注文を確認してください",
+      "OCCUPY_NOT_FOUND": "宿泊記録が見つかりません",
+      "TIME_CONFLICT": "この期間は部屋の既存の注文と競合しています",
+      "MAINTENANCE_CONFLICT": "この期間、部屋はメンテナンス中です",
+      "OCCUPANT_TIME_CONFLICT": "この宿泊者は選択した期間に別の予約があります",
+      "KEY_BOX_NO_EMPTY": "キーボックス番号を入力してください",
+      "BOX_PASSWORD_EMPTY": "ボックスパスワードを入力してください",
+      "MOBILE_CUTOFF": "北京時間15:00以降は当日の予約はできません。明日以降の日付を選択してください。",
+      "GROUP_NAME_EMPTY": "団体名を入力してください",
+      "CONTACT_NAME_EMPTY": "連絡先名を入力してください",
+      "CONTACT_PHONE_EMPTY": "連絡先電話番号を入力してください",
+      "COMPANY_EMPTY": "会社名を入力してください",
+      "COST_CENTER_EMPTY": "コストセンターを入力してください",
+      "ACTIVITY_CODE_EMPTY": "活動コードを入力してください"
+    },
+    "maint": {
+      "START_AFTER_END": "開始時間は終了時間より前にしてください",
+      "ORDER_CONFLICT": "この期間、部屋には既存の予約があります！",
+      "OTHER_CONFLICT": "この期間、部屋には他のメンテナンス記録があります！",
+      "COMPLETED_NO_REVERT": "完了したメンテナンス記録は無効化のみ可能で、進行中に戻すことはできません",
+      "COMPLETED_NO_DELETE": "完了したメンテナンス記録は削除できません",
+      "ACTIVE_NO_DELETE": "進行中のメンテナンス記録は削除できません、キャンセルのみ可能です"
+    },
+    "notif": {
+      "RECIPIENT_MISSING": "受信者情報が不足しています",
+      "UNKNOWN_CHANNEL": "不明な通知チャネル"
+    },
+    "general": {
+      "PARAM_ERROR": "{0}",
+      "EXCEL_FAILED": "Excelの生成に失敗しました",
+      "ORDER_NOT_FOUND": "注文が見つかりません",
+      "ROOM_NOT_FOUND": "部屋が見つかりません",
+      "OCCUPY_NOT_FOUND": "宿泊記録が見つかりません",
+      "DATA_CONSTRAINT_VIOLATION": "データ制約違反または無効なリクエスト",
+      "INTERNAL_ERROR": "サーバー内部エラー"
+    },
+    "runtime": {
+      "UNEXPECTED": "操作に失敗しました"
+    }
   }
 }

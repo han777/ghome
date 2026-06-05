@@ -39,7 +39,7 @@ api.interceptors.response.use(
       const i18nKey = 'errors.' + data.code;
       const args = Array.isArray(data.args) ? data.args : [];
       try {
-        const translated = i18n.global.t(i18nKey, ...args);
+        const translated = i18n.global.t(i18nKey, args);
         // If the key exists (translated !== key itself), use it
         if (translated !== i18nKey) {
           error.response.data = { message: translated, code: data.code };

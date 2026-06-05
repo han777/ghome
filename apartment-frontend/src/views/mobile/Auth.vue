@@ -26,8 +26,9 @@
         </div>
 
         <!-- WeChat Work login button (not in WeChat env) -->
-        <button v-if="!isWeComEnv && !statusMessage" class="mobile-btn-primary wecom-login-btn" @click="wecomAutoLogin">
-          <span class="wecom-icon">💬</span> {{ $t('auth.wecomLogin') }}
+        <button v-if="!isWeComEnv && !statusMessage" class="mobile-btn-primary wecom-login-btn" :disabled="loading" @click="wecomAutoLogin">
+          <span v-if="loading" class="loading-spinner-small"></span>
+          <span v-else class="wecom-icon">💬</span> {{ loading ? $t('auth.redirectingWecom') : $t('auth.wecomLogin') }}
         </button>
 
         <div class="other-login">

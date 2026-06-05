@@ -85,7 +85,7 @@ export function translateError(error: any, locale: string = 'zh'): string {
     // 使用 i18n 进行翻译
     try {
       const t = i18n.global.t;
-      message = t(`errors.${code}`);
+      message = t(`errors.${code}`, args);
     } catch {
       message = errorMessagesZh[code]; // 回退到中文
     }
