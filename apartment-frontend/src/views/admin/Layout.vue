@@ -92,6 +92,7 @@ const menuGroups = [
       { name: '字典管理', path: '/admin/dicts', icon: '📖' },
       { name: '部门管理', path: '/admin/depts', icon: '🏢' },
       { name: '全局设置', path: '/admin/global-settings', icon: '🔧' },
+      { name: '定时任务', path: '/admin/scheduled-task-logs', icon: '⏰' },
     ]
   }
 ];
@@ -129,7 +130,8 @@ const titles: Record<string, string> = {
   'BookingPurposes': '订房事由',
   'NotificationRecords': '通知记录',
   'CleaningTasks': '清扫任务',
-  'GlobalSettings': '全局设置'
+  'GlobalSettings': '全局设置',
+  'ScheduledTaskLogs': '定时任务'
 };
 
 const currentTitle = computed(() => titles[route.name as string] || 'Dashboard');

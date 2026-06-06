@@ -26,4 +26,6 @@ public interface CleaningTaskRepository extends JpaRepository<CleaningTask, Long
     List<CleaningTask> findByRoomIdAndStatusIn(Long roomId, Collection<Integer> statuses);
 
     boolean existsByRoomIdAndStatus(Long roomId, Integer status);
+
+    boolean existsByRoomIdAndTaskTypeAndStatus(Long roomId, Integer taskType, Integer status);
 }

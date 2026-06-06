@@ -5,6 +5,7 @@ import com.apartment.exception.BusinessException;
 import com.apartment.exception.ErrorCode;
 import com.apartment.repository.RoomMaintenanceRepository;
 import com.apartment.repository.RoomOrderRepository;
+import com.apartment.service.RoomMaintenanceService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,9 @@ public class RoomMaintenanceController {
 
     @Autowired
     private RoomOrderRepository orderRepository;
+
+    @Autowired
+    private RoomMaintenanceService maintenanceService;
 
 
 
@@ -64,14 +68,24 @@ public class RoomMaintenanceController {
             }
         }
 
+        RoomMaintenance existing = null;
         if (maintenance.getId() != null) {
-            RoomMaintenance existing = maintenanceRepository.findById(maintenance.getId()).orElse(null);
+            existing = maintenanceRepository.findById(maintenance.getId()).orElse(null);
             if (existing != null && existing.getStatus() == 1 && maintenance.getStatus() != 1 && maintenance.getStatus() != 2) {
                 throw new BusinessException(ErrorCode.MAINT_COMPLETED_NO_REVERT);
             }
         }
 
-        return maintenanceRepository.save(maintenance);
+        boolean wasNotCompleted = existing == null || existing.getStatus() != 1;
+
+        RoomMaintenance saved = maintenanceRepository.save(maintenance);
+
+        // 维护完成（人工完成）时触发强打扫任务
+        if (saved.getStatus() == 1 && wasNotCompleted) {
+            maintenanceService.completeMaintenance(saved);
+        }
+
+        return saved;
     }
 
     @DeleteMapping("/{id}")

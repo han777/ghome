@@ -145,6 +145,18 @@ public class CleaningTaskService {
     }
 
     /**
+     * 维护完成后创建强打扫任务
+     */
+    @Transactional
+    public CleaningTask createDeepCleanForMaintenance(Room room) {
+        LocalDate today = LocalDate.now();
+        if (taskRepository.existsByRoomIdAndTaskTypeAndStatus(room.getId(), 2, 0)) {
+            return null;
+        }
+        return createTask(room, 2, today, "维护完成，需强打扫");
+    }
+
+    /**
      * 手动触发生成任务（用于测试）
      */
     @Transactional

@@ -66,3 +66,14 @@ UPDATE room_occupy SET status = 0 WHERE status = 10;
 
 -- Step 6: Map old Finish(11) -> Checked-out(2)
 UPDATE room_occupy SET status = 2 WHERE status = 11;
+
+-- #8: Scheduled task execution log
+CREATE TABLE IF NOT EXISTS scheduled_task_log (
+  id BIGSERIAL PRIMARY KEY,
+  task_name VARCHAR(200) NOT NULL,
+  execute_time TIMESTAMP NOT NULL,
+  duration BIGINT,
+  status VARCHAR(20) NOT NULL DEFAULT 'success',
+  fail_reason TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_stl_execute_time ON scheduled_task_log(execute_time DESC);

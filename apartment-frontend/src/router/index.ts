@@ -135,6 +135,11 @@ const router = createRouter({
                     path: 'global-settings',
                     name: 'GlobalSettings',
                     component: () => import('../views/admin/GlobalSettings.vue')
+                },
+                {
+                    path: 'scheduled-task-logs',
+                    name: 'ScheduledTaskLogs',
+                    component: () => import('../views/admin/ScheduledTaskLogs.vue')
                 }
             ]
         },
