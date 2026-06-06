@@ -110,8 +110,11 @@ export function translateError(error: any, locale: string = 'zh'): string {
   }
 
   // runtime.UNEXPECTED 时附带后端原始错误信息，避免只显示"操作失败"
-  if (code === 'runtime.UNEXPECTED' && error?.message) {
-    message += '：' + error.message;
+  if (code === 'runtime.UNEXPECTED') {
+    const originalMsg = error?.originalMessage || error?.message;
+    if (originalMsg) {
+      message += '：' + originalMsg;
+    }
   }
 
   return message;

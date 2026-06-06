@@ -42,7 +42,7 @@ api.interceptors.response.use(
         const translated = i18n.global.t(i18nKey, args);
         // If the key exists (translated !== key itself), use it
         if (translated !== i18nKey) {
-          error.response.data = { message: translated, code: data.code };
+          error.response.data = { message: translated, code: data.code, originalMessage: data.message };
         }
       } catch (e) {
         // Fallback: use raw code
