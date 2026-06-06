@@ -179,7 +179,7 @@
       <div class="modal-content" :class="{ 'modal-maximized': isMaximized }">
         <div class="modal-header">
           <div class="header-left">
-            <h2>{{ form.id ? '编辑订单' : '创建订单' }}</h2>
+            <h2>{{ form.id ? (form.orderNo || '编辑订单') : '创建订单' }}</h2>
             <div class="modal-nav">
               <a href="#section-basic" @click.prevent="scrollTo('section-basic')">🏠 基础信息</a>
               <a href="#section-rooms" @click.prevent="scrollTo('section-rooms')">🛏️ 客房</a>
@@ -1349,10 +1349,13 @@ const removeOrDeleteRoom = async (occupy: any, index: number) => {
     try {
       const savedOrder: any = await api.delete(`/orders/occupy/${occupy.id}`);
       if (savedOrder) {
-        Object.assign(form, savedOrder);
-        if (savedOrder.createdAt) form.createdAt = savedOrder.createdAt.slice(0, 16);
+        // Only update fields affected by room deletion — do NOT use Object.assign
+        // which overwrites user-modified fields (customerType, status, etc.) with stale API values
         if (savedOrder.startDate) form.startDate = savedOrder.startDate.slice(0, 10);
         if (savedOrder.endDate) form.endDate = savedOrder.endDate.slice(0, 10);
+        if (savedOrder.roomFee != null) form.roomFee = savedOrder.roomFee;
+        if (savedOrder.serviceFee != null) form.serviceFee = savedOrder.serviceFee;
+        if (savedOrder.totalAmount != null) form.totalAmount = savedOrder.totalAmount;
         if (savedOrder.roomOccupies) {
           form.roomOccupies = savedOrder.roomOccupies.map((ro: any) => ({
             ...ro,
@@ -1362,16 +1365,6 @@ const removeOrDeleteRoom = async (occupy: any, index: number) => {
             checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
           }));
           sortRoomOccupies();
-        }
-        form.bookerId = savedOrder.booker?.id || null;
-        form.purposeId = savedOrder.purpose?.id || null;
-        if (savedOrder.productDetails) {
-          form.productDetails = savedOrder.productDetails.map((d: any) => ({
-            ...d,
-            productId: d.product?.id
-          }));
-        } else {
-          form.productDetails = [];
         }
       }
       fetchData();
