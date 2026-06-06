@@ -342,7 +342,7 @@
               </div>
             </div>
             <div class="room-cards-container">
-              <div v-for="(occupy, index) in form.roomOccupies" :key="index" class="room-card">
+              <div v-for="(occupy, index) in form.roomOccupies" :key="index" class="room-card" :class="{ 'room-card-empty': !occupy.roomId }">
                 <div class="card-header">
                   <div class="card-title">
                     <span class="room-no">房间 {{ getRoomNo(Number(occupy.roomId)) || '未设置' }}</span>
@@ -375,7 +375,7 @@
                       </div>
                     </template>
                     <!-- 原始 datetime-local 输入 -->
-                    <input v-else type="datetime-local" v-model="occupy.checkInTime" @input="updateRoomQuantity(occupy)" :disabled="!isEditMode || !!form.id">
+                    <input v-else type="datetime-local" v-model="occupy.checkInTime" @input="updateRoomQuantity(occupy)" :disabled="!isEditMode || (!!form.id && !!occupy.id)">
                   </div>
                   <div class="card-item" :class="{ 'calendar-active': showCheckOutCalendar === index }">
                     <label>实际退房</label>
@@ -397,7 +397,7 @@
                       </div>
                     </template>
                     <!-- 原始 datetime-local 输入 -->
-                    <input v-else type="datetime-local" v-model="occupy.checkOutTime" @input="updateRoomQuantity(occupy)" :disabled="!isEditMode || !!form.id">
+                    <input v-else type="datetime-local" v-model="occupy.checkOutTime" @input="updateRoomQuantity(occupy)" :disabled="!isEditMode || (!!form.id && !!occupy.id)">
                   </div>
                     <div class="card-item">
                       <label>房间</label>
@@ -1318,11 +1318,11 @@ const buildProductDetailDiff = (currentForm: any, origForm: any) => {
 };
 
 const addRoomRow = () => {
-  // 默认使用今天和明天作为入住/退房时间
-  const today = new Date().toISOString().slice(0, 10);
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-  const checkIn = today + 'T14:00';
-  const checkOut = tomorrow + 'T12:00';
+  // 默认使用订单主单的入住/退房时间
+  const startDate = form.startDate || new Date().toISOString().slice(0, 10);
+  const endDate = form.endDate || new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const checkIn = startDate.slice(0, 10) + 'T14:00';
+  const checkOut = endDate.slice(0, 10) + 'T12:00';
   form.roomOccupies.push({
     roomId: null,
     occupantUserId: form.customerType === 1 ? form.bookerId : null,
@@ -1333,7 +1333,7 @@ const addRoomRow = () => {
     checkInTime: checkIn,
     checkOutTime: checkOut,
     actualPrice: 0,
-    quantity: 1
+    quantity: calculateDays(checkIn, checkOut)
   });
 };
 
@@ -2680,6 +2680,8 @@ th.sortable:hover {
 .room-cards-container { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 15px; }
 .room-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.2s; }
 .room-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-color: #38bdf8; }
+.room-card-empty { border: 2px solid #f59e0b; background: #fffbeb; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15), 0 1px 3px rgba(0,0,0,0.1); }
+.room-card-empty:hover { border-color: #d97706; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2), 0 4px 6px -1px rgba(0,0,0,0.1); }
 .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #f1f5f9; }
 .card-title { display: flex; flex-direction: column; gap: 2px; }
 .room-no { font-size: 16px; font-weight: 800; color: #0f172a; }
