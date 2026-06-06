@@ -573,7 +573,6 @@ public class RoomOrderService {
         if (order.getRoomOccupies() != null) {
             for (RoomOccupy occupy : order.getRoomOccupies()) {
                 occupy.setStatus(RoomOccupy.STATUS_CHECKED_OUT);
-                occupy.setCheckOutTime(now);
                 Room room = occupy.getRoom();
                 if (room != null) {
                     room.setStatus(0); // Available
@@ -752,7 +751,6 @@ public class RoomOrderService {
         }
 
         occupy.setStatus(RoomOccupy.STATUS_CHECKED_OUT);
-        occupy.setCheckOutTime(LocalDateTime.now());
         occupyRepository.save(occupy);
 
         Room room = occupy.getRoom();
@@ -770,7 +768,6 @@ public class RoomOrderService {
 
             if (allFinished) {
                 order.setStatus(3); // Out
-                order.setEndDate(LocalDateTime.now());
                 orderRepository.save(order);
             }
         }
