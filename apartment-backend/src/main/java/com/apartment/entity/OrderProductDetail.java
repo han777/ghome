@@ -27,4 +27,7 @@ public class OrderProductDetail {
     private Integer quantity = 1;
     private LocalDate consumeDate;
     private String remarks;
+
+    @Transient
+    private String _action; // "add", "modify", "delete", "unchanged"
 }

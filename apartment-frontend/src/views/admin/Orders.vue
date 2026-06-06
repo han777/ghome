@@ -189,7 +189,7 @@
             </div>
           </div>
           <div class="header-actions">
-            <button v-if="form.id && !isEditMode" class="edit-top-btn" @click="isEditMode = true">编辑</button>
+            <button v-if="form.id && !isEditMode" class="edit-top-btn" @click="enterEditMode">编辑</button>
             <button v-if="form.id && form.status <= 1" class="cancel-order-btn" @click="cancelOrderFromModal(form.id)">取消订单</button>
             <button v-if="form.id && form.status === 1" class="send-card-btn" @click="openSendCardModal(form.id)">📇 发送房卡</button>
             <button v-if="form.id && form.status < 3 && form.status > 1 && form.customerType === 1" class="checkout-btn" @click="handleCheckout">🔔 退房</button>
@@ -780,6 +780,7 @@ const sendCardOrderId = ref<number | null>(null);
 const sendCardForm = reactive({ keyBoxNo: '', boxPassword: '' });
 const isMaximized = ref(false);
 const isEditMode = ref(false);
+const originalForm = ref<any>(null);
 const filterTodayArrival = ref(false);
 const filterTodayDeparture = ref(false);
 const statusFilter = ref<number[]>([1, 2]); // Default: Pending (1), In (2)
@@ -850,10 +851,17 @@ const resetFilters = () => {
 
 const closeModal = () => {
   showModal.value = false;
+  originalForm.value = null;
   if (returnPath.value) {
     router.push(returnPath.value);
     returnPath.value = null;
   }
+};
+
+const enterEditMode = () => {
+  // Snapshot current form state for change detection
+  originalForm.value = JSON.parse(JSON.stringify(form));
+  isEditMode.value = true;
 };
 
 const form = reactive<any>({
@@ -1179,6 +1187,125 @@ const getRoomTypeName = (id: number) => {
   return parseNameIntl(room.roomType.nameIntlJson, 'zh') || room.roomType.typeCode || '未知房型';
 };
 
+/** Build roomOccupy diff with _action markers for incremental update */
+const buildRoomOccupyDiff = (currentForm: any, origForm: any) => {
+  const result: any[] = [];
+  const isGroup = currentForm.customerType === 2;
+  const currentIds = new Set(currentForm.roomOccupies?.map((r: any) => r.id).filter(Boolean));
+
+  for (const ro of currentForm.roomOccupies || []) {
+    if (!ro.id) {
+      // New room (no id) → add with all fields
+      result.push({
+        _action: 'add',
+        room: ro.roomId ? { id: ro.roomId } : null,
+        occupantUser: !isGroup && ro.occupantUserId ? { id: ro.occupantUserId } : null,
+        occupantName: isGroup ? currentForm.groupName : ro.occupantName,
+        checkInTime: ro.checkInTime,
+        checkOutTime: ro.checkOutTime,
+        occupantCount: ro.occupantCount,
+        coOccupants: ro.coOccupants,
+        status: ro.status,
+        actualPrice: ro.actualPrice,
+        quantity: ro.quantity,
+      });
+    } else {
+      // Existing room: compare with original
+      const original = origForm.roomOccupies?.find((o: any) => o.id === ro.id);
+      if (!original) {
+        // Shouldn't happen, but treat as add
+        result.push({ _action: 'add', id: ro.id, room: ro.roomId ? { id: ro.roomId } : null });
+        continue;
+      }
+
+      const occupyFieldsToCompare = ['roomId', 'occupantUserId', 'occupantName', 'checkInTime', 'checkOutTime', 'occupantCount', 'coOccupants', 'status', 'actualPrice', 'quantity'];
+      const changedFields: any = { _action: 'modify', id: ro.id };
+      let hasChange = false;
+
+      for (const field of occupyFieldsToCompare) {
+        if (JSON.stringify(ro[field]) !== JSON.stringify(original[field])) {
+          hasChange = true;
+          if (field === 'roomId') {
+            changedFields.room = ro.roomId ? { id: ro.roomId } : null;
+          } else if (field === 'occupantUserId') {
+            changedFields.occupantUser = ro.occupantUserId ? { id: ro.occupantUserId } : null;
+          } else {
+            changedFields[field] = ro[field];
+          }
+        }
+      }
+
+      if (hasChange) {
+        result.push(changedFields);
+      } else {
+        result.push({ _action: 'unchanged', id: ro.id });
+      }
+    }
+  }
+
+  // Detect deleted rooms (in original but not in current)
+  for (const orig of origForm.roomOccupies || []) {
+    if (orig.id && !currentIds.has(orig.id)) {
+      result.push({ _action: 'delete', id: orig.id });
+    }
+  }
+
+  return result;
+};
+
+/** Build productDetail diff with _action markers for incremental update */
+const buildProductDetailDiff = (currentForm: any, origForm: any) => {
+  const result: any[] = [];
+  const currentIds = new Set(currentForm.productDetails?.map((d: any) => d.id).filter(Boolean));
+
+  for (const d of currentForm.productDetails || []) {
+    if (!d.id) {
+      result.push({
+        _action: 'add',
+        product: d.productId ? { id: d.productId } : null,
+        actualPrice: d.actualPrice,
+        quantity: d.quantity,
+        consumeDate: d.consumeDate,
+        remarks: d.remarks,
+      });
+    } else {
+      const original = origForm.productDetails?.find((o: any) => o.id === d.id);
+      if (!original) {
+        result.push({ _action: 'add', id: d.id, product: d.productId ? { id: d.productId } : null });
+        continue;
+      }
+
+      const fieldsToCompare = ['productId', 'actualPrice', 'quantity', 'consumeDate', 'remarks'];
+      const changedFields: any = { _action: 'modify', id: d.id };
+      let hasChange = false;
+
+      for (const field of fieldsToCompare) {
+        if (JSON.stringify(d[field]) !== JSON.stringify(original[field])) {
+          hasChange = true;
+          if (field === 'productId') {
+            changedFields.product = d.productId ? { id: d.productId } : null;
+          } else {
+            changedFields[field] = d[field];
+          }
+        }
+      }
+
+      if (hasChange) {
+        result.push(changedFields);
+      } else {
+        result.push({ _action: 'unchanged', id: d.id });
+      }
+    }
+  }
+
+  for (const orig of origForm.productDetails || []) {
+    if (orig.id && !currentIds.has(orig.id)) {
+      result.push({ _action: 'delete', id: orig.id });
+    }
+  }
+
+  return result;
+};
 
 const addRoomRow = () => {
   // 默认使用今天和明天作为入住/退房时间
@@ -1970,49 +2097,87 @@ const saveOrder = async () => {
       return;
     }
 
+    let payload: any;
 
-    // Map IDs to objects for backend
-    const payload = { ...form };
-    // 日期选择器只返回日期，需要补充默认时间
-    if (payload.startDate && payload.startDate.length === 10) payload.startDate += 'T14:00:00';
-    if (payload.endDate && payload.endDate.length === 10) payload.endDate += 'T12:00:00';
-    
-    if (form.bookerId) {
-      payload.booker = { id: form.bookerId };
-    }
-    delete payload.bookerId;
+    if (form.id && originalForm.value) {
+      // ===== UPDATE: Incremental protocol — only send changed fields =====
+      payload = { id: form.id };
 
-    // Map purposeId to purpose object
-    if (form.purposeId) {
-      payload.purpose = { id: form.purposeId };
+      // Date handling
+      const startDate = form.startDate?.length === 10 ? form.startDate + 'T14:00:00' : form.startDate;
+      const endDate = form.endDate?.length === 10 ? form.endDate + 'T12:00:00' : form.endDate;
+      const origStartDate = originalForm.value.startDate?.length === 10 ? originalForm.value.startDate + 'T14:00:00' : originalForm.value.startDate;
+      const origEndDate = originalForm.value.endDate?.length === 10 ? originalForm.value.endDate + 'T12:00:00' : originalForm.value.endDate;
+
+      // Order-level scalar fields: only include changed ones
+      const orderScalarFields = [
+        'bookPhone', 'bizType', 'customerType', 'status', 'remarks',
+        'roomFee', 'serviceFee', 'totalAmount',
+        'groupName', 'contactName', 'contactPhone',
+        'company', 'costCenter', 'activityCode', 'projectCode'
+      ];
+      for (const field of orderScalarFields) {
+        if (JSON.stringify(form[field]) !== JSON.stringify(originalForm.value[field])) {
+          payload[field] = form[field];
+        }
+      }
+      if (startDate !== origStartDate) payload.startDate = startDate;
+      if (endDate !== origEndDate) payload.endDate = endDate;
+
+      // Reference fields
+      if (form.bookerId !== originalForm.value.bookerId) {
+        payload.booker = form.bookerId ? { id: form.bookerId } : null;
+      }
+      if (form.purposeId !== originalForm.value.purposeId) {
+        payload.purpose = form.purposeId ? { id: form.purposeId } : null;
+      }
+
+      // Room occupies with _action markers
+      payload.roomOccupies = buildRoomOccupyDiff(form, originalForm.value);
+
+      // Product details with _action markers
+      payload.productDetails = buildProductDetailDiff(form, originalForm.value);
+
     } else {
-      payload.purpose = null;
-    }
-    delete payload.purposeId;
+      // ===== CREATE or no originalForm: Legacy full payload =====
+      payload = { ...form };
+      // Date handling
+      if (payload.startDate && payload.startDate.length === 10) payload.startDate += 'T14:00:00';
+      if (payload.endDate && payload.endDate.length === 10) payload.endDate += 'T12:00:00';
 
-    // Handle nested roomOccupies payload
-    if (form.roomOccupies) {
+      if (form.bookerId) {
+        payload.booker = { id: form.bookerId };
+      }
+      delete payload.bookerId;
+
+      if (form.purposeId) {
+        payload.purpose = { id: form.purposeId };
+      } else {
+        payload.purpose = null;
+      }
+      delete payload.purposeId;
+
       const isGroup = form.customerType === 2;
-      payload.roomOccupies = form.roomOccupies.map((ro: any) => ({
-        ...ro,
-        room: ro.roomId ? { id: ro.roomId } : null,
-        occupantUser: !isGroup && ro.occupantUserId ? { id: ro.occupantUserId } : null,
-        occupantName: isGroup ? form.groupName : null
-      })).filter((ro: any) => ro.room !== null);
+      if (form.roomOccupies) {
+        payload.roomOccupies = form.roomOccupies.map((ro: any) => ({
+          ...ro,
+          room: ro.roomId ? { id: ro.roomId } : null,
+          occupantUser: !isGroup && ro.occupantUserId ? { id: ro.occupantUserId } : null,
+          occupantName: isGroup ? form.groupName : null
+        })).filter((ro: any) => ro.room !== null);
+      }
+      if (form.productDetails) {
+        payload.productDetails = form.productDetails.map((d: any) => ({
+          ...d,
+          product: d.productId ? { id: d.productId } : null
+        })).filter((d: any) => d.product !== null);
+      }
+      delete payload.userId;
     }
-
-    // Handle nested productDetails payload
-    if (form.productDetails) {
-      payload.productDetails = form.productDetails.map((d: any) => ({
-        ...d,
-        product: d.productId ? { id: d.productId } : null
-      })).filter((d: any) => d.product !== null);
-    }
-    delete payload.userId;
     
     const savedOrder: any = await api.post('/orders', payload);
     isEditMode.value = false;
-    // 保存成功后不关闭form，用返回数据刷新form让用户查看更新结果
+    originalForm.value = null;
     if (savedOrder) {
       form.id = savedOrder.id;
       Object.assign(form, savedOrder);
@@ -2082,9 +2247,11 @@ const cancelEdit = async () => {
         fetchOrderLogs(fresh.id);
       }
       isEditMode.value = false;
+      originalForm.value = null;
     } catch (e) {
       alert('重新获取订单失败');
       isEditMode.value = false;
+      originalForm.value = null;
     }
   }
 };

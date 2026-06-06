@@ -47,6 +47,12 @@ public class RoomOrderService {
     private com.apartment.repository.CleaningTaskRepository cleaningTaskRepository;
 
     @Autowired
+    private com.apartment.repository.SysUserRepository userRepository;
+
+    @Autowired
+    private com.apartment.repository.ProductPriceRepository productPriceRepository;
+
+    @Autowired
     private MessageTemplateService messageTemplateService;
 
     @Autowired
@@ -937,5 +943,465 @@ public class RoomOrderService {
 
     public List<OrderFee> getOrderFees(Long orderId) {
         return feeRepository.findByOrderId(orderId);
+    }
+
+    // ===== Incremental save for order updates =====
+
+    /**
+     * Incrementally update an existing order based on incoming partial data.
+     * @return JSON string of changed fields for logging, or null if no changes
+     */
+    @Transactional
+    public String saveOrderIncremental(RoomOrder existing, RoomOrder incoming) {
+        java.util.List<java.util.Map<String, Object>> changeLog = new java.util.ArrayList<>();
+
+        // 1. Apply order-level partial update (only non-null fields from incoming)
+        applyOrderFieldChanges(existing, incoming, changeLog);
+
+        // 2. Process room occupies incrementally
+        java.util.List<RoomChangeInfo> roomChanges = processRoomOccupiesIncremental(existing, incoming, changeLog);
+
+        // 3. Process product details incrementally
+        processProductDetailsIncremental(existing, incoming, changeLog);
+
+        // 4. Validate and save
+        validateOrder(existing);
+        RoomOrder saved = orderRepository.save(existing);
+
+        // 5. Trigger room-change notifications
+        for (RoomChangeInfo info : roomChanges) {
+            notifyRoomChange(saved, info);
+        }
+
+        // 6. Return change log as JSON (controller handles OrderLog creation with user context)
+        if (changeLog.isEmpty()) return null;
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(changeLog);
+        } catch (Exception e) {
+            return changeLog.toString();
+        }
+    }
+
+    /** Apply order-level partial update: only override non-null fields from incoming */
+    private void applyOrderFieldChanges(RoomOrder existing, RoomOrder incoming, java.util.List<java.util.Map<String, Object>> changeLog) {
+        // Scalar fields
+        if (incoming.getBookPhone() != null && !incoming.getBookPhone().equals(existing.getBookPhone())) {
+            addChange(changeLog, "联系电话", existing.getBookPhone(), incoming.getBookPhone());
+            existing.setBookPhone(incoming.getBookPhone());
+        }
+        if (incoming.getStartDate() != null && !incoming.getStartDate().equals(existing.getStartDate())) {
+            addChange(changeLog, "入住时间", String.valueOf(existing.getStartDate()), String.valueOf(incoming.getStartDate()));
+            existing.setStartDate(incoming.getStartDate());
+        }
+        if (incoming.getEndDate() != null && !incoming.getEndDate().equals(existing.getEndDate())) {
+            addChange(changeLog, "离店时间", String.valueOf(existing.getEndDate()), String.valueOf(incoming.getEndDate()));
+            existing.setEndDate(incoming.getEndDate());
+        }
+        if (incoming.getBizType() != null && !incoming.getBizType().equals(existing.getBizType())) {
+            addChange(changeLog, "业务类型", String.valueOf(existing.getBizType()), String.valueOf(incoming.getBizType()));
+            existing.setBizType(incoming.getBizType());
+        }
+        if (incoming.getCustomerType() != null && !incoming.getCustomerType().equals(existing.getCustomerType())) {
+            addChange(changeLog, "客户类型", String.valueOf(existing.getCustomerType()), String.valueOf(incoming.getCustomerType()));
+            existing.setCustomerType(incoming.getCustomerType());
+        }
+        if (incoming.getStatus() != null && !incoming.getStatus().equals(existing.getStatus())) {
+            addChange(changeLog, "订单状态", String.valueOf(existing.getStatus()), String.valueOf(incoming.getStatus()));
+            existing.setStatus(incoming.getStatus());
+        }
+        if (incoming.getRemarks() != null && !incoming.getRemarks().equals(existing.getRemarks())) {
+            addChange(changeLog, "备注", existing.getRemarks(), incoming.getRemarks());
+            existing.setRemarks(incoming.getRemarks());
+        }
+        if (incoming.getRoomFee() != null && incoming.getRoomFee().compareTo(existing.getRoomFee() != null ? existing.getRoomFee() : BigDecimal.ZERO) != 0) {
+            addChange(changeLog, "房费", String.valueOf(existing.getRoomFee()), String.valueOf(incoming.getRoomFee()));
+            existing.setRoomFee(incoming.getRoomFee());
+        }
+        if (incoming.getServiceFee() != null && incoming.getServiceFee().compareTo(existing.getServiceFee() != null ? existing.getServiceFee() : BigDecimal.ZERO) != 0) {
+            addChange(changeLog, "服务费", String.valueOf(existing.getServiceFee()), String.valueOf(incoming.getServiceFee()));
+            existing.setServiceFee(incoming.getServiceFee());
+        }
+        if (incoming.getTotalAmount() != null && incoming.getTotalAmount().compareTo(existing.getTotalAmount() != null ? existing.getTotalAmount() : BigDecimal.ZERO) != 0) {
+            addChange(changeLog, "总金额", String.valueOf(existing.getTotalAmount()), String.valueOf(incoming.getTotalAmount()));
+            existing.setTotalAmount(incoming.getTotalAmount());
+        }
+        if (incoming.getGroupName() != null && !incoming.getGroupName().equals(existing.getGroupName())) {
+            addChange(changeLog, "团体名称", existing.getGroupName(), incoming.getGroupName());
+            existing.setGroupName(incoming.getGroupName());
+        }
+        if (incoming.getContactName() != null && !incoming.getContactName().equals(existing.getContactName())) {
+            addChange(changeLog, "联系人姓名", existing.getContactName(), incoming.getContactName());
+            existing.setContactName(incoming.getContactName());
+        }
+        if (incoming.getContactPhone() != null && !incoming.getContactPhone().equals(existing.getContactPhone())) {
+            addChange(changeLog, "联系电话(团体)", existing.getContactPhone(), incoming.getContactPhone());
+            existing.setContactPhone(incoming.getContactPhone());
+        }
+        if (incoming.getCompany() != null && !incoming.getCompany().equals(existing.getCompany())) {
+            addChange(changeLog, "所属公司", existing.getCompany(), incoming.getCompany());
+            existing.setCompany(incoming.getCompany());
+        }
+        if (incoming.getCostCenter() != null && !incoming.getCostCenter().equals(existing.getCostCenter())) {
+            addChange(changeLog, "成本中心", existing.getCostCenter(), incoming.getCostCenter());
+            existing.setCostCenter(incoming.getCostCenter());
+        }
+        if (incoming.getActivityCode() != null && !incoming.getActivityCode().equals(existing.getActivityCode())) {
+            addChange(changeLog, "活动编码", existing.getActivityCode(), incoming.getActivityCode());
+            existing.setActivityCode(incoming.getActivityCode());
+        }
+        if (incoming.getProjectCode() != null && !incoming.getProjectCode().equals(existing.getProjectCode())) {
+            addChange(changeLog, "项目编码", existing.getProjectCode(), incoming.getProjectCode());
+            existing.setProjectCode(incoming.getProjectCode());
+        }
+
+        // Reference fields
+        if (incoming.getBooker() != null && incoming.getBooker().getId() != null) {
+            Long oldBookerId = existing.getBooker() != null ? existing.getBooker().getId() : null;
+            if (!incoming.getBooker().getId().equals(oldBookerId)) {
+                String oldName = existing.getBooker() != null ? existing.getBooker().getRealName() : "空";
+                // Resolve new booker name
+                SysUser newBooker = userRepository.findById(incoming.getBooker().getId()).orElse(incoming.getBooker());
+                String newName = newBooker.getRealName() != null ? newBooker.getRealName() : newBooker.getUsername();
+                addChange(changeLog, "订房人", oldName, newName);
+                existing.setBooker(newBooker);
+            }
+        }
+        if (incoming.getPurpose() != null && incoming.getPurpose().getId() != null) {
+            Long oldPurposeId = existing.getPurpose() != null ? existing.getPurpose().getId() : null;
+            if (!incoming.getPurpose().getId().equals(oldPurposeId)) {
+                String oldName = existing.getPurpose() != null ? existing.getPurpose().getName() : "空";
+                addChange(changeLog, "订房事由", oldName, "已变更");
+                existing.setPurpose(incoming.getPurpose());
+            }
+        }
+    }
+
+    private java.util.List<RoomChangeInfo> processRoomOccupiesIncremental(RoomOrder existing, RoomOrder incoming, java.util.List<java.util.Map<String, Object>> changeLog) {
+        java.util.List<RoomChangeInfo> roomChanges = new java.util.ArrayList<>();
+
+        if (incoming.getRoomOccupies() == null) return roomChanges;
+
+        // Check if any _action is set; if not, fall back to legacy clear+add
+        boolean hasAction = incoming.getRoomOccupies().stream().anyMatch(ro -> ro.get_action() != null);
+        if (!hasAction) {
+            // Legacy: clear and re-add (existing behavior)
+            existing.getRoomOccupies().clear();
+            for (RoomOccupy o : incoming.getRoomOccupies()) {
+                o.setOrder(existing);
+                if (o.getRoom() != null && o.getRoom().getId() != null) {
+                    o.setRoom(roomRepository.findById(o.getRoom().getId()).orElse(o.getRoom()));
+                }
+                if (o.getOccupantUser() != null && o.getOccupantUser().getId() != null) {
+                    o.setOccupantUser(userRepository.findById(o.getOccupantUser().getId()).orElse(o.getOccupantUser()));
+                }
+                existing.getRoomOccupies().add(o);
+            }
+            return roomChanges;
+        }
+
+        for (RoomOccupy ro : incoming.getRoomOccupies()) {
+            String action = ro.get_action();
+            if (action == null || action.isEmpty()) continue;
+
+            switch (action) {
+                case "add":
+                    processRoomAdd(ro, existing, changeLog);
+                    break;
+                case "modify":
+                    RoomChangeInfo info = processRoomModify(ro, existing, changeLog);
+                    if (info != null) roomChanges.add(info);
+                    break;
+                case "delete":
+                    processRoomDelete(ro, existing, changeLog);
+                    break;
+                case "unchanged":
+                    // Skip
+                    break;
+            }
+        }
+
+        return roomChanges;
+    }
+
+    private void processRoomAdd(RoomOccupy ro, RoomOrder existing, java.util.List<java.util.Map<String, Object>> changeLog) {
+        RoomOccupy newOccupy = new RoomOccupy();
+        newOccupy.setOrder(existing);
+        if (ro.getRoom() != null && ro.getRoom().getId() != null) {
+            Room room = roomRepository.findById(ro.getRoom().getId()).orElse(null);
+            newOccupy.setRoom(room);
+            addChange(changeLog, "新增房间", "", room != null ? room.getRoomNo() : String.valueOf(ro.getRoom().getId()));
+        }
+        if (ro.getOccupantUser() != null && ro.getOccupantUser().getId() != null) {
+            newOccupy.setOccupantUser(userRepository.findById(ro.getOccupantUser().getId()).orElse(null));
+        }
+        newOccupy.setOccupantName(ro.getOccupantName());
+        newOccupy.setCheckInTime(ro.getCheckInTime());
+        newOccupy.setCheckOutTime(ro.getCheckOutTime());
+        newOccupy.setOccupantCount(ro.getOccupantCount());
+        newOccupy.setCoOccupants(ro.getCoOccupants());
+        newOccupy.setStatus(ro.getStatus() != null ? ro.getStatus() : RoomOccupy.STATUS_PENDING);
+        newOccupy.setActualPrice(ro.getActualPrice());
+        newOccupy.setQuantity(ro.getQuantity());
+        existing.getRoomOccupies().add(newOccupy);
+    }
+
+    private RoomChangeInfo processRoomModify(RoomOccupy ro, RoomOrder existing, java.util.List<java.util.Map<String, Object>> changeLog) {
+        if (ro.getId() == null) return null;
+
+        // Find the existing occupy
+        RoomOccupy existingOccupy = null;
+        for (RoomOccupy eo : existing.getRoomOccupies()) {
+            if (ro.getId().equals(eo.getId())) {
+                existingOccupy = eo;
+                break;
+            }
+        }
+        if (existingOccupy == null) return null;
+
+        String roomPrefix = "房间[" + (existingOccupy.getRoom() != null ? existingOccupy.getRoom().getRoomNo() : ro.getId()) + "]";
+        RoomChangeInfo roomChangeInfo = null;
+
+        // Check roomId change
+        if (ro.getRoom() != null && ro.getRoom().getId() != null) {
+            Long oldRoomId = existingOccupy.getRoom() != null ? existingOccupy.getRoom().getId() : null;
+            if (!ro.getRoom().getId().equals(oldRoomId)) {
+                Room newRoom = roomRepository.findById(ro.getRoom().getId()).orElse(null);
+                String oldRoomNo = existingOccupy.getRoom() != null ? existingOccupy.getRoom().getRoomNo() : "未知";
+                String newRoomNo = newRoom != null ? newRoom.getRoomNo() : "未知";
+                addChange(changeLog, roomPrefix + "房间号", oldRoomNo, newRoomNo);
+
+                // Room change detected
+                roomChangeInfo = new RoomChangeInfo(oldRoomNo, newRoomNo, existingOccupy.getRoom(), newRoom);
+
+                // Free old room, occupy new room
+                if (existingOccupy.getRoom() != null) {
+                    existingOccupy.getRoom().setStatus(0); // Available
+                    roomRepository.save(existingOccupy.getRoom());
+                }
+                existingOccupy.setRoom(newRoom);
+                if (newRoom != null) {
+                    boolean isGroup = existing.getCustomerType() != null && existing.getCustomerType() == 2;
+                    if (!isGroup) {
+                        newRoom.setStatus(1); // Occupied
+                        roomRepository.save(newRoom);
+                    }
+                }
+            }
+        }
+
+        // Check other field changes (only apply non-null fields)
+        if (ro.getOccupantUser() != null && ro.getOccupantUser().getId() != null) {
+            Long oldUserId = existingOccupy.getOccupantUser() != null ? existingOccupy.getOccupantUser().getId() : null;
+            if (!ro.getOccupantUser().getId().equals(oldUserId)) {
+                SysUser newUser = userRepository.findById(ro.getOccupantUser().getId()).orElse(null);
+                String oldName = existingOccupy.getOccupantUser() != null ? existingOccupy.getOccupantUser().getRealName() : "空";
+                String newName = newUser != null ? newUser.getRealName() : "空";
+                addChange(changeLog, roomPrefix + "入住人", oldName, newName);
+                existingOccupy.setOccupantUser(newUser);
+            }
+        }
+        if (ro.getOccupantName() != null && !ro.getOccupantName().equals(existingOccupy.getOccupantName())) {
+            addChange(changeLog, roomPrefix + "入住人姓名", existingOccupy.getOccupantName(), ro.getOccupantName());
+            existingOccupy.setOccupantName(ro.getOccupantName());
+        }
+        if (ro.getCheckInTime() != null && !ro.getCheckInTime().equals(existingOccupy.getCheckInTime())) {
+            addChange(changeLog, roomPrefix + "入住时间", String.valueOf(existingOccupy.getCheckInTime()), String.valueOf(ro.getCheckInTime()));
+            existingOccupy.setCheckInTime(ro.getCheckInTime());
+        }
+        if (ro.getCheckOutTime() != null && !ro.getCheckOutTime().equals(existingOccupy.getCheckOutTime())) {
+            addChange(changeLog, roomPrefix + "退房时间", String.valueOf(existingOccupy.getCheckOutTime()), String.valueOf(ro.getCheckOutTime()));
+            existingOccupy.setCheckOutTime(ro.getCheckOutTime());
+        }
+        if (ro.getOccupantCount() != null && !ro.getOccupantCount().equals(existingOccupy.getOccupantCount())) {
+            addChange(changeLog, roomPrefix + "入住人数", String.valueOf(existingOccupy.getOccupantCount()), String.valueOf(ro.getOccupantCount()));
+            existingOccupy.setOccupantCount(ro.getOccupantCount());
+        }
+        if (ro.getCoOccupants() != null && !ro.getCoOccupants().equals(existingOccupy.getCoOccupants())) {
+            addChange(changeLog, roomPrefix + "同住人", existingOccupy.getCoOccupants(), ro.getCoOccupants());
+            existingOccupy.setCoOccupants(ro.getCoOccupants());
+        }
+        if (ro.getStatus() != null && !ro.getStatus().equals(existingOccupy.getStatus())) {
+            // Reject invalid status transitions (e.g., checked-in back to pending)
+            if (existingOccupy.getStatus() == RoomOccupy.STATUS_CHECKED_IN && ro.getStatus() == RoomOccupy.STATUS_PENDING) {
+                throw new BusinessException(ErrorCode.ORDER_OCCUPY_STATUS_INVALID);
+            }
+            if (existingOccupy.getStatus() == RoomOccupy.STATUS_CHECKED_OUT || existingOccupy.getStatus() == RoomOccupy.STATUS_CANCELED) {
+                throw new BusinessException(ErrorCode.ORDER_OCCUPY_FINISHED);
+            }
+            addChange(changeLog, roomPrefix + "状态", String.valueOf(existingOccupy.getStatus()), String.valueOf(ro.getStatus()));
+            existingOccupy.setStatus(ro.getStatus());
+        }
+        if (ro.getActualPrice() != null && (existingOccupy.getActualPrice() == null || ro.getActualPrice().compareTo(existingOccupy.getActualPrice()) != 0)) {
+            addChange(changeLog, roomPrefix + "单价", String.valueOf(existingOccupy.getActualPrice()), String.valueOf(ro.getActualPrice()));
+            existingOccupy.setActualPrice(ro.getActualPrice());
+        }
+        if (ro.getQuantity() != null && !ro.getQuantity().equals(existingOccupy.getQuantity())) {
+            addChange(changeLog, roomPrefix + "数量", String.valueOf(existingOccupy.getQuantity()), String.valueOf(ro.getQuantity()));
+            existingOccupy.setQuantity(ro.getQuantity());
+        }
+
+        return roomChangeInfo;
+    }
+
+    private void processRoomDelete(RoomOccupy ro, RoomOrder existing, java.util.List<java.util.Map<String, Object>> changeLog) {
+        if (ro.getId() == null) return;
+
+        RoomOccupy toRemove = null;
+        for (RoomOccupy eo : existing.getRoomOccupies()) {
+            if (ro.getId().equals(eo.getId())) {
+                toRemove = eo;
+                break;
+            }
+        }
+        if (toRemove != null) {
+            String roomNo = toRemove.getRoom() != null ? toRemove.getRoom().getRoomNo() : String.valueOf(ro.getId());
+            addChange(changeLog, "删除房间", roomNo, "");
+            // Free room
+            if (toRemove.getRoom() != null) {
+                toRemove.getRoom().setStatus(0);
+                roomRepository.save(toRemove.getRoom());
+            }
+            existing.getRoomOccupies().remove(toRemove);
+        }
+    }
+
+    private void processProductDetailsIncremental(RoomOrder existing, RoomOrder incoming, java.util.List<java.util.Map<String, Object>> changeLog) {
+        if (incoming.getProductDetails() == null) return;
+
+        boolean hasAction = incoming.getProductDetails().stream().anyMatch(pd -> pd.get_action() != null);
+        if (!hasAction) {
+            // Legacy: clear and re-add
+            existing.getProductDetails().clear();
+            for (com.apartment.entity.OrderProductDetail d : incoming.getProductDetails()) {
+                d.setOrder(existing);
+                if (d.getProduct() != null && d.getProduct().getId() != null) {
+                    d.setProduct(productPriceRepository.findById(d.getProduct().getId()).orElse(d.getProduct()));
+                }
+                existing.getProductDetails().add(d);
+            }
+            return;
+        }
+
+        for (com.apartment.entity.OrderProductDetail pd : incoming.getProductDetails()) {
+            String action = pd.get_action();
+            if (action == null || action.isEmpty()) continue;
+
+            switch (action) {
+                case "add":
+                    processProductAdd(pd, existing, changeLog);
+                    break;
+                case "modify":
+                    processProductModify(pd, existing, changeLog);
+                    break;
+                case "delete":
+                    processProductDelete(pd, existing, changeLog);
+                    break;
+                case "unchanged":
+                    break;
+            }
+        }
+    }
+
+    private void processProductAdd(com.apartment.entity.OrderProductDetail pd, RoomOrder existing, java.util.List<java.util.Map<String, Object>> changeLog) {
+        com.apartment.entity.OrderProductDetail newDetail = new com.apartment.entity.OrderProductDetail();
+        newDetail.setOrder(existing);
+        if (pd.getProduct() != null && pd.getProduct().getId() != null) {
+            newDetail.setProduct(productPriceRepository.findById(pd.getProduct().getId()).orElse(pd.getProduct()));
+            addChange(changeLog, "新增商品", "", pd.getProduct().getId().toString());
+        }
+        newDetail.setActualPrice(pd.getActualPrice());
+        newDetail.setQuantity(pd.getQuantity() != null ? pd.getQuantity() : 1);
+        newDetail.setConsumeDate(pd.getConsumeDate());
+        newDetail.setRemarks(pd.getRemarks());
+        existing.getProductDetails().add(newDetail);
+    }
+
+    private void processProductModify(com.apartment.entity.OrderProductDetail pd, RoomOrder existing, java.util.List<java.util.Map<String, Object>> changeLog) {
+        if (pd.getId() == null) return;
+        com.apartment.entity.OrderProductDetail existingDetail = null;
+        for (com.apartment.entity.OrderProductDetail ed : existing.getProductDetails()) {
+            if (pd.getId().equals(ed.getId())) {
+                existingDetail = ed;
+                break;
+            }
+        }
+        if (existingDetail == null) return;
+
+        String prefix = "商品[" + pd.getId() + "]";
+        if (pd.getProduct() != null && pd.getProduct().getId() != null) {
+            Long oldId = existingDetail.getProduct() != null ? existingDetail.getProduct().getId() : null;
+            if (!pd.getProduct().getId().equals(oldId)) {
+                existingDetail.setProduct(productPriceRepository.findById(pd.getProduct().getId()).orElse(pd.getProduct()));
+                addChange(changeLog, prefix + "商品", String.valueOf(oldId), String.valueOf(pd.getProduct().getId()));
+            }
+        }
+        if (pd.getActualPrice() != null && (existingDetail.getActualPrice() == null || pd.getActualPrice().compareTo(existingDetail.getActualPrice()) != 0)) {
+            addChange(changeLog, prefix + "单价", String.valueOf(existingDetail.getActualPrice()), String.valueOf(pd.getActualPrice()));
+            existingDetail.setActualPrice(pd.getActualPrice());
+        }
+        if (pd.getQuantity() != null && !pd.getQuantity().equals(existingDetail.getQuantity())) {
+            addChange(changeLog, prefix + "数量", String.valueOf(existingDetail.getQuantity()), String.valueOf(pd.getQuantity()));
+            existingDetail.setQuantity(pd.getQuantity());
+        }
+        if (pd.getConsumeDate() != null && !pd.getConsumeDate().equals(existingDetail.getConsumeDate())) {
+            addChange(changeLog, prefix + "消费日期", String.valueOf(existingDetail.getConsumeDate()), String.valueOf(pd.getConsumeDate()));
+            existingDetail.setConsumeDate(pd.getConsumeDate());
+        }
+        if (pd.getRemarks() != null && !pd.getRemarks().equals(existingDetail.getRemarks())) {
+            addChange(changeLog, prefix + "备注", existingDetail.getRemarks(), pd.getRemarks());
+            existingDetail.setRemarks(pd.getRemarks());
+        }
+    }
+
+    private void processProductDelete(com.apartment.entity.OrderProductDetail pd, RoomOrder existing, java.util.List<java.util.Map<String, Object>> changeLog) {
+        if (pd.getId() == null) return;
+        com.apartment.entity.OrderProductDetail toRemove = null;
+        for (com.apartment.entity.OrderProductDetail ed : existing.getProductDetails()) {
+            if (pd.getId().equals(ed.getId())) {
+                toRemove = ed;
+                break;
+            }
+        }
+        if (toRemove != null) {
+            addChange(changeLog, "删除商品", String.valueOf(pd.getId()), "");
+            existing.getProductDetails().remove(toRemove);
+        }
+    }
+
+    private void notifyRoomChange(RoomOrder order, RoomChangeInfo info) {
+        String displayName = getOrderDisplayName(order);
+        String switchDateStr = LocalDateTime.now().format(DATE_ONLY);
+        SysUser booker = order.getBooker();
+        String locale = booker != null && booker.getLocale() != null ? booker.getLocale() : "zh";
+        String changeSubject = messageTemplateService.buildRoomChangeSubject(locale, displayName, info.oldRoomNo, info.newRoomNo);
+        String changeContent = messageTemplateService.buildRoomChangeContent(locale, order.getOrderNo(), displayName, info.oldRoomNo, info.newRoomNo, switchDateStr);
+        notifyBooker(order, changeSubject, changeContent, "room_change");
+    }
+
+    private void addChange(java.util.List<java.util.Map<String, Object>> changes, String field, String oldVal, String newVal) {
+        if (oldVal == null) oldVal = "空";
+        if (newVal == null) newVal = "空";
+        if (!oldVal.equals(newVal)) {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("field", field);
+            m.put("oldValue", oldVal);
+            m.put("newValue", newVal);
+            changes.add(m);
+        }
+    }
+
+    /** Internal class to carry room change info for notification */
+    private static class RoomChangeInfo {
+        final String oldRoomNo;
+        final String newRoomNo;
+        final Room oldRoom;
+        final Room newRoom;
+
+        RoomChangeInfo(String oldRoomNo, String newRoomNo, Room oldRoom, Room newRoom) {
+            this.oldRoomNo = oldRoomNo;
+            this.newRoomNo = newRoomNo;
+            this.oldRoom = oldRoom;
+            this.newRoom = newRoom;
+        }
     }
 }

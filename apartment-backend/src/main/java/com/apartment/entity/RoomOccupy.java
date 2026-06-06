@@ -45,4 +45,6 @@ public class RoomOccupy {
     private String roomNo;
     @Transient
     private String roomTypeName;
+    @Transient
+    private String _action; // "add", "modify", "delete", "unchanged"
 }

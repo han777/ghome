@@ -152,15 +152,39 @@ public class RoomOrderController {
                     bookingPurposeRepository.findByName("差旅").ifPresent(order::setPurpose);
                 }
             } else {
-                // UPDATE ORDER - record field changes
+                // UPDATE ORDER
                 RoomOrder existing = orderRepository.findById(order.getId()).orElse(null);
                 if (existing != null) {
+                    existing.setLastUpdateUser(u);
                     if (order.getCreateUser() == null) {
                         order.setCreateUser(existing.getCreateUser());
                     }
                     if (order.getCreatedAt() == null) {
                         order.setCreatedAt(existing.getCreatedAt());
                     }
+
+                    // Check if incremental protocol is used (any _action marker set)
+                    boolean hasActionMarkers = false;
+                    if (order.getRoomOccupies() != null) {
+                        hasActionMarkers = order.getRoomOccupies().stream()
+                            .anyMatch(ro -> ro.get_action() != null && !ro.get_action().isEmpty());
+                    }
+                    if (!hasActionMarkers && order.getProductDetails() != null) {
+                        hasActionMarkers = order.getProductDetails().stream()
+                            .anyMatch(pd -> pd.get_action() != null && !pd.get_action().isEmpty());
+                    }
+
+                    if (hasActionMarkers) {
+                        // Incremental protocol: partial update with action markers
+                        String changes = orderService.saveOrderIncremental(existing, order);
+                        RoomOrder saved = orderRepository.findById(existing.getId()).orElse(existing);
+                        if (changes != null) {
+                            logOperation(saved, "SAVE", "编辑订单并保存", changes);
+                        }
+                        return saved;
+                    }
+
+                    // Legacy protocol: full replace
                     String changes = buildChangeLog(existing, order);
                     if (changes != null && !changes.isEmpty()) {
                         // Copy room occupies from incoming payload onto managed entity

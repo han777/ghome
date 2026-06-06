@@ -421,6 +421,7 @@
       "OCCUPY_NOT_PENDING": "该房间不在待入住状态",
       "OCCUPY_NOT_CHECKED_IN": "该房间不在已入住状态",
       "OCCUPY_FINISHED": "已退房或已取消的房间无法调整时间",
+      "OCCUPY_STATUS_INVALID": "房间状态变更无效",
       "ALREADY_CHECKED_OUT": "订单已退房，无法添加房间"
     },
     "maint": {
