@@ -317,7 +317,7 @@ public class RoomOrderController {
     private String newValue(Object val) { return formatValue(val); }
 
     private void addChange(java.util.List<java.util.Map<String, Object>> changes, String field, String oldVal, String newVal) {
-        if (!oldVal.equals(newVal)) {
+        if (!java.util.Objects.equals(oldVal, newVal)) {
             java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
             m.put("field", field);
             m.put("oldValue", oldVal);

@@ -779,6 +779,16 @@ public class RoomOrderService {
         RoomOrder order = occupy.getOrder();
         Room room = occupy.getRoom();
 
+        // Remove from order's collection first to avoid cascade/orphanRemoval conflict.
+        // RoomOrder.roomOccupies has cascade=ALL + orphanRemoval=true; if we only call
+        // occupyRepository.delete(), the occupy stays in order.getRoomOccupies(), and
+        // the subsequent orderRepository.save(order) cascade-merges it back — conflicting
+        // with the explicit delete and potentially re-persisting the row.
+        if (order != null && order.getRoomOccupies() != null) {
+            order.getRoomOccupies().remove(occupy);
+        }
+        occupy.setOrder(null);
+
         occupyRepository.delete(occupy);
 
         if (room != null) {
@@ -964,6 +974,10 @@ public class RoomOrderService {
         // 3. Process product details incrementally
         processProductDetailsIncremental(existing, incoming, changeLog);
 
+        // 3.5 Recalculate date range and prices after room changes
+        recalcOrderDateRange(existing);
+        calculatePrices(existing);
+
         // 4. Validate and save
         validateOrder(existing);
         RoomOrder saved = orderRepository.save(existing);
@@ -1130,6 +1144,14 @@ public class RoomOrderService {
             Room room = roomRepository.findById(ro.getRoom().getId()).orElse(null);
             newOccupy.setRoom(room);
             addChange(changeLog, "新增房间", "", room != null ? room.getRoomNo() : String.valueOf(ro.getRoom().getId()));
+            // Update room status for individual orders (consistent with processRoomModify)
+            if (room != null) {
+                boolean isGroup = existing.getCustomerType() != null && existing.getCustomerType() == 2;
+                if (!isGroup) {
+                    room.setStatus(1); // Occupied
+                    roomRepository.save(room);
+                }
+            }
         }
         if (ro.getOccupantUser() != null && ro.getOccupantUser().getId() != null) {
             newOccupy.setOccupantUser(userRepository.findById(ro.getOccupantUser().getId()).orElse(null));
