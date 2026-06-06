@@ -1164,6 +1164,9 @@ watch([() => form.roomOccupies, () => form.startDate, () => form.endDate, () => 
         const room = rooms.value.find(r => r.id === ro.roomId);
         if (room && room.roomType) {
           const price = form.bizType === 1 ? room.roomType.priceShortRent : room.roomType.priceLongRent;
+          // Sync actualPrice on each occupy so diff reflects the correct price
+          ro.actualPrice = price;
+          ro.quantity = days;
           rFee += (price || 0) * days;
         }
       }

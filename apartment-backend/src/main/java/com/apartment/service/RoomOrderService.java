@@ -243,7 +243,18 @@ public class RoomOrderService {
             }
         }
         order.setRoomFee(totalRoomFee);
-        if (order.getServiceFee() == null) order.setServiceFee(BigDecimal.ZERO);
+
+        // Recalculate serviceFee from product details (source of truth, not frontend value)
+        BigDecimal totalServiceFee = BigDecimal.ZERO;
+        if (order.getProductDetails() != null) {
+            for (com.apartment.entity.OrderProductDetail detail : order.getProductDetails()) {
+                if (detail.getActualPrice() != null && detail.getQuantity() != null) {
+                    totalServiceFee = totalServiceFee.add(detail.getActualPrice().multiply(new BigDecimal(detail.getQuantity())));
+                }
+            }
+        }
+        order.setServiceFee(totalServiceFee);
+
         order.setTotalAmount(totalRoomFee.add(order.getServiceFee()));
     }
 
@@ -965,8 +976,21 @@ public class RoomOrderService {
     public String saveOrderIncremental(RoomOrder existing, RoomOrder incoming) {
         java.util.List<java.util.Map<String, Object>> changeLog = new java.util.ArrayList<>();
 
+        // Capture old bizType before applyOrderFieldChanges overwrites it
+        Integer oldBizType = existing.getBizType();
+
         // 1. Apply order-level partial update (only non-null fields from incoming)
         applyOrderFieldChanges(existing, incoming, changeLog);
+
+        // 1.5 If bizType changed, reset actualPrice on all active occupies so calculatePrices
+        //     will recalculate from the new bizType (short-term vs long-term price)
+        if (incoming.getBizType() != null && !incoming.getBizType().equals(oldBizType)) {
+            if (existing.getRoomOccupies() != null) {
+                for (RoomOccupy occupy : existing.getRoomOccupies()) {
+                    occupy.setActualPrice(null);
+                }
+            }
+        }
 
         // 2. Process room occupies incrementally
         java.util.List<RoomChangeInfo> roomChanges = processRoomOccupiesIncremental(existing, incoming, changeLog);
@@ -1201,6 +1225,8 @@ public class RoomOrderService {
                     roomRepository.save(existingOccupy.getRoom());
                 }
                 existingOccupy.setRoom(newRoom);
+                // Reset actualPrice so calculatePrices will recalculate from the new room's type
+                existingOccupy.setActualPrice(null);
                 if (newRoom != null) {
                     boolean isGroup = existing.getCustomerType() != null && existing.getCustomerType() == 2;
                     if (!isGroup) {

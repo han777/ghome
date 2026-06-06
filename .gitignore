@@ -14,3 +14,7 @@ package-lock.json
 package.json
 reset_admin_pwd.sh
 .sisyphus/run-continuation/*
+apartment-backend/.settings/*
+apartment-backend/.project
+apartment-backend/.classpath
+apartment-backend/.factorypath
