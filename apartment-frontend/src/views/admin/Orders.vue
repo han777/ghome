@@ -1158,7 +1158,7 @@ watch([() => form.roomOccupies, () => form.startDate, () => form.endDate, () => 
   let sFee = 0;
   // 1. Room Fee (Sum of all rooms)
   if (form.roomOccupies && form.startDate && form.endDate) {
-    const days = calculateDays(form.startDate, form.endDate);
+    const isGroup = form.customerType === 2;
     form.roomOccupies.forEach((ro: any) => {
       if (ro.roomId) {
         const room = rooms.value.find(r => r.id === ro.roomId);
@@ -1166,6 +1166,14 @@ watch([() => form.roomOccupies, () => form.startDate, () => form.endDate, () => 
           const price = form.bizType === 1 ? room.roomType.priceShortRent : room.roomType.priceLongRent;
           // Sync actualPrice on each occupy so diff reflects the correct price
           ro.actualPrice = price;
+          
+          // Calculate days: group orders use per-room check-in/out times; individual orders use order-level dates
+          let days: number;
+          if (isGroup && ro.checkInTime && ro.checkOutTime) {
+            days = calculateDays(ro.checkInTime, ro.checkOutTime);
+          } else {
+            days = calculateDays(form.startDate, form.endDate);
+          }
           ro.quantity = days;
           rFee += (price || 0) * days;
         }
