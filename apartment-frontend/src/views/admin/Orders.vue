@@ -333,7 +333,7 @@
           <!-- Room Occupancy Section -->
           <section id="section-rooms" class="form-section">
             <div class="section-header">
-              <h3 class="section-title">客房入住</h3>
+              <h3 class="section-title">客房</h3>
               <div class="header-actions">
                 <span class="room-count-badge" v-if="form.roomOccupies?.length">
                   {{ form.roomOccupies.length }} 间
