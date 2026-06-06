@@ -170,43 +170,45 @@ public class RoomStatusService {
                 detail.setCleaningTasks(taskInfos);
             }
 
-            // 最近抵达订单（以 RoomOccupy 状态为准：该房间待入住）
-            RoomOrder nearestArriving = activeOrders.stream()
-                .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream()
-                    .anyMatch(ro -> ro.getRoom() != null && ro.getRoom().getId().equals(room.getId())
-                        && ro.getStatus() != null && ro.getStatus() == RoomOccupy.STATUS_PENDING))
-                .filter(o -> o.getStartDate() != null)
-                .min(Comparator.comparing(RoomOrder::getStartDate))
+            // 最近抵达（基于 RoomOccupy 的 checkInTime：该房间待入住）
+            RoomOccupy nearestArrivingOccupy = activeOrders.stream()
+                .flatMap(o -> o.getRoomOccupies() != null ? o.getRoomOccupies().stream() : java.util.stream.Stream.empty())
+                .filter(ro -> ro.getRoom() != null && ro.getRoom().getId().equals(room.getId())
+                    && ro.getStatus() != null && ro.getStatus() == RoomOccupy.STATUS_PENDING
+                    && ro.getCheckInTime() != null)
+                .min(Comparator.comparing(RoomOccupy::getCheckInTime))
                 .orElse(null);
 
-            if (nearestArriving != null) {
+            if (nearestArrivingOccupy != null) {
+                RoomOrder nearestArriving = nearestArrivingOccupy.getOrder();
                 RoomStatusDashboardDTO.OrderInfo orderInfo = new RoomStatusDashboardDTO.OrderInfo();
                 orderInfo.setOrderId(nearestArriving.getId());
                 orderInfo.setGuestName(resolveGuestName(nearestArriving, room.getId()));
                 orderInfo.setRoomNo(room.getRoomNo());
                 detail.setNearestArriving(orderInfo);
 
-                int arrivingDays = (int) ChronoUnit.DAYS.between(today, nearestArriving.getStartDate().toLocalDate());
+                int arrivingDays = (int) ChronoUnit.DAYS.between(today, nearestArrivingOccupy.getCheckInTime().toLocalDate());
                 detail.setArrivingDays(arrivingDays);
             }
 
-            // 最近离开订单（以 RoomOccupy 状态为准：该房间已入住）
-            RoomOrder nearestDeparting = activeOrders.stream()
-                .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream()
-                    .anyMatch(ro -> ro.getRoom() != null && ro.getRoom().getId().equals(room.getId())
-                        && ro.getStatus() != null && ro.getStatus() == RoomOccupy.STATUS_CHECKED_IN))
-                .filter(o -> o.getEndDate() != null)
-                .min(Comparator.comparing(RoomOrder::getEndDate))
+            // 最近离开（基于 RoomOccupy 的 checkOutTime：该房间已入住）
+            RoomOccupy nearestDepartingOccupy = activeOrders.stream()
+                .flatMap(o -> o.getRoomOccupies() != null ? o.getRoomOccupies().stream() : java.util.stream.Stream.empty())
+                .filter(ro -> ro.getRoom() != null && ro.getRoom().getId().equals(room.getId())
+                    && ro.getStatus() != null && ro.getStatus() == RoomOccupy.STATUS_CHECKED_IN
+                    && ro.getCheckOutTime() != null)
+                .min(Comparator.comparing(RoomOccupy::getCheckOutTime))
                 .orElse(null);
 
-            if (nearestDeparting != null) {
+            if (nearestDepartingOccupy != null) {
+                RoomOrder nearestDeparting = nearestDepartingOccupy.getOrder();
                 RoomStatusDashboardDTO.OrderInfo orderInfo = new RoomStatusDashboardDTO.OrderInfo();
                 orderInfo.setOrderId(nearestDeparting.getId());
                 orderInfo.setGuestName(resolveGuestName(nearestDeparting, room.getId()));
                 orderInfo.setRoomNo(room.getRoomNo());
                 detail.setNearestDeparting(orderInfo);
 
-                int departingDays = (int) ChronoUnit.DAYS.between(today, nearestDeparting.getEndDate().toLocalDate());
+                int departingDays = (int) ChronoUnit.DAYS.between(today, nearestDepartingOccupy.getCheckOutTime().toLocalDate());
                 detail.setDepartingDays(departingDays);
             }
 
