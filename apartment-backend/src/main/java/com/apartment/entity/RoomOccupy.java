@@ -46,5 +46,6 @@ public class RoomOccupy {
     @Transient
     private String roomTypeName;
     @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("_action")
     private String _action; // "add", "modify", "delete", "unchanged"
 }

@@ -29,5 +29,6 @@ public class OrderProductDetail {
     private String remarks;
 
     @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("_action")
     private String _action; // "add", "modify", "delete", "unchanged"
 }
