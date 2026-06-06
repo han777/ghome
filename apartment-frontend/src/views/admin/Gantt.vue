@@ -31,9 +31,9 @@
                 :key="occ.id"
                 class="order-bar"
                 :style="getOccupyBarStyle(occ)"
-                :title="occ.occupantUser?.realName"
+                :title="occ.occupantName || occ.occupantUser?.realName"
               >
-                {{ occ.occupantUser?.realName }}
+                {{ occ.occupantName || occ.occupantUser?.realName }}
               </div>
               <div
                 v-for="m in getMaintenancesForRoom(room.id)"
