@@ -62,14 +62,19 @@ const menuGroups = [
     items: [
       { name: '房态仪表盘', path: '/admin/dashboard', icon: '📊' },
       { name: '入住管理', path: '/admin/orders', icon: '📝' },
+      { name: '线性房态', path: '/admin/gantt', icon: '📅' },
+      { name: '房型预测报表', path: '/admin/room-type-forecast', icon: '📉' },
       { name: '清扫任务', path: '/admin/cleaning-tasks', icon: '🧹' },
       { name: '维修管理', path: '/admin/maintenances', icon: '🔧' },
-      { name: '线性房态', path: '/admin/gantt', icon: '📅' },
+    ]
+  },
+  {
+    title: '财务报表',
+    icon: '📈',
+    items: [
       { name: '财务报表', path: '/admin/reports', icon: '📈' },
-      { name: '房型预测报表', path: '/admin/room-type-forecast', icon: '📉' },
       { name: '房间费结算明细', path: '/admin/room-fee-detail', icon: '🧾' },
       { name: '商品服务费结算明细', path: '/admin/service-fee-detail', icon: '📋' },
-      { name: '通知记录', path: '/admin/notification-records', icon: '🔔' },
     ]
   },
   {
@@ -92,6 +97,7 @@ const menuGroups = [
       { name: '字典管理', path: '/admin/dicts', icon: '📖' },
       { name: '部门管理', path: '/admin/depts', icon: '🏢' },
       { name: '全局设置', path: '/admin/global-settings', icon: '🔧' },
+      { name: '通知记录', path: '/admin/notification-records', icon: '🔔' },
       { name: '定时任务', path: '/admin/scheduled-task-logs', icon: '⏰' },
     ]
   }
