@@ -12,6 +12,9 @@ public interface RoomMaintenanceRepository extends JpaRepository<RoomMaintenance
     @Query("SELECT COUNT(m) FROM RoomMaintenance m WHERE m.room.id = ?1 AND m.startTime <= ?3 AND m.endTime >= ?2 AND m.status = 0")
     long countOverlappingMaintenances(Long roomId, LocalDateTime start, LocalDateTime end);
 
+    @Query("SELECT COUNT(m) FROM RoomMaintenance m WHERE m.room.id = ?1 AND m.startTime <= ?3 AND m.endTime >= ?2 AND m.status != 2")
+    long countOverlappingActiveMaintenances(Long roomId, LocalDateTime start, LocalDateTime end);
+
     @Query("SELECT m FROM RoomMaintenance m WHERE m.startTime <= ?2 AND m.endTime >= ?1 AND m.status = 0")
     List<RoomMaintenance> findActiveMaintenancesInPeriod(LocalDateTime start, LocalDateTime end);
 }
