@@ -91,7 +91,7 @@ const fetchData = async () => {
       api.get('/occupies/all'),
       api.get('/maintenances/all')
     ]) as any[];
-    rooms.value = roomRes;
+    rooms.value = roomRes.sort((a: any, b: any) => a.roomNo.localeCompare(b.roomNo, undefined, { numeric: true }));
     occupies.value = occupyRes;
     maintenances.value = maintRes;
   } catch (e) {

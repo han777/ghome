@@ -387,22 +387,28 @@ public class RoomOrderController {
 
     @PostMapping("/occupy/{occupyId}/check-in")
     public RoomOrder checkInRoom(@PathVariable Long occupyId) {
+        RoomOccupy occupy = occupyRepository.findById(occupyId).orElse(null);
+        String roomNo = occupy != null && occupy.getRoom() != null ? occupy.getRoom().getRoomNo() : "未知房间";
         RoomOrder result = orderService.checkInRoom(occupyId);
-        logOperation(result, "CHECK_IN", "房间入住", null);
+        logOperation(result, "CHECK_IN", "房间入住: " + roomNo, null);
         return result;
     }
 
     @PostMapping("/occupy/{occupyId}/checkout")
     public RoomOrder checkoutRoom(@PathVariable Long occupyId) {
+        RoomOccupy occupy = occupyRepository.findById(occupyId).orElse(null);
+        String roomNo = occupy != null && occupy.getRoom() != null ? occupy.getRoom().getRoomNo() : "未知房间";
         RoomOrder result = orderService.checkoutRoom(occupyId);
-        logOperation(result, "ROOM_CHECKOUT", "房间退房", null);
+        logOperation(result, "ROOM_CHECKOUT", "房间退房: " + roomNo, null);
         return result;
     }
 
     @DeleteMapping("/occupy/{occupyId}")
     public RoomOrder deleteRoomOccupy(@PathVariable Long occupyId) {
+        RoomOccupy occupy = occupyRepository.findById(occupyId).orElse(null);
+        String roomNo = occupy != null && occupy.getRoom() != null ? occupy.getRoom().getRoomNo() : "未知房间";
         RoomOrder result = orderService.deleteRoomOccupy(occupyId);
-        logOperation(result, "DELETE_ROOM", "删除房间", null);
+        logOperation(result, "DELETE_ROOM", "删除房间: " + roomNo, null);
         return result;
     }
 

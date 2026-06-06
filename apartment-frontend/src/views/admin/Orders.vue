@@ -104,7 +104,7 @@
             <th>创建人</th>
             <th>房数</th>
             <th>房间列表</th>
-            <th>业务类型</th>
+            <th>客户类型</th>
             <th>订房事由</th>
             <th class="sortable" @click="toggleSort('startDate')">入住时间{{ sortIndicator('startDate') }}</th>
             <th class="sortable" @click="toggleSort('endDate')">离开时间{{ sortIndicator('endDate') }}</th>
@@ -140,7 +140,7 @@
             </td>
             <td>
               <span class="tag">
-                {{ getDictLabel('BIZ_TYPE', order.bizType) }}
+                {{ order.customerType === 1 ? '个人' : order.customerType === 2 ? '团体' : '-' }}
               </span>
             </td>
             <td>{{ order.purpose?.name || '-' }}</td>
@@ -401,7 +401,7 @@
                   </div>
                     <div class="card-item">
                       <label>房间</label>
-                      <div class="room-selector-btn" @click="openRoomPicker(occupy, index)" v-if="isEditMode && occupy.status === 0">
+                      <div class="room-selector-btn" @click="openRoomPicker(occupy, index)" v-if="isEditMode">
                         <span v-if="occupy.roomId" class="selected-room-info">
                           <strong>{{ getRoomNo(Number(occupy.roomId)) }}</strong>
                           <small>({{ getRoomTypeName(Number(occupy.roomId)) }})</small>
@@ -442,7 +442,7 @@
                   </div>
                   <div class="card-item">
                     <label>状态</label>
-                    <select v-model="occupy.status" :disabled="!isEditMode || occupy.status !== 0">
+                    <select v-model="occupy.status" disabled>
                       <option :value="0">待入住</option>
                       <option :value="1">已入住</option>
                       <option :value="2">已退房</option>
@@ -1181,6 +1181,16 @@ watch([() => form.roomOccupies, () => form.startDate, () => form.endDate, () => 
 }, { deep: true });
 
 const getRoomNo = (id: number) => rooms.value.find(r => r.id === id)?.roomNo;
+
+const sortRoomOccupies = () => {
+  if (!form.roomOccupies) return;
+  form.roomOccupies.sort((a: any, b: any) => {
+    const noA = getRoomNo(Number(a.roomId)) || '';
+    const noB = getRoomNo(Number(b.roomId)) || '';
+    return noA.localeCompare(noB, undefined, { numeric: true });
+  });
+};
+
 const getRoomTypeName = (id: number) => {
   const room = rooms.value.find(r => r.id === id);
   if (!room || !room.roomType) return '未知房型';
@@ -1351,6 +1361,7 @@ const removeOrDeleteRoom = async (occupy: any, index: number) => {
             checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
             checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
           }));
+          sortRoomOccupies();
         }
         form.bookerId = savedOrder.booker?.id || null;
         form.purposeId = savedOrder.purpose?.id || null;
@@ -1387,6 +1398,7 @@ const refreshFormFromSaved = (savedOrder: any) => {
       checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
       checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
     }));
+    sortRoomOccupies();
   }
   form.bookerId = savedOrder.booker?.id || null;
   form.purposeId = savedOrder.purpose?.id || null;
@@ -1470,6 +1482,7 @@ const confirmChangeRoom = async () => {
           checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
           checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
         }));
+        sortRoomOccupies();
       }
       form.bookerId = savedOrder.booker?.id || null;
       form.purposeId = savedOrder.purpose?.id || null;
@@ -1649,6 +1662,7 @@ const openModal = (order?: any, tab: string = 'basic') => {
         checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
         checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
       }));
+      sortRoomOccupies();
     } else {
       form.roomOccupies = [];
     }
@@ -1950,6 +1964,7 @@ const confirmTimeAdjust = async () => {
         checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
         checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
       }));
+      sortRoomOccupies();
     }
     showTimeAdjustModal.value = false;
     fetchData(); // Refresh list background
@@ -2192,6 +2207,7 @@ const saveOrder = async () => {
           checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
           checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
         }));
+        sortRoomOccupies();
       } else {
         form.roomOccupies = [];
       }
@@ -2231,6 +2247,7 @@ const cancelEdit = async () => {
             checkInTime: ro.checkInTime ? ro.checkInTime.slice(0, 16) : null,
             checkOutTime: ro.checkOutTime ? ro.checkOutTime.slice(0, 16) : null
           }));
+          sortRoomOccupies();
         } else {
           form.roomOccupies = [];
         }
