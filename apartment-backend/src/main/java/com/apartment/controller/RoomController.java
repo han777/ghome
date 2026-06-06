@@ -37,6 +37,7 @@ public class RoomController {
         List<Room> allRooms = roomRepository.findAll();
         return allRooms.stream()
                 .filter(r -> !unavailableRoomIds.contains(r.getId()))
+                .sorted(java.util.Comparator.comparing(Room::getRoomNo))
                 .collect(java.util.stream.Collectors.toList());
     }
 
