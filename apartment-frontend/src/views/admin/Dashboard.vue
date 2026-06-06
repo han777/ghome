@@ -292,6 +292,7 @@
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '../../utils/api';
+import { getErrorMessageZh } from '../../utils/errorTranslate';
 
 const router = useRouter();
 const route = useRoute();
@@ -781,7 +782,7 @@ const openEditMaintenance = async () => {
     showMaintenanceModal.value = true;
   } catch (e) {
     console.error('Failed to fetch maintenance', e);
-    alert('获取维护记录失败');
+    alert('获取维护记录失败: ' + getErrorMessageZh(e));
   }
 };
 
@@ -801,7 +802,7 @@ const saveMaintenance = async () => {
     fetchData();
   } catch (e: any) {
     console.error('Failed to save maintenance', e);
-    alert(e.response?.data || '保存维护记录失败');
+    alert('保存维护记录失败: ' + getErrorMessageZh(e));
   }
 };
 

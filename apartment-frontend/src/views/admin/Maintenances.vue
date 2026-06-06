@@ -113,6 +113,7 @@
 import { ref, onMounted, reactive, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '../../utils/api';
+import { getErrorMessageZh } from '../../utils/errorTranslate';
 
 const route = useRoute();
 const maintenances = ref<any[]>([]);
@@ -218,9 +219,9 @@ const saveMaintenance = async () => {
     await api.post('/maintenances', payload);
     showModal.value = false;
     fetchData();
-  } catch (e: any) {
-    alert(e.response?.data || 'Failed to save');
-  }
+   } catch (e: any) {
+     alert('保存失败: ' + getErrorMessageZh(e));
+   }
 };
 
 const voidMaintenance = async (m: any) => {
@@ -229,9 +230,9 @@ const voidMaintenance = async (m: any) => {
     const payload = { ...m, status: 2 };
     await api.post('/maintenances', payload);
     fetchData();
-  } catch (e: any) {
-    alert(e.response?.data || 'Failed to void');
-  }
+   } catch (e: any) {
+     alert('作废失败: ' + getErrorMessageZh(e));
+   }
 };
 
 const deleteMaintenance = async (id: number) => {
@@ -239,9 +240,9 @@ const deleteMaintenance = async (id: number) => {
   try {
     await api.delete(`/maintenances/${id}`);
     fetchData();
-  } catch (e: any) {
-    alert(e.response?.data || 'Failed to delete');
-  }
+   } catch (e: any) {
+     alert('删除失败: ' + getErrorMessageZh(e));
+   }
 };
 
 onMounted(fetchData);

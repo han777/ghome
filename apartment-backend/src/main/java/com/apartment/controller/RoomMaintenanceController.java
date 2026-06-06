@@ -39,6 +39,10 @@ public class RoomMaintenanceController {
 
     @PostMapping
     public RoomMaintenance saveMaintenance(@RequestBody RoomMaintenance maintenance) {
+        if (maintenance.getRoom() == null || maintenance.getRoom().getId() == null) {
+            throw new BusinessException(ErrorCode.GENERAL_ROOM_NOT_FOUND);
+        }
+
         if (maintenance.getStartTime() == null) {
             maintenance.setStartTime(LocalDateTime.now());
         }
@@ -50,21 +54,25 @@ public class RoomMaintenanceController {
             throw new BusinessException(ErrorCode.MAINT_START_AFTER_END);
         }
 
+        Long roomId = maintenance.getRoom().getId();
+
         // Only check overlap if it's not cancelled
         if (maintenance.getStatus() != 2) {
-            long orderCount = orderRepository.countOverlappingActiveOrders(maintenance.getRoom().getId(), maintenance.getStartTime(), maintenance.getEndTime());
+            long orderCount = orderRepository.countOverlappingActiveOrders(roomId, maintenance.getStartTime(), maintenance.getEndTime());
             if (orderCount > 0) {
                 throw new BusinessException(ErrorCode.MAINT_ORDER_CONFLICT);
             }
 
-            java.util.List<RoomMaintenance> others = maintenanceRepository.findByRoomId(maintenance.getRoom().getId());
-            for (RoomMaintenance other : others) {
-                if (other.getStatus() == 2) continue;
-                if (maintenance.getId() != null && maintenance.getId().equals(other.getId())) continue;
-
-                if (maintenance.getStartTime().isBefore(other.getEndTime()) && maintenance.getEndTime().isAfter(other.getStartTime())) {
-                    throw new BusinessException(ErrorCode.MAINT_OTHER_CONFLICT);
+            long maintConflictCount = maintenanceRepository.countOverlappingActiveMaintenances(roomId, maintenance.getStartTime(), maintenance.getEndTime());
+            // Exclude self when editing
+            if (maintenance.getId() != null) {
+                RoomMaintenance self = maintenanceRepository.findById(maintenance.getId()).orElse(null);
+                if (self != null && self.getStartTime().isBefore(maintenance.getEndTime()) && self.getEndTime().isAfter(maintenance.getStartTime())) {
+                    maintConflictCount--;
                 }
+            }
+            if (maintConflictCount > 0) {
+                throw new BusinessException(ErrorCode.MAINT_OTHER_CONFLICT);
             }
         }
 
