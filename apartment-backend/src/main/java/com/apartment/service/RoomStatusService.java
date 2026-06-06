@@ -63,44 +63,12 @@ public class RoomStatusService {
         LocalDate today = now.toLocalDate();
         RoomStatusDashboardDTO dto = new RoomStatusDashboardDTO();
 
-        LocalDateTime startOfDay = today.atStartOfDay();
-        LocalDateTime endOfDay = today.atTime(23, 59, 59);
-
         // 获取所有订单
         List<RoomOrder> allOrders = orderRepository.findAll();
 
-        // 待确认订单 (status=1) - 用于按抵达聚合
-        List<RoomOrder> pendingOrders = allOrders.stream()
-            .filter(o -> o.getStatus() != null && o.getStatus() == 1)
-            .collect(Collectors.toList());
-
-        // 已入住订单 (status=2) - 纯按订单状态判断，不用时间范围
-        // Also include status=1 (Pending) orders as they may have pending rooms
+        // 有效订单 (排除已完成 status=3 和已取消 status=4)
         List<RoomOrder> activeOrders = allOrders.stream()
-            .filter(o -> o.getStatus() != null && (o.getStatus() == 1 || o.getStatus() == 2))
-            .collect(Collectors.toList());
-
-        // 今日抵达/离开（仅统计未入住/未退房的订单）
-        List<RoomOrder> arrivingToday = allOrders.stream()
-            .filter(o -> o.getStatus() != null && (o.getStatus() == 0 || o.getStatus() == 1))
-            .filter(o -> o.getStartDate() != null
-                && !o.getStartDate().isBefore(startOfDay)
-                && !o.getStartDate().isAfter(endOfDay))
-            .collect(Collectors.toList());
-
-        List<RoomOrder> departingToday = allOrders.stream()
-            .filter(o -> o.getStatus() != null && (o.getStatus() == 1 || o.getStatus() == 2))
-            .filter(o -> o.getEndDate() != null
-                && !o.getEndDate().isBefore(startOfDay)
-                && !o.getEndDate().isAfter(endOfDay))
-            .collect(Collectors.toList());
-
-        // 未来3日抵达（仅统计未入住订单）
-        List<RoomOrder> arrivingSoon = allOrders.stream()
-            .filter(o -> o.getStatus() != null && (o.getStatus() == 0 || o.getStatus() == 1))
-            .filter(o -> o.getStartDate() != null
-                && !o.getStartDate().isBefore(today.plusDays(1).atStartOfDay())
-                && !o.getStartDate().isAfter(today.plusDays(3).atTime(23, 59, 59)))
+            .filter(o -> o.getStatus() != null && o.getStatus() != 3 && o.getStatus() != 4)
             .collect(Collectors.toList());
 
         // 维修中的房间
@@ -108,10 +76,6 @@ public class RoomStatusService {
 
         // 所有未完成的清扫任务（包括过期的）
         List<CleaningTask> pendingTasks = cleaningTaskRepository.findByStatus(0);
-
-        dto.setArrivingToday(arrivingToday.size());
-        dto.setDepartingToday(departingToday.size());
-        dto.setArrivingInNDays(arrivingSoon.size());
 
         List<Room> allRooms = roomRepository.findAll();
 
@@ -126,17 +90,8 @@ public class RoomStatusService {
                 detail.setFloorName(room.getFloor().getName());
             }
 
-            // 标签（先设基础标签，逾期标签在计算天数后追加）
+            // 标签（基于 arrivingDays/departingDays 在计算后追加）
             List<String> labels = new ArrayList<>();
-            if (arrivingToday.stream().anyMatch(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))) {
-                labels.add("ARRIVING_TODAY");
-            }
-            if (departingToday.stream().anyMatch(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))) {
-                labels.add("DEPARTING_TODAY");
-            }
-            if (arrivingSoon.stream().anyMatch(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))) {
-                labels.add("ARRIVING_SOON");
-            }
 
             // 维护状态（维修+锁房合并）
             RoomMaintenance activeMaintenance = activeMaintenances.stream()
@@ -215,12 +170,11 @@ public class RoomStatusService {
                 detail.setCleaningTasks(taskInfos);
             }
 
-            // 最近到达订单信息（未抵达）
-            // 待确认订单(status=1): 无论时间早晚，都视为未抵达
-            // 已入住订单(status=2): 视为已抵达，不在此筛选
-            RoomOrder nearestArriving = allOrders.stream()
-                .filter(o -> o.getStatus() != null && o.getStatus() == 1)
-                .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))
+            // 最近抵达订单（以 RoomOccupy 状态为准：该房间待入住）
+            RoomOrder nearestArriving = activeOrders.stream()
+                .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream()
+                    .anyMatch(ro -> ro.getRoom() != null && ro.getRoom().getId().equals(room.getId())
+                        && ro.getStatus() != null && ro.getStatus() == RoomOccupy.STATUS_PENDING))
                 .filter(o -> o.getStartDate() != null)
                 .min(Comparator.comparing(RoomOrder::getStartDate))
                 .orElse(null);
@@ -234,15 +188,10 @@ public class RoomStatusService {
 
                 int arrivingDays = (int) ChronoUnit.DAYS.between(today, nearestArriving.getStartDate().toLocalDate());
                 detail.setArrivingDays(arrivingDays);
-                if (arrivingDays < 0) {
-                    labels.add("OVERDUE_ARRIVING");
-                }
             }
 
-            // 最近离开订单信息（已抵达）
-            // Based on RoomOccupy status=1 (Checked-in), not just order status
-            RoomOrder nearestDeparting = allOrders.stream()
-                .filter(o -> o.getStatus() != null && o.getStatus() == 2)
+            // 最近离开订单（以 RoomOccupy 状态为准：该房间已入住）
+            RoomOrder nearestDeparting = activeOrders.stream()
                 .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream()
                     .anyMatch(ro -> ro.getRoom() != null && ro.getRoom().getId().equals(room.getId())
                         && ro.getStatus() != null && ro.getStatus() == RoomOccupy.STATUS_CHECKED_IN))
@@ -259,24 +208,32 @@ public class RoomStatusService {
 
                 int departingDays = (int) ChronoUnit.DAYS.between(today, nearestDeparting.getEndDate().toLocalDate());
                 detail.setDepartingDays(departingDays);
-                if (departingDays < 0) {
-                    labels.add("OVERDUE_DEPARTING");
-                }
             }
 
-            // 确保 ARRIVING_TODAY 房间有 orderId
-            if (detail.getOrderId() == null && labels.contains("ARRIVING_TODAY")) {
-                RoomOrder arrivingOrder = arrivingToday.stream()
-                    .filter(o -> o.getRoomOccupies() != null && o.getRoomOccupies().stream().anyMatch(ro -> ro.getRoom().getId().equals(room.getId())))
-                    .findFirst().orElse(null);
-                if (arrivingOrder != null) {
-                    detail.setOrderId(arrivingOrder.getId());
-                }
+            // 基于 arrivingDays/departingDays 设置标签
+            if (detail.getArrivingDays() != null) {
+                if (detail.getArrivingDays() < 0) labels.add("OVERDUE_ARRIVING");
+                else if (detail.getArrivingDays() == 0) labels.add("ARRIVING_TODAY");
+                else if (detail.getArrivingDays() <= 3) labels.add("ARRIVING_SOON");
+            }
+            if (detail.getDepartingDays() != null) {
+                if (detail.getDepartingDays() < 0) labels.add("OVERDUE_DEPARTING");
+                else if (detail.getDepartingDays() == 0) labels.add("DEPARTING_TODAY");
+            }
+
+            // 空闲房间用抵达订单补充 orderId
+            if (detail.getOrderId() == null && detail.getNearestArriving() != null) {
+                detail.setOrderId(detail.getNearestArriving().getOrderId());
             }
 
             detail.setLabels(labels);
             return detail;
         }).collect(Collectors.toList());
+
+        // 抵达/离开统计（基于房间的 arrivingDays/departingDays）
+        dto.setArrivingToday((int) roomDetails.stream().filter(r -> r.getArrivingDays() != null && r.getArrivingDays() == 0).count());
+        dto.setDepartingToday((int) roomDetails.stream().filter(r -> r.getDepartingDays() != null && r.getDepartingDays() == 0).count());
+        dto.setArrivingInNDays((int) roomDetails.stream().filter(r -> r.getArrivingDays() != null && r.getArrivingDays() > 0 && r.getArrivingDays() <= 3).count());
 
         // 状态计数
         Map<String, Long> counts = new HashMap<>();

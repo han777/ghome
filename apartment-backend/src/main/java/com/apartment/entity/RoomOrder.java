@@ -27,7 +27,7 @@ public class RoomOrder {
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties("order")
     private java.util.List<RoomOccupy> roomOccupies;
 
-    private Integer customerType = 1; // 1: Individual, 2: Group
+    private Integer customerType; // 1: Individual, 2: Group (default set in controller)
     private Integer bizType; // 1: Short, 2: Long
 
     @ManyToOne
@@ -37,10 +37,10 @@ public class RoomOrder {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 
-    private Integer status = 0; // 0: Cooling-off, 1: Pending, 2: In, 3: Out, 4: Canceled
-    private BigDecimal totalAmount = BigDecimal.ZERO;
-    private BigDecimal roomFee = BigDecimal.ZERO;
-    private BigDecimal serviceFee = BigDecimal.ZERO;
+    private Integer status; // 0: Cooling-off, 1: Pending, 2: In, 3: Out, 4: Canceled (default set in controller)
+    private BigDecimal totalAmount;
+    private BigDecimal roomFee;
+    private BigDecimal serviceFee;
     private String bookPhone;
 
     private String keyBoxNo;     // 房卡箱号

@@ -25,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -141,7 +142,13 @@ public class RoomOrderController {
             }
 
             if (order.getId() == null) {
-                // NEW ORDER
+                // NEW ORDER — apply entity defaults that were removed from field initializers
+                // to prevent Jackson defaults from overwriting existing values on incremental updates
+                if (order.getCustomerType() == null) order.setCustomerType(1);
+                if (order.getStatus() == null) order.setStatus(0);
+                if (order.getTotalAmount() == null) order.setTotalAmount(BigDecimal.ZERO);
+                if (order.getRoomFee() == null) order.setRoomFee(BigDecimal.ZERO);
+                if (order.getServiceFee() == null) order.setServiceFee(BigDecimal.ZERO);
                 if (order.getCreateUser() == null) {
                     order.setCreateUser(u);
                 }

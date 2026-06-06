@@ -31,7 +31,7 @@ public class RoomOccupy {
     private String coOccupants; // 同住人
     private String occupantName; // 入住人姓名（团体时=团体名称）
 
-    private Integer status = 0; // 0: Pending(待入住), 1: Checked-in(已入住), 2: Checked-out(已退房), 3: Canceled(取消)
+    private Integer status; // 0: Pending(待入住), 1: Checked-in(已入住), 2: Checked-out(已退房), 3: Canceled(取消) (default set in service)
 
     public static final int STATUS_PENDING = 0;
     public static final int STATUS_CHECKED_IN = 1;
