@@ -16,6 +16,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleBizEx(BusinessException e) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("code", e.getErrorCode().getCode());
+        body.put("message", e.getErrorCode().getCode());
         body.put("args", e.getArgs());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
@@ -30,6 +31,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeEx(RuntimeException e) {
+        e.printStackTrace();
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("code", "runtime.UNEXPECTED");
         body.put("message", e.getMessage());

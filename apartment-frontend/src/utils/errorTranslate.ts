@@ -38,6 +38,13 @@ const errorMessagesZh: Record<string, string> = {
   'order.COST_CENTER_EMPTY': '成本中心不能为空',
   'order.ACTIVITY_CODE_EMPTY': '活动编码不能为空',
   'order.MOBILE_CUTOFF': '北京时间15:00后不可预订当天房间，请选择明天及以后的日期',
+  'order.GROUP_CHECKOUT_PER_ROOM': '团体退房须逐间操作',
+  'order.HAS_CHECKED_IN_ROOM': '订单中存在已入住房间，无法执行此操作',
+  'order.OCCUPY_NOT_PENDING': '该房间不在待入住状态，无法删除',
+  'order.OCCUPY_NOT_CHECKED_IN': '该房间未入住',
+  'order.OCCUPY_FINISHED': '该房间已完成',
+  'order.OCCUPY_STATUS_INVALID': '房间状态无效',
+  'order.ALREADY_CHECKED_OUT': '该房间已退房',
 
   // Maintenance
   'maint.START_AFTER_END': '开始时间不能晚于结束时间',
@@ -59,7 +66,7 @@ const errorMessagesZh: Record<string, string> = {
   'general.OCCUPY_NOT_FOUND': '入住记录未找到',
   'general.DATA_CONSTRAINT_VIOLATION': '数据约束冲突或无效请求',
   'general.INTERNAL_ERROR': '服务器内部错误',
-  'runtime.UNEXPECTED': '操作失败'
+  'runtime.UNEXPECTED': '操作失败' // 后附原始错误信息
 };
 
 /**
@@ -100,6 +107,11 @@ export function translateError(error: any, locale: string = 'zh'): string {
     args.forEach((arg: any, index: number) => {
       message = message.replace(new RegExp(`\\{${index}\\}`, 'g'), String(arg));
     });
+  }
+
+  // runtime.UNEXPECTED 时附带后端原始错误信息，避免只显示"操作失败"
+  if (code === 'runtime.UNEXPECTED' && error?.message) {
+    message += '：' + error.message;
   }
 
   return message;
