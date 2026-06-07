@@ -159,6 +159,10 @@ public class RoomOrderService {
                 currentStatusCount++;
             }
 
+            // Resolve roomNo from DB (frontend only sends room.id)
+            String roomNo = roomRepository.findById(occupy.getRoom().getId())
+                    .map(Room::getRoomNo).orElse(null);
+
             // 1. Room Overlap check for each room
             List<RoomOrder> roomOrders = orderRepository.findByRoomIdAndStatusIn(occupy.getRoom().getId(), activeStatuses);
             for (RoomOrder existing : roomOrders) {
@@ -168,14 +172,14 @@ public class RoomOrderService {
                 LocalDateTime exEndDT = existing.getEndDate();
 
                 if (startDT.isBefore(exEndDT) && endDT.isAfter(exStartDT)) {
-                    throw new BusinessException(ErrorCode.ORDER_ROOM_TIME_CONFLICT, occupy.getRoom().getRoomNo());
+                    throw new BusinessException(ErrorCode.ORDER_ROOM_TIME_CONFLICT, roomNo);
                 }
             }
 
             // 2. Room Maintenance Overlap
             long maintenanceCount = maintenanceRepository.countOverlappingMaintenances(occupy.getRoom().getId(), startDT, endDT);
             if (maintenanceCount > 0) {
-                throw new BusinessException(ErrorCode.ORDER_ROOM_MAINTENANCE, occupy.getRoom().getRoomNo());
+                throw new BusinessException(ErrorCode.ORDER_ROOM_MAINTENANCE, roomNo);
             }
 
             // 3. Occupant User Overlap check (Only if occupant is set)
