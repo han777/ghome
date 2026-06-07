@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { i18n } from '../main';
 
 const api = axios.create({
   baseURL: '/api',
@@ -18,7 +17,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for auth errors and i18n error codes
+// Response interceptor for auth errors
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
@@ -30,22 +29,6 @@ api.interceptors.response.use(
         window.location.href = '/m/auth';
       } else {
         window.location.href = '/login';
-      }
-    }
-
-    // Translate error codes from backend
-    const data = error.response?.data;
-    if (data && data.code) {
-      const i18nKey = 'errors.' + data.code;
-      const args = Array.isArray(data.args) ? data.args : [];
-      try {
-        const translated = i18n.global.t(i18nKey, args);
-        // If the key exists (translated !== key itself), use it
-        if (translated !== i18nKey) {
-          error.response.data = { message: translated, code: data.code, originalMessage: data.message };
-        }
-      } catch (e) {
-        // Fallback: use raw code
       }
     }
 
