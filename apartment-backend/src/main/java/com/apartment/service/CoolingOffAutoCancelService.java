@@ -39,7 +39,7 @@ public class CoolingOffAutoCancelService {
     @Scheduled(fixedRate = 5 * 60 * 1000)
     @Transactional
     public void autoCancelExpiredCoolingOffOrders() {
-        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(COOLING_OFF_MINUTES);
+        LocalDateTime cutoff = LocalDateTime.now(java.time.ZoneId.of("Asia/Shanghai")).minusMinutes(COOLING_OFF_MINUTES);
         List<RoomOrder> expiredOrders = orderRepository.findByStatusAndCreatedAtBefore(STATUS_COOLING_OFF, cutoff);
 
         if (expiredOrders.isEmpty()) {
@@ -81,7 +81,7 @@ public class CoolingOffAutoCancelService {
         OrderLog orderLog = new OrderLog();
         orderLog.setOrder(order);
         orderLog.setOperator(null); // 系统自动操作
-        orderLog.setOperationTime(LocalDateTime.now());
+        orderLog.setOperationTime(LocalDateTime.now(java.time.ZoneId.of("Asia/Shanghai")));
         orderLog.setOperationType("AUTO_CANCEL");
         orderLog.setOperationContent("超时自动取消");
         orderLogRepository.save(orderLog);

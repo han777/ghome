@@ -492,7 +492,8 @@ public class RoomOrderService {
 
         // Cancel deadline: must be no later than 24:00 of the day before check-in
         LocalDateTime cancelDeadline = order.getStartDate().toLocalDate().atStartOfDay();
-        if (LocalDateTime.now().isAfter(cancelDeadline) || LocalDateTime.now().isEqual(cancelDeadline)) {
+        LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("Asia/Shanghai"));
+        if (now.isAfter(cancelDeadline) || now.isEqual(cancelDeadline)) {
             throw new BusinessException(ErrorCode.ORDER_CANCEL_DEADLINE_PASSED);
         }
 

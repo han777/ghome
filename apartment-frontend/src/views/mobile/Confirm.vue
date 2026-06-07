@@ -143,7 +143,8 @@ const stayDays = computed(() => {
 
 const deadlineStr = computed(() => {
   if (!order.value?.createdAt) return '-';
-  const created = new Date(order.value.createdAt);
+  const raw = order.value.createdAt;
+  const created = new Date(raw.includes('+') || raw.includes('Z') ? raw : raw + '+08:00');
   const deadline = new Date(created.getTime() + 15 * 60000);
   return deadline.toLocaleTimeString();
 });
@@ -166,8 +167,9 @@ const fetchOrder = async () => {
         companions.value = coStr.split(',').filter(Boolean);
       }
       
-      // Start countdown based on createdAt
-      const created = new Date(found.createdAt || Date.now());
+      // Start countdown based on createdAt (server time is Beijing UTC+8)
+      const createdStr = found.createdAt;
+      const created = createdStr ? new Date(createdStr.includes('+') || createdStr.includes('Z') ? createdStr : createdStr + '+08:00') : new Date();
       const elapsed = Math.floor((Date.now() - created.getTime()) / 1000);
       countdown.value = Math.max(0, 900 - elapsed);
       if (countdown.value <= 0) isExpired.value = true;
