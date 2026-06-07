@@ -73,7 +73,7 @@
     "fri": "Fri",
     "sat": "Sat",
     "selectRoomTypeTitle": "Select Room Type",
-    "timezoneWarn": "Your device timezone differs from Beijing Time (UTC+8). Order dates are in Beijing Time, please verify before booking.",
+    "timezoneWarn": "Your device timezone differs from Beijing Time (UTC+8). Order dates are in Beijing Time, please note.",
     "timezoneDismiss": "OK"
   },
   "roomSelect": {

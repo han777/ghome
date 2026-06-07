@@ -73,7 +73,7 @@
     "fri": "金曜日",
     "sat": "土曜日",
     "selectRoomTypeTitle": "部屋タイプを選択",
-    "timezoneWarn": "デバイスのタイムゾーンが北京時間（UTC+8）と異なります。注文の日付は北京時間ですので、予約前にご確認ください。",
+    "timezoneWarn": "デバイスのタイムゾーンが北京時間（UTC+8）と異なります。注文の日付は北京時間ですので、ご承知ください。",
     "timezoneDismiss": "了解"
   },
   "roomSelect": {

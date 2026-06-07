@@ -73,7 +73,7 @@
     "fri": "星期五",
     "sat": "星期六",
     "selectRoomTypeTitle": "选择房型",
-    "timezoneWarn": "您的设备时区与北京时间（UTC+8）不一致，订单日期为北京时间，请确认后再预订。",
+    "timezoneWarn": "您的设备时区与北京时间（UTC+8）不一致，订单日期为北京时间，请知悉。",
     "timezoneDismiss": "知道了"
   },
   "roomSelect": {
