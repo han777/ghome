@@ -14,7 +14,7 @@ const errorMessagesZh: Record<string, string> = {
   'order.DATES_EMPTY': '入住和离开日期不能为空',
   'order.END_BEFORE_START': '离开时间必须晚于入住时间',
   'order.ROOM_NO_EMPTY': '房号不能为空',
-  'order.ROOM_TIME_CONFLICT': '房间 {0} 的入住到离开时间与已有的未结订单冲突！',
+  'order.ROOM_TIME_CONFLICT': '房间 {0} 的住离时段与其他订单冲突！',
   'order.ROOM_MAINTENANCE': '房间 {0} 处于维修状态！',
   'order.OCCUPANT_CONFLICT': '入住人 {0} 在此期间已有其他房间预约，存在时段冲突！',
   'order.INDIVIDUAL_ONE_CURRENT': '个人客人订单只允许一条记录为当前状态',
