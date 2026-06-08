@@ -48,10 +48,16 @@ public class CleaningTaskService {
         for (RoomOccupy occupy : checkoutOccupies) {
             Room room = occupy.getRoom();
             if (room != null && !processedRooms.contains(room.getId())) {
-                if (!taskRepository.existsByRoomIdAndStatus(room.getId(), 0)) {
-                    createTask(room, 2, today, "当日退房，需强打扫");
-                    processedRooms.add(room.getId());
+                // 强打扫：先终止该房间所有计划状态的清扫任务
+                List<CleaningTask> plannedTasks = taskRepository.findByRoomIdAndStatus(room.getId(), 0);
+                for (CleaningTask plannedTask : plannedTasks) {
+                    plannedTask.setStatus(1);  // 取消
                 }
+                if (!plannedTasks.isEmpty()) {
+                    taskRepository.saveAll(plannedTasks);
+                }
+                createTask(room, 2, today, "当日退房，需强打扫");
+                processedRooms.add(room.getId());
             }
         }
 
@@ -61,12 +67,10 @@ public class CleaningTaskService {
         for (RoomOccupy occupy : currentOccupies) {
             Room room = occupy.getRoom();
             if (room != null && !processedRooms.contains(room.getId())) {
-                // 检查是否当日退房（如果是，已经在上面的强打扫中处理了）
-                if (occupy.getCheckOutTime() == null || !occupy.getCheckOutTime().toLocalDate().equals(today)) {
-                    if (!taskRepository.existsByRoomIdAndStatus(room.getId(), 0)) {
-                        createTask(room, 1, today, "日常保洁");
-                        processedRooms.add(room.getId());
-                    }
+                // 日常保洁：如果该房间有任何计划状态的清扫任务，则跳过
+                if (!taskRepository.existsByRoomIdAndStatus(room.getId(), 0)) {
+                    createTask(room, 1, today, "日常保洁");
+                    processedRooms.add(room.getId());
                 }
             }
         }
@@ -172,11 +176,17 @@ public class CleaningTaskService {
         for (RoomOccupy occupy : checkoutOccupies) {
             Room room = occupy.getRoom();
             if (room != null && !processedRooms.contains(room.getId())) {
-                if (!taskRepository.existsByRoomIdAndStatus(room.getId(), 0)) {
-                    createTask(room, 2, date, "当日退房，需强打扫");
-                    processedRooms.add(room.getId());
-                    count++;
+                // 强打扫：先终止该房间所有计划状态的清扫任务
+                List<CleaningTask> plannedTasks = taskRepository.findByRoomIdAndStatus(room.getId(), 0);
+                for (CleaningTask plannedTask : plannedTasks) {
+                    plannedTask.setStatus(1);  // 取消
                 }
+                if (!plannedTasks.isEmpty()) {
+                    taskRepository.saveAll(plannedTasks);
+                }
+                createTask(room, 2, date, "当日退房，需强打扫");
+                processedRooms.add(room.getId());
+                count++;
             }
         }
 
@@ -185,12 +195,11 @@ public class CleaningTaskService {
         for (RoomOccupy occupy : currentOccupies) {
             Room room = occupy.getRoom();
             if (room != null && !processedRooms.contains(room.getId())) {
-                if (occupy.getCheckOutTime() == null || !occupy.getCheckOutTime().toLocalDate().equals(date)) {
-                    if (!taskRepository.existsByRoomIdAndStatus(room.getId(), 0)) {
-                        createTask(room, 1, date, "日常保洁");
-                        processedRooms.add(room.getId());
-                        count++;
-                    }
+                // 日常保洁：如果该房间有任何计划状态的清扫任务，则跳过
+                if (!taskRepository.existsByRoomIdAndStatus(room.getId(), 0)) {
+                    createTask(room, 1, date, "日常保洁");
+                    processedRooms.add(room.getId());
+                    count++;
                 }
             }
         }

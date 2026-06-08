@@ -18,3 +18,4 @@ apartment-backend/.settings/*
 apartment-backend/.project
 apartment-backend/.classpath
 apartment-backend/.factorypath
+.omo/run-continuation/*
