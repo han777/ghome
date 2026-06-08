@@ -8,6 +8,7 @@ const errorMessagesZh: Record<string, string> = {
   'auth.PHONE_IN_USE': '该手机号已被其他用户使用',
   'auth.USER_NOT_FOUND': '用户不存在',
   'user.EMAIL_REQUIRED': '人工添加的用户邮箱为必填项',
+  'user.EMAIL_EXISTS': '该邮箱已被其他用户使用',
 
   // Order
   'order.ROOM_EMPTY': '房间不能为空',

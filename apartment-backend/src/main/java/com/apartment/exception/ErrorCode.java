@@ -7,6 +7,7 @@ public enum ErrorCode {
     AUTH_PHONE_IN_USE("auth.PHONE_IN_USE"),
     AUTH_USER_NOT_FOUND("auth.USER_NOT_FOUND"),
     USER_EMAIL_REQUIRED("user.EMAIL_REQUIRED"),
+    USER_EMAIL_EXISTS("user.EMAIL_EXISTS"),
 
     // Order
     ORDER_ROOM_EMPTY("order.ROOM_EMPTY"),

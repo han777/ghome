@@ -386,7 +386,8 @@
       "USER_NOT_FOUND": "用户不存在"
     },
     "user": {
-      "EMAIL_REQUIRED": "人工添加的用户邮箱为必填项"
+      "EMAIL_REQUIRED": "人工添加的用户邮箱为必填项",
+      "EMAIL_EXISTS": "该邮箱已被其他用户使用"
     },
     "order": {
       "ROOM_EMPTY": "房间不能为空",

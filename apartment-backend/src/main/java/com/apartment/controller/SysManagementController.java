@@ -61,6 +61,15 @@ public class SysManagementController {
                 throw new BusinessException(ErrorCode.USER_EMAIL_REQUIRED);
             }
         }
+
+        // Validate email uniqueness
+        if (user.getEmail() != null && !user.getEmail().trim().isEmpty()) {
+            userRepository.findByEmail(user.getEmail()).ifPresent(existing -> {
+                if (user.getId() == null || !user.getId().equals(existing.getId())) {
+                    throw new BusinessException(ErrorCode.USER_EMAIL_EXISTS);
+                }
+            });
+        }
         return userRepository.save(user);
     }
 

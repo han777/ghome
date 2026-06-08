@@ -386,7 +386,8 @@
       "USER_NOT_FOUND": "User not found"
     },
     "user": {
-      "EMAIL_REQUIRED": "Email is required for manually added users"
+      "EMAIL_REQUIRED": "Email is required for manually added users",
+      "EMAIL_EXISTS": "This email is already in use by another user"
     },
     "order": {
       "ROOM_EMPTY": "Room cannot be empty",
