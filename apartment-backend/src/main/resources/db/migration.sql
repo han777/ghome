@@ -77,3 +77,9 @@ CREATE TABLE IF NOT EXISTS scheduled_task_log (
   fail_reason TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_stl_execute_time ON scheduled_task_log(execute_time DESC);
+
+-- #9: Prevent duplicate order numbers
+-- Prerequisite: Check for existing duplicates before applying:
+--   SELECT order_no, COUNT(*) FROM room_order WHERE order_no IS NOT NULL GROUP BY order_no HAVING COUNT(*) > 1;
+-- If duplicates exist, resolve them manually before running this migration.
+CREATE UNIQUE INDEX IF NOT EXISTS unique_order_no ON room_order (order_no) WHERE order_no IS NOT NULL;

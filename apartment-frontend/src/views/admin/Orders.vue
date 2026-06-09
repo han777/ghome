@@ -268,20 +268,20 @@
                 <input v-model="form.remarks" placeholder="订单备注信息..." :disabled="!isEditMode">
               </div>
 
-              <div class="form-item">
+              <div class="form-item" v-if="form.id">
                 <label>创建时间</label>
                 <input type="datetime-local" v-model="form.createdAt" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
               </div>
-              <div class="form-item">
+              <div class="form-item" v-if="form.id">
                 <label>创建人</label>
                 <input :value="form.createUser?.realName || form.createUser?.username || '-'" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
               </div>
 
-              <div class="form-item">
+              <div class="form-item" v-if="form.id">
                 <label>房卡箱号</label>
                 <input v-model="form.keyBoxNo" placeholder="房卡箱号" :disabled="!isEditMode">
               </div>
-              <div class="form-item">
+              <div class="form-item" v-if="form.id">
                 <label>箱密码</label>
                 <input v-model="form.boxPassword" placeholder="箱密码" :disabled="!isEditMode">
               </div>
@@ -1684,6 +1684,7 @@ const openModal = (order?: any, tab: string = 'basic') => {
   } else {
     Object.assign(form, {
       id: null,
+      orderNo: null,
       userId: null,
       bizType: 1,
       startDate: new Date().toISOString().slice(0, 10),
@@ -1887,6 +1888,7 @@ const openModalWithRoom = async (roomId: number, roomNo: string) => {
 
   Object.assign(form, {
     id: null,
+    orderNo: null,
     userId: null,
     bizType: businessPurpose?.bizType || 1,
     startDate: checkInDateStr,
@@ -2192,6 +2194,8 @@ const saveOrder = async () => {
         })).filter((d: any) => d.product !== null);
       }
       delete payload.userId;
+      delete payload.createdAt;
+      delete payload.createUser;
     }
     
     const savedOrder: any = await api.post('/orders', payload);

@@ -144,6 +144,7 @@ public class RoomOrderController {
             if (order.getId() == null) {
                 // NEW ORDER — apply entity defaults that were removed from field initializers
                 // to prevent Jackson defaults from overwriting existing values on incremental updates
+                order.setOrderNo(null); // Force regeneration to prevent duplicate orderNo from frontend cache
                 if (order.getCustomerType() == null) order.setCustomerType(1);
                 if (order.getStatus() == null) order.setStatus(0);
                 if (order.getTotalAmount() == null) order.setTotalAmount(BigDecimal.ZERO);
