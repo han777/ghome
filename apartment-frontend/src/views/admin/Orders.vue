@@ -1029,11 +1029,11 @@ const filteredOrders = computed(() => {
     // Status filter
     const matchStatus = statusFilter.value.length === 0 || statusFilter.value.includes(o.status);
 
-    // Today Arrival filter
-    const matchArrival = !filterTodayArrival.value || o.startDate?.split('T')[0] === today;
+    // Today Arrival filter (based on room-level checkInTime)
+    const matchArrival = !filterTodayArrival.value || (o.roomOccupies?.some((ro: any) => ro.checkInTime?.split('T')[0] === today) ?? false);
 
-    // Today Departure filter
-    const matchDeparture = !filterTodayDeparture.value || o.endDate?.split('T')[0] === today;
+    // Today Departure filter (based on room-level checkOutTime)
+    const matchDeparture = !filterTodayDeparture.value || (o.roomOccupies?.some((ro: any) => ro.checkOutTime?.split('T')[0] === today) ?? false);
 
     return matchStatus && matchArrival && matchDeparture;
   }).sort((a, b) => {
