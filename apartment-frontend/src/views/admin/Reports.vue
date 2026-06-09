@@ -73,6 +73,13 @@
             <td>¥{{ formatMoney(row.serviceFee) }}</td>
             <td class="bold">¥{{ formatMoney(row.totalAmount) }}</td>
           </tr>
+          <!-- Summary row per page -->
+          <tr v-if="orders.length > 0" class="summary-row">
+            <td colspan="12" class="summary-label">本页合计</td>
+            <td class="summary-value">¥{{ formatMoney(pageTotals.roomFee) }}</td>
+            <td class="summary-value">¥{{ formatMoney(pageTotals.serviceFee) }}</td>
+            <td class="summary-value summary-total">¥{{ formatMoney(pageTotals.totalAmount) }}</td>
+          </tr>
           <tr v-if="orders.length === 0">
             <td colspan="15" class="empty-cell">暂无数据</td>
           </tr>
@@ -132,6 +139,13 @@ const fetchPurposes = async () => {
 fetchPurposes();
 
 const rowNumber = (idx: number) => currentPage.value * pageSize.value + idx + 1;
+
+const pageTotals = computed(() => {
+  const roomFee = orders.value.reduce((s, r) => s + Number(r.roomFee || 0), 0);
+  const serviceFee = orders.value.reduce((s, r) => s + Number(r.serviceFee || 0), 0);
+  const totalAmount = orders.value.reduce((s, r) => s + Number(r.totalAmount || 0), 0);
+  return { roomFee, serviceFee, totalAmount };
+});
 
 const fetchData = async (page: number) => {
   currentPage.value = page;
@@ -326,6 +340,33 @@ fetchData(0);
 .detail-table td.bold {
   font-weight: 700;
   color: #0f172a;
+}
+
+.summary-row {
+  background: #f0f9ff;
+}
+
+.summary-row td {
+  border-top: 2px solid #38bdf8;
+  padding: 10px 12px;
+}
+
+.summary-label {
+  font-weight: 700;
+  font-size: 14px;
+  color: #0369a1;
+  text-align: right;
+}
+
+.summary-value {
+  font-weight: 700;
+  font-size: 14px;
+  color: #0369a1;
+}
+
+.summary-total {
+  font-size: 15px;
+  color: #0c4a6e;
 }
 
 .empty-cell {
