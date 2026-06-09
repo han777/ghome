@@ -2715,8 +2715,8 @@ th.sortable:hover {
 .card-action-btn.delete:hover { color: #ef4444; }
 
 .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-.card-item label { display: block; font-size: 11px; color: #475569; margin-bottom: 4px; font-weight: 600; }
-.card-item select, .card-item input { width: 100%; padding: 6px 8px; border: 1px solid #f1f5f9; border-radius: 6px; font-size: 13px; background: #f8fafc; }
+.card-item label { display: block; font-size: 13px; color: #475569; margin-bottom: 4px; font-weight: 600; }
+.card-item select, .card-item input { width: 100%; padding: 6px 8px; border: 1px solid #f1f5f9; border-radius: 6px; font-size: 14px; background: #f8fafc; }
 .empty-rooms { grid-column: span 3; text-align: center; padding: 40px; color: #94a3b8; background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 12px; }
 
 /* List View Styles */
