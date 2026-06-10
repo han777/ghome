@@ -142,15 +142,15 @@
       <div class="notice-section price-table-section">
         <h2 class="section-heading">{{ $t('notice.priceTableTitle') }}</h2>
         <p class="price-table-note">{{ $t('notice.priceTableNote') }}</p>
-        <div class="price-table-wrapper">
-          <table class="price-table">
+        <div class="price-grid">
+          <table class="price-table" v-for="half in priceTableHalves" :key="half[0][0]">
             <thead>
               <tr>
                 <th v-for="h in ($tm('notice.priceTableHeaders') as string[])" :key="h">{{ h }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(row, i) in ($tm('notice.priceTableItems') as string[][])" :key="i">
+              <tr v-for="(row, i) in half" :key="i">
                 <td class="col-no">{{ row[0] }}</td>
                 <td class="col-name">{{ row[1] }}</td>
                 <td class="col-price">{{ row[2] }}</td>
@@ -164,13 +164,22 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
+const { tm } = useI18n();
 
 const goBack = () => {
   router.back();
 };
+
+const priceTableHalves = computed(() => {
+  const items = tm('notice.priceTableItems') as string[][];
+  const mid = Math.ceil(items.length / 2);
+  return [items.slice(0, mid), items.slice(mid)];
+});
 </script>
 
 <style scoped>
@@ -239,16 +248,22 @@ const goBack = () => {
   margin: 0 0 10px 0;
 }
 
-.price-table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.price-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 480px) {
+  .price-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .price-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  min-width: 220px;
 }
 
 .price-table th {
@@ -257,7 +272,6 @@ const goBack = () => {
   padding: 7px 8px;
   text-align: left;
   font-weight: 600;
-  white-space: nowrap;
 }
 
 .price-table td {
@@ -272,7 +286,7 @@ const goBack = () => {
 }
 
 .col-no {
-  width: 36px;
+  width: 32px;
   color: #999;
   text-align: center;
 }
@@ -282,16 +296,5 @@ const goBack = () => {
   text-align: right;
   font-weight: 600;
   color: #c0392b;
-}
-
-@media (min-width: 600px) {
-  .price-table {
-    font-size: 14px;
-  }
-
-  .price-table th,
-  .price-table td {
-    padding: 8px 12px;
-  }
 }
 </style>
