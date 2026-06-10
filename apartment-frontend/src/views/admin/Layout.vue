@@ -48,62 +48,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../../utils/api';
 
 const route = useRoute();
 const router = useRouter();
 
-const menuGroups = [
-  {
-    title: '客房业务',
-    icon: '🏨',
-    items: [
-      { name: '房态仪表盘', path: '/admin/dashboard', icon: '📊' },
-      { name: '入住管理', path: '/admin/orders', icon: '📝' },
-      { name: '线性房态', path: '/admin/gantt', icon: '📅' },
-      { name: '房型预测报表', path: '/admin/room-type-forecast', icon: '📉' },
-      { name: '清扫任务', path: '/admin/cleaning-tasks', icon: '🧹' },
-      { name: '维修管理', path: '/admin/maintenances', icon: '🔧' },
-    ]
-  },
-  {
-    title: '财务报表',
-    icon: '📈',
-    items: [
-      { name: '财务报表', path: '/admin/reports', icon: '📈' },
-      { name: '房间费结算明细', path: '/admin/room-fee-detail', icon: '🧾' },
-      { name: '商品服务费结算明细', path: '/admin/service-fee-detail', icon: '📋' },
-    ]
-  },
-  {
-    title: '数据管理',
-    icon: '📊',
-    items: [
-      { name: '楼栋管理', path: '/admin/buildings', icon: '🏘️' },
-      { name: '房型价格', path: '/admin/room-types', icon: '🛌' },
-      { name: '房间列表', path: '/admin/rooms', icon: '🏠' },
-      { name: '商品服务价格', path: '/admin/product-prices', icon: '🏷️' },
-      { name: '订房事由', path: '/admin/booking-purposes', icon: '📋' },
-    ]
-  },
-  {
-    title: '系统管理',
-    icon: '⚙️',
-    items: [
-      { name: '用户管理', path: '/admin/accounts', icon: '👤' },
-      { name: '角色管理', path: '/admin/roles', icon: '🛡️' },
-      { name: '字典管理', path: '/admin/dicts', icon: '📖' },
-      { name: '部门管理', path: '/admin/depts', icon: '🏢' },
-      { name: '全局设置', path: '/admin/global-settings', icon: '🔧' },
-      { name: '通知记录', path: '/admin/notification-records', icon: '🔔' },
-      { name: '定时任务', path: '/admin/scheduled-task-logs', icon: '⏰' },
-    ]
-  }
-];
+const menuGroups = ref<any[]>([]);
 
-const expandedGroups = ref(menuGroups.map(g => g.title));
+const expandedGroups = computed(() => menuGroups.value.map((g: any) => g.title));
 
 const toggleGroup = (title: string) => {
   const index = expandedGroups.value.indexOf(title);
@@ -149,9 +103,32 @@ onMounted(async () => {
     currentUser.value = await api.get('/sys/profile');
   } catch (e) {
     console.error('Failed to fetch profile', e);
-    // If unauthorized, redirect to login might be handled by api interceptor
+  }
+
+  try {
+    const menus: any[] = await api.get('/sys/menus/current-user');
+    const groups = menus
+      .filter((m: any) => m.parentId == null)
+      .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    menuGroups.value = groups.map((group: any) => ({
+      title: group.menuName,
+      icon: group.icon,
+      items: menus
+        .filter((m: any) => m.parentId === group.id)
+        .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+        .map((m: any) => ({ name: m.menuName, path: m.path, icon: m.icon }))
+    }));
+  } catch (e) {
+    console.error('Failed to fetch menus', e);
   }
 });
+
+watch(() => route.path, (path) => {
+  const allowedPaths = menuGroups.value.flatMap((g: any) => g.items.map((i: any) => i.path));
+  if (allowedPaths.length > 0 && !allowedPaths.includes(path)) {
+    router.replace(allowedPaths[0]);
+  }
+}, { immediate: true });
 
 const logout = () => {
   localStorage.removeItem('token');

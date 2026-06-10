@@ -80,6 +80,7 @@ const handleLogin = async () => {
 
         const isAdmin = roles.includes('ROLE_ADMIN');
         const isUser = roles.includes('ROLE_USER');
+        const isFinance = roles.includes('ROLE_FINANCE');
 
         const redirect = route.query.redirect as string;
         if (redirect && redirect !== '/admin') {
@@ -90,6 +91,10 @@ const handleLogin = async () => {
         if (isAdmin && isUser) {
           router.push('/role-selection');
         } else if (isAdmin) {
+          router.push('/admin');
+        } else if (isFinance && isUser) {
+          router.push('/role-selection');
+        } else if (isFinance) {
           router.push('/admin');
         } else if (isUser) {
           router.push('/m');

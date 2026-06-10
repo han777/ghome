@@ -23,8 +23,14 @@ const router = createRouter({
             path: '/admin',
             name: 'Admin',
             component: () => import('../views/admin/Layout.vue'),
-            meta: { requiresAuth: true, roles: ['ROLE_ADMIN'] },
-            redirect: '/admin/dashboard',
+            meta: { requiresAuth: true, roles: ['ROLE_ADMIN', 'ROLE_FINANCE'] },
+            redirect: () => {
+                const roles: string[] = JSON.parse(localStorage.getItem('roles') || '[]')
+                if (roles.includes('ROLE_FINANCE') && !roles.includes('ROLE_ADMIN')) {
+                    return '/admin/reports'
+                }
+                return '/admin/dashboard'
+            },
             children: [
                 {
                     path: 'dashboard',
@@ -216,8 +222,11 @@ router.beforeEach((to, _from, next) => {
         if (!roles.some(r => (to.meta.roles as string[]).includes(r))) {
             const isAdmin = roles.includes('ROLE_ADMIN')
             const isUser = roles.includes('ROLE_USER')
+            const isFinance = roles.includes('ROLE_FINANCE')
             if (isAdmin && isUser) next('/role-selection')
             else if (isAdmin) next('/admin')
+            else if (isFinance && isUser) next('/role-selection')
+            else if (isFinance) next('/admin')
             else if (isUser) next('/m')
             else next('/login')
             return

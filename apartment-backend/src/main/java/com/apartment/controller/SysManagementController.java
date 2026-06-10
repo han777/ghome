@@ -107,4 +107,14 @@ public class SysManagementController {
 
     // --- Menus ---
     @GetMapping("/menus") public List<SysMenu> getMenus() { return menuRepository.findAll(); }
+
+    @GetMapping("/menus/current-user")
+    public List<SysMenu> getCurrentUserMenus() {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        SysUser user = userRepository.findByUsername(username).orElseThrow();
+        List<String> roleCodes = user.getRoles().stream()
+            .map(SysRole::getRoleCode)
+            .toList();
+        return menuRepository.findByRolesRoleCodeInOrderBySortOrderAsc(roleCodes);
+    }
 }

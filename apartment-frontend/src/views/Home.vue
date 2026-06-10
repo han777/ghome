@@ -17,10 +17,15 @@ onMounted(async () => {
     const roles = (user.roles || []).map((r: any) => r.roleCode)
     const isAdmin = roles.includes('ROLE_ADMIN')
     const isUser = roles.includes('ROLE_USER')
+    const isFinance = roles.includes('ROLE_FINANCE')
 
     if (isAdmin && isUser) {
       router.replace('/role-selection')
     } else if (isAdmin) {
+      router.replace('/admin')
+    } else if (isFinance && isUser) {
+      router.replace('/role-selection')
+    } else if (isFinance) {
       router.replace('/admin')
     } else if (isUser) {
       router.replace('/m')

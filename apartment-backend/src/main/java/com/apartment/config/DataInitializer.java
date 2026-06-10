@@ -15,6 +15,7 @@ public class DataInitializer {
     CommandLineRunner initData(
             SysUserRepository userRepository,
             SysRoleRepository roleRepository,
+            SysMenuRepository menuRepository,
             SysDictRepository dictRepository,
             SysDictItemRepository dictItemRepository,
             PasswordEncoder passwordEncoder,
@@ -32,6 +33,14 @@ public class DataInitializer {
                 userRole.setRoleCode("ROLE_USER");
                 userRole.setRoleName("Standard User");
                 roleRepository.save(userRole);
+            }
+
+            // Initialize ROLE_FINANCE if not exists
+            if (roleRepository.findByRoleCode("ROLE_FINANCE").isEmpty()) {
+                SysRole financeRole = new SysRole();
+                financeRole.setRoleCode("ROLE_FINANCE");
+                financeRole.setRoleName("Finance");
+                roleRepository.save(financeRole);
             }
 
             // 2. Initialize Admin User if not exists
@@ -76,6 +85,91 @@ public class DataInitializer {
                 }
                 userRepository.save(testUser);
                 System.out.println("Test Mobile User created: 13800138000");
+            }
+
+            // Initialize menus if not exists
+            if (menuRepository.count() == 0) {
+                // Group 1: 客房业务
+                SysMenu g1 = new SysMenu();
+                g1.setMenuName("客房业务"); g1.setIcon("🏨"); g1.setSortOrder(0);
+                g1 = menuRepository.save(g1);
+
+                menuRepository.save(createMenu("房态仪表盘", "/admin/dashboard", "📊", g1.getId(), 0));
+                menuRepository.save(createMenu("入住管理", "/admin/orders", "📝", g1.getId(), 1));
+                menuRepository.save(createMenu("线性房态", "/admin/gantt", "📅", g1.getId(), 2));
+                menuRepository.save(createMenu("房型预测报表", "/admin/room-type-forecast", "📉", g1.getId(), 3));
+                menuRepository.save(createMenu("清扫任务", "/admin/cleaning-tasks", "🧹", g1.getId(), 4));
+                menuRepository.save(createMenu("维修管理", "/admin/maintenances", "🔧", g1.getId(), 5));
+
+                // Group 2: 财务报表
+                SysMenu g2 = new SysMenu();
+                g2.setMenuName("财务报表"); g2.setIcon("📈"); g2.setSortOrder(1);
+                g2 = menuRepository.save(g2);
+
+                menuRepository.save(createMenu("财务报表", "/admin/reports", "📈", g2.getId(), 0));
+                menuRepository.save(createMenu("房间费结算明细", "/admin/room-fee-detail", "🧾", g2.getId(), 1));
+                menuRepository.save(createMenu("商品服务费结算明细", "/admin/service-fee-detail", "📋", g2.getId(), 2));
+
+                // Group 3: 数据管理
+                SysMenu g3 = new SysMenu();
+                g3.setMenuName("数据管理"); g3.setIcon("📊"); g3.setSortOrder(2);
+                g3 = menuRepository.save(g3);
+
+                menuRepository.save(createMenu("楼栋管理", "/admin/buildings", "🏘️", g3.getId(), 0));
+                menuRepository.save(createMenu("房型价格", "/admin/room-types", "🛌", g3.getId(), 1));
+                menuRepository.save(createMenu("房间列表", "/admin/rooms", "🏠", g3.getId(), 2));
+                menuRepository.save(createMenu("商品服务价格", "/admin/product-prices", "🏷️", g3.getId(), 3));
+                menuRepository.save(createMenu("订房事由", "/admin/booking-purposes", "📋", g3.getId(), 4));
+
+                // Group 4: 系统管理
+                SysMenu g4 = new SysMenu();
+                g4.setMenuName("系统管理"); g4.setIcon("⚙️"); g4.setSortOrder(3);
+                g4 = menuRepository.save(g4);
+
+                menuRepository.save(createMenu("用户管理", "/admin/accounts", "👤", g4.getId(), 0));
+                menuRepository.save(createMenu("角色管理", "/admin/roles", "🛡️", g4.getId(), 1));
+                menuRepository.save(createMenu("字典管理", "/admin/dicts", "📖", g4.getId(), 2));
+                menuRepository.save(createMenu("部门管理", "/admin/depts", "🏢", g4.getId(), 3));
+                menuRepository.save(createMenu("全局设置", "/admin/global-settings", "🔧", g4.getId(), 4));
+                menuRepository.save(createMenu("通知记录", "/admin/notification-records", "🔔", g4.getId(), 5));
+                menuRepository.save(createMenu("定时任务", "/admin/scheduled-task-logs", "⏰", g4.getId(), 6));
+            }
+
+            // Bind roles to menus
+            SysRole adminRole = roleRepository.findByRoleCode("ROLE_ADMIN").orElse(null);
+            if (adminRole != null) {
+                java.util.List<SysMenu> allMenus = menuRepository.findAll();
+                for (SysMenu menu : allMenus) {
+                    if (menu.getRoles() == null) menu.setRoles(new java.util.HashSet<>());
+                    if (!menu.getRoles().contains(adminRole)) {
+                        menu.getRoles().add(adminRole);
+                        menuRepository.save(menu);
+                    }
+                }
+            }
+
+            SysRole financeRole = roleRepository.findByRoleCode("ROLE_FINANCE").orElse(null);
+            if (financeRole != null) {
+                java.util.List<SysMenu> allMenus = menuRepository.findAll();
+                SysMenu financeGroup = allMenus.stream()
+                    .filter(m -> "财务报表".equals(m.getMenuName()) && m.getParentId() == null)
+                    .findFirst().orElse(null);
+                if (financeGroup != null) {
+                    if (financeGroup.getRoles() == null) financeGroup.setRoles(new java.util.HashSet<>());
+                    if (!financeGroup.getRoles().contains(financeRole)) {
+                        financeGroup.getRoles().add(financeRole);
+                        menuRepository.save(financeGroup);
+                    }
+                    for (SysMenu menu : allMenus) {
+                        if (financeGroup.getId().equals(menu.getParentId())) {
+                            if (menu.getRoles() == null) menu.setRoles(new java.util.HashSet<>());
+                            if (!menu.getRoles().contains(financeRole)) {
+                                menu.getRoles().add(financeRole);
+                                menuRepository.save(menu);
+                            }
+                        }
+                    }
+                }
             }
 
             // 3. Initialize Dictionaries from Enums
@@ -144,6 +238,16 @@ public class DataInitializer {
                 System.err.println("User source data migration failed: " + e.getMessage());
             }
         };
+    }
+
+    private SysMenu createMenu(String name, String path, String icon, Long parentId, int sortOrder) {
+        SysMenu menu = new SysMenu();
+        menu.setMenuName(name);
+        menu.setPath(path);
+        menu.setIcon(icon);
+        menu.setParentId(parentId);
+        menu.setSortOrder(sortOrder);
+        return menu;
     }
 
     private void initEnumDict(SysDictRepository dictRepository, SysDictItemRepository dictItemRepository, 
