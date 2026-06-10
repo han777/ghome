@@ -62,7 +62,7 @@
       </div>
 
       <!-- Notice Row -->
-      <div class="mobile-card notice-row">
+      <div class="mobile-card notice-row" @click="router.push('/m/notice')">
         <span>{{ $t('booking.stayNotice') }}</span>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="#ccc"><path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>
       </div>

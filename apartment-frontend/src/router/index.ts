@@ -187,6 +187,12 @@ const router = createRouter({
             component: () => import('../views/mobile/Confirm.vue')
         },
         {
+            path: '/m/notice',
+            name: 'MobileNotice',
+            component: () => import('../views/mobile/Notice.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
             path: '/m/order-detail/:id',
             name: 'MobileOrderDetail',
             component: () => import('../views/mobile/OrderDetail.vue'),

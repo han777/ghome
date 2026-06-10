@@ -378,6 +378,63 @@
       "WeCom": "WeChat Work"
     }
   },
+  "notice": {
+    "title": "Stay Notice",
+    "section1Title": "I. Reservation, Check-in & Check-out",
+    "s1": {
+      "p1": "Reservation Confirmation: Once your booking is confirmed, a confirmation message will be sent via Enterprise WeChat/Email. (Note: Any booking made on the day of arrival should be completed by 15:00.)",
+      "p2": "Check-in: From 14:00.",
+      "p3": "Room Card Collection: Please use the collection code sent via Enterprise WeChat/Email on your check-in day to retrieve your card from the code-protected locker at the security booth of Phase 2 campus. This card gives you access to your room as well as to G-Home public areas.",
+      "p4": "Check-out:",
+      "p4a": "Check-out: By 12:00 noon. (Please drop your room card into the card return box at the ground floor reception.)",
+      "p4b": "Before checking out, please check your personal belongings. Lost items will be kept for 7 days only (contact the administrator to claim).",
+      "p5": "Modification & Cancellation Rules:",
+      "p5a": "Cancellations must be made through the channel you booked with before 24:00 on the day prior to check-in. Late cancellations will incur a full night's charge.",
+      "p5b": "Early check-out must be requested through the channel you booked with before 24:00 on the day prior to your actual check-out date. Late requests will incur a full night's charge.",
+      "p5c": "Extensions to your stay must be made as a new booking via the Enterprise WeChat G-Home reservation system / website."
+    },
+    "section2Title": "II. Facilities & Usage Guidelines",
+    "s2": {
+      "p6": "Public Areas:",
+      "p6a": "Breakfast: Served 7:30–8:30. Monday to Friday: Staff Canteen, Ground Floor – tap your room card to collect your meal. Saturday & Sunday: G-Home Breakfast Room, Ground Floor – present your breakfast voucher.",
+      "p6b": "Gym: East side, 2nd Floor – open 8:00–22:00.",
+      "p6c": "Laundry Room: West side, Ground Floor.",
+      "p7": "WiFi Connection:",
+      "p7a": "Public areas: WiFi name: G-Home | Password: 88888888",
+      "p7b": "In-room: WiFi name: (your room number) | Password: 88888888",
+      "p8": "Energy Conservation: Please turn off air conditioning, lights, and electrical appliances when leaving your room."
+    },
+    "section3Title": "III. Housekeeping & Room Maintenance",
+    "s3": {
+      "p9": "Hygiene Standards:",
+      "p9a": "Bed linen is changed for every new guest.",
+      "p9b": "For extended stays: bed linen will not be changed daily. Disposable items (toothbrush, tissues, etc.) will be replenished daily.",
+      "p10": "Facility Maintenance:",
+      "p10a": "If something isn't working properly, please report it immediately for repair (Maintenance hotline: 0510-85882003).",
+      "p10b": "Damage Compensation: Guests will be charged the full replacement cost for any damage or loss of facilities caused by their negligence."
+    },
+    "section4Title": "IV. Safety & Code of Conduct",
+    "s4": {
+      "p11": "Visitor Management:",
+      "p11a": "Visitors are welcome between 08:00 and 22:00.",
+      "p11b": "No overnight guests.",
+      "p12": "Smoking Policy:",
+      "p12a": "Smoking (including e-cigarettes) is strictly prohibited throughout the building – including all rooms, bathrooms, and public areas.",
+      "p12b": "The only designated outdoor smoking area is located outside the apartment's main entrance, equipped with cigarette disposal bins.",
+      "p13": "Fire Safety:",
+      "p13a": "Open flames and unauthorised electrical wiring are strictly prohibited. Blocking fire safety equipment is also not allowed.",
+      "p13b": "Please take a moment to look at the evacuation map behind your room door, and make sure fire exits are kept clear.",
+      "p14": "Valuables: The apartment accepts no liability for lost or misplaced personal items. Please keep your belongings safe.",
+      "p15": "Prohibited Actions:",
+      "p15a": "No pets allowed",
+      "p15b": "No cooking with open flames"
+    },
+    "section5Title": "V. Emergency & Contact Information",
+    "s5": {
+      "p16": "Emergencies: Fire: 119 | Medical emergency: 120 | G-Home duty number: 0510-85882003",
+      "p17": "General Enquiries: Hongya Jiang (same name on Enterprise WeChat) | G-Home duty number: 0510-85882003"
+    }
+  },
   "errors": {
     "auth": {
       "CODE_FORMAT_INVALID": "Invalid code format, please enter 4-6 digits",
