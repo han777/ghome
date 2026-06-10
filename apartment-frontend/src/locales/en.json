@@ -433,7 +433,40 @@
     "s5": {
       "p16": "Emergencies: Fire: 119 | Medical emergency: 120 | G-Home duty number: 0510-85882003",
       "p17": "General Enquiries: Hongya Jiang (same name on Enterprise WeChat) | G-Home duty number: 0510-85882003"
-    }
+    },
+    "priceTableTitle": "VI. Damage Compensation Price List",
+    "priceTableNote": "Friendly Reminder: Damages will be charged at full replacement cost.",
+    "priceTableHeaders": ["No.", "Item", "Cost (¥)"],
+    "priceTableItems": [
+      ["1", "Television", "2500"],
+      ["2", "Bluetooth speaker", "1015"],
+      ["3", "Skirting board", "545"],
+      ["4", "Refrigerator", "500"],
+      ["5", "Hairdryer", "220"],
+      ["6", "Carpet/floor burn mark", "from 200"],
+      ["7", "Wireless phone charger", "150"],
+      ["8", "Duvet inner", "120"],
+      ["9", "Duvet cover", "100"],
+      ["10", "Flat sheet", "100"],
+      ["11", "Electric kettle", "70"],
+      ["12", "Blood stain", "from 50"],
+      ["13", "Pillow inner", "50"],
+      ["14", "Mattress protector", "50"],
+      ["15", "Amenities box", "50"],
+      ["16", "Laundry basket", "50"],
+      ["17", "Room card", "50"],
+      ["18", "Waste bin", "40"],
+      ["19", "Tissue box cover", "30"],
+      ["20", "Bath towel", "30"],
+      ["21", "TV remote control", "20"],
+      ["22", "Bath mat", "15"],
+      ["23", "Drinking glass / cup", "15"],
+      ["24", "Clothes hanger", "15"],
+      ["25", "Trouser hanger", "15"],
+      ["26", "Hairdryer pouch", "15"],
+      ["27", "Pillowcase", "15"],
+      ["28", "Face towel", "10"]
+    ]
   },
   "errors": {
     "auth": {
