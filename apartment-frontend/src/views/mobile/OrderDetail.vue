@@ -110,7 +110,7 @@
       <div class="mobile-card price-card">
         <div class="price-detail-list">
           <div class="price-detail-row">
-            <span class="detail-label">{{ $t('confirm.roomCharge') }}{{ $t('confirm.perNightMath', { price: roomPrice, days: stayDays }) }}</span>
+            <span class="detail-label">{{ $t('confirm.roomCharge') }}{{ $t('confirm.perNightMath', { price: roomPrice, days: stayDays }, stayDays) }}</span>
             <span class="detail-value">CNY {{ (roomPrice * stayDays).toFixed(2) }}</span>
           </div>
           <div v-for="fee in extraFees" :key="fee.id" class="price-detail-row">

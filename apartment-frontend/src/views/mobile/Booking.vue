@@ -19,7 +19,7 @@
           <span class="date-day">{{ getDayOfWeek(startDate) }}</span>
         </div>
         <div class="date-duration">
-          <span class="duration-badge">{{ $t('booking.nights', { n: stayDays }) }}</span>
+          <span class="duration-badge">{{ $t('booking.nights', { n: stayDays }, stayDays) }}</span>
           <div class="duration-line"></div>
         </div>
         <div class="date-item">

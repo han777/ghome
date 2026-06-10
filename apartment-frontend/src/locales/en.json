@@ -56,7 +56,7 @@
     "north": "North",
     "submit": "Book Now",
     "title2": "Apartment Booking",
-    "nights": "{n} Nights",
+    "nights": "{n} Night | {n} Nights",
     "pics": "{n} Pics",
     "perNight": "/Night",
     "bookNow": "Book Now",
@@ -139,7 +139,7 @@
     "cancelConfirm": "Are you sure you want to cancel?",
     "bookSuccess": "Booking successful!",
     "submitFail": "Submit failed: ",
-    "perNightMath": "(¥ {price}/Night x {days} Nights)",
+    "perNightMath": "(¥ {price}/Night x {days} Night) | (¥ {price}/Night x {days} Nights)",
     "perNightMath2": "( ¥ {price}/Night x {days} )",
     "currentUser": "Current User"
   },
