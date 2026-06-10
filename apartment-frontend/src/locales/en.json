@@ -64,7 +64,7 @@
     "checkInDate": "Check-in Date",
     "checkOutDate": "Check-out Date",
     "selectRoomType": "Select",
-    "stayNotice": "Stay Notice",
+    "stayNotice": "Guest Information",
     "sun": "Sun",
     "mon": "Mon",
     "tue": "Tue",
@@ -133,7 +133,7 @@
     "companionName": "Enter companion's name",
     "confirmBtn": "Confirm",
     "cancelBtn": "Cancel",
-    "notice": "Stay Notice",
+    "notice": "Guest Information",
     "totalLabel": "Total",
     "cancelOrder": "Cancel Order",
     "cancelConfirm": "Are you sure you want to cancel?",
@@ -379,7 +379,7 @@
     }
   },
   "notice": {
-    "title": "Stay Notice",
+    "title": "Guest Information",
     "section1Title": "I. Reservation, Check-in & Check-out",
     "s1": {
       "p1": "Reservation Confirmation: Once your booking is confirmed, a confirmation message will be sent via Enterprise WeChat/Email. (Note: Any booking made on the day of arrival should be completed by 15:00.)",
