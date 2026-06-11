@@ -31,9 +31,9 @@ server:
   port: 10080
 
 wecom:
-  corpid: ${WECOM_CORPID:ww250a982fbe9d08da}
-  secret: ${WECOM_SECRET:hdTto-F2mSMpMbDuHURzQaUTHEBurCyVeHeubHxWAI0}
-  agentid: ${WECOM_AGENTID:1000003}
+  corpid: ${WECOM_CORPID:ww7a5aa1c5d3489ab8}
+  secret: ${WECOM_SECRET:NAO_aVh2fuBybH_-ZwY7hFUhYQ6xhCKV8ai9ZYVwb98}
+  agentid: ${WECOM_AGENTID:1000096}
   token: ${WECOM_TOKEN:s689tN6pZSAvDJm88VM6QVA3}
   encoding-aes-key: ${WECOM_ENCODING_AES_KEY:7CiOlMDrLPYNIm5xzaDtk1YopqOp6yIBOSSNPJyDJfs}
   callback:
