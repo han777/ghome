@@ -102,6 +102,24 @@ echo "Skip automatic schema migration. Run manually if JPA entities changed."
 # === Step 7: Ensure upload directory + update configs + restart services ===
 echo "[7/7] Restarting services..."
 mkdir -p /opt/uploads
+
+# Deploy SSL certificates
+SSL_DIR="/etc/nginx/ssl"
+if [ -f "$PROJECT_DIR/genesismedtech.com.pem" ] && [ -f "$PROJECT_DIR/genesismedtech.com.key" ]; then
+    mkdir -p "$SSL_DIR"
+    cp "$PROJECT_DIR/genesismedtech.com.pem" "$SSL_DIR/genesismedtech.com.pem"
+    cp "$PROJECT_DIR/genesismedtech.com.key" "$SSL_DIR/genesismedtech.com.key"
+    chmod 600 "$SSL_DIR/genesismedtech.com.key"
+    chmod 644 "$SSL_DIR/genesismedtech.com.pem"
+    echo "SSL certificates deployed to $SSL_DIR"
+elif [ -f "$SSL_DIR/genesismedtech.com.pem" ] && [ -f "$SSL_DIR/genesismedtech.com.key" ]; then
+    echo "SSL certificates already deployed at $SSL_DIR (skipping)"
+else
+    echo "WARNING: SSL certificate files not found. HTTPS will not work."
+    echo "Expected: $PROJECT_DIR/genesismedtech.com.pem and .key"
+    echo "      or: $SSL_DIR/genesismedtech.com.pem and .key"
+fi
+
 cp "$DEPLOY_DIR/nginx.conf" /etc/nginx/conf.d/ghome.conf
 cp "$DEPLOY_DIR/apartment-backend.service" /etc/systemd/system/apartment-backend.service
 systemctl daemon-reload
@@ -123,7 +141,7 @@ else
 fi
 
 # Frontend check
-FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://ghome.genesismedtech.com/)
+FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://ghome.genesismedtech.com/)
 if [ "$FRONTEND_STATUS" = "200" ]; then
     echo "✓ Frontend is accessible (HTTP $FRONTEND_STATUS)"
 else
@@ -132,6 +150,6 @@ fi
 
 echo ""
 echo "=== Deployment Complete ==="
-echo "Backend: http://ghome.genesismedtech.com/api/"
-echo "Frontend: http://ghome.genesismedtech.com/"
-echo "WeChat Work Callback: http://ghome.genesismedtech.com/api/auth/wecom/callback"
+echo "Backend: https://ghome.genesismedtech.com/api/"
+echo "Frontend: https://ghome.genesismedtech.com/"
+echo "WeChat Work Callback: https://ghome.genesismedtech.com/api/auth/wecom/callback"

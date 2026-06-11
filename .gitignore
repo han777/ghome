@@ -6,7 +6,6 @@ apartment-backend/uploads/
 deploy/*
 .claude/*
 node_modules/*
-
 backend_error.log
 gen_bcrypt.js
 login.json
