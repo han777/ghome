@@ -9,19 +9,16 @@ spring:
     password: asd12345
     driver-class-name: org.postgresql.Driver
   mail:
-    host: ${MAIL_HOST:smtp.qq.com}
-    port: ${MAIL_PORT:465}
-    username: ${MAIL_USERNAME:740771731@qq.com}
-    password: ${MAIL_PASSWORD:cupkkvrophlobbjf}
+    host: ${MAIL_HOST:mail.gmedtech.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:ghome.notice@gmedtech.com}
+    password: ${MAIL_PASSWORD:Jsyl@199}
     properties:
       mail:
         smtp:
           auth: true
-          ssl:
+          starttls:
             enable: true
-          socketFactory:
-            class: javax.net.ssl.SSLSocketFactory
-            port: 465
     test-connection: false
   jpa:
     hibernate:

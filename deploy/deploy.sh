@@ -60,6 +60,10 @@ if [ -f "$PROJECT_DIR/.env.deploy" ]; then
     WECOM_SECRET=$(grep '^WECOM_SECRET=' "$PROJECT_DIR/.env.deploy" | cut -d= -f2)
     WECOM_AGENTID=$(grep '^WECOM_AGENTID=' "$PROJECT_DIR/.env.deploy" | cut -d= -f2)
     WECOM_CALLBACK_BASE_URL=$(grep '^WECOM_CALLBACK_BASE_URL=' "$PROJECT_DIR/.env.deploy" | cut -d= -f2)
+    MAIL_HOST=$(grep '^MAIL_HOST=' "$PROJECT_DIR/.env.deploy" | cut -d= -f2)
+    MAIL_PORT=$(grep '^MAIL_PORT=' "$PROJECT_DIR/.env.deploy" | cut -d= -f2)
+    MAIL_USERNAME=$(grep '^MAIL_USERNAME=' "$PROJECT_DIR/.env.deploy" | cut -d= -f2)
+    MAIL_PASSWORD=$(grep '^MAIL_PASSWORD=' "$PROJECT_DIR/.env.deploy" | cut -d= -f2-)
 else
     echo "WARNING: .env.deploy not found. Using dev config (NOT recommended for production)."
 fi
@@ -122,6 +126,17 @@ fi
 
 cp "$DEPLOY_DIR/nginx.conf" /etc/nginx/conf.d/ghome.conf
 cp "$DEPLOY_DIR/apartment-backend.service" /etc/systemd/system/apartment-backend.service
+
+# Write mail environment variables for systemd (Spring Boot picks up MAIL_* automatically)
+ENV_FILE="/etc/apartment-backend.env"
+: > "$ENV_FILE"
+[ -n "$MAIL_HOST" ]     && echo "MAIL_HOST=$MAIL_HOST" >> "$ENV_FILE"
+[ -n "$MAIL_PORT" ]     && echo "MAIL_PORT=$MAIL_PORT" >> "$ENV_FILE"
+[ -n "$MAIL_USERNAME" ] && echo "MAIL_USERNAME=$MAIL_USERNAME" >> "$ENV_FILE"
+[ -n "$MAIL_PASSWORD" ] && echo "MAIL_PASSWORD=$MAIL_PASSWORD" >> "$ENV_FILE"
+chmod 600 "$ENV_FILE"
+echo "Mail env written to $ENV_FILE"
+
 systemctl daemon-reload
 systemctl restart apartment-backend
 nginx -t && nginx -s reload || { echo "WARNING: nginx reload failed."; }
