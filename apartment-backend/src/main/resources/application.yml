@@ -8,22 +8,16 @@ spring:
     username: hxl
     password: asd12345
     driver-class-name: org.postgresql.Driver
-  mail:
-    host: ${MAIL_HOST:mail.gmedtech.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:ghome.notice@gmedtech.com}
-    password: ${MAIL_PASSWORD:Jsyl@199}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-    test-connection: false
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+exchange:
+  ews-url: ${EWS_URL:https://mail.genesismedtech.com/EWS/Exchange.asmx}
+  username: ${EWS_USERNAME:ghome.notice@gmedtech.com}
+  password: ${EWS_PASSWORD:Jsyl@199}
+
 server:
   port: 10080
 
