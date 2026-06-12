@@ -33,6 +33,14 @@ public class MessageTemplateService {
         return "房间入住信息通知";
     }
 
+    public String buildRoomCardSubject(String locale) {
+        return switch (locale != null ? locale : "zh") {
+            case "en" -> "Your Room Card Is Ready";
+            case "ja" -> "ルームカードの準備ができました";
+            default -> "您的房卡已经准备好";
+        };
+    }
+
     /**
      * Build a dynamic email subject with booker/group name and stay dates.
      * Format: 订单提醒：{name}将于{startDate}至{endDate}入住本公寓

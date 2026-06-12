@@ -354,10 +354,7 @@ public class RoomOrderService {
                 coTime != null ? coTime.format(fmt) : ""
             );
 
-            String displayName = getOrderDisplayName(order);
-            String subject = messageTemplateService.buildEmailSubject(displayName,
-                ciTime != null ? ciTime.format(DATE_ONLY) : "",
-                coTime != null ? coTime.format(DATE_ONLY) : "");
+            String subject = messageTemplateService.buildRoomCardSubject(userLocale);
 
             NotificationRecord nr = new NotificationRecord();
             nr.setOrder(order);
